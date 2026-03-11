@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<style>
+  body { background: #fff; margin: 0; padding: 20px; font-family: sans-serif; }
+  .diagram-section { page-break-after: always; margin-bottom: 40px; padding: 20px; }
+  h2 { color: #333; margin-bottom: 10px; }
+  .mermaid { background: #fff; }
+</style>
+</head><body>
+
+<div class="diagram-section" id="alex">
+<h2>Alex — Reel Upload</h2>
+<pre class="mermaid">
+classDiagram
+    direction TB
+    class ReelModel {
+        +int ReelId
+        +int? MovieId
+        +int? CreatorUserId
+        +string VideoUrl
+        +string ThumbnailUrl
+        +string Title
+        +string Caption
+        +int DurationSeconds
+        +string? CropDataJson
+        +int? BackgroundMusicId
+        +string Source
+        +DateTime CreatedAt
+        +DateTime? LastEditedAt
+    }
+    class ReelUploadRequest {
+        &lt;&lt;DTO&gt;&gt;
+        +Stream VideoFileStream
+        +string FileName
+        +int UploaderUserId
+        +int? MovieId
+        +string? Caption
+    }
+    class IVideoStorageService {
+        &lt;&lt;interface&gt;&gt;
+        +UploadVideoAsync(ReelUploadRequest) ReelModel
+        +ValidateVideoAsync(Stream) ValidationResult
+    }
+    class ReelRepository {
+        +InsertReelAsync(ReelModel) void
+    }
+    class ReelUploadViewModel {
+        +string SelectedFilePath
+        +string StatusMessage
+        +bool IsUploading
+        +int? SelectedMovieId
+        +ICommand PickFileCommand
+        +ICommand SubmitUploadCommand
+    }
+    class ReelUploadView {
+        &lt;&lt;View&gt;&gt;
+    }
+    ReelUploadView --> ReelUploadViewModel : DataContext
+    ReelUploadViewModel --> IVideoStorageService : uses
+    IVideoStorageService --> ReelModel : returns
+    IVideoStorageService --> ReelUploadRequest : consumes
+    ReelRepository --> ReelModel : persists
+    IVideoStorageService --> ReelRepository : calls
+</pre>
+</div>
+
+<div class="diagram-section" id="andrei">
+<h2>Andrei — Trailer Scraping</h2>
+<pre class="mermaid">
+classDiagram
+    direction TB
+    class ReelModel {
+        +int ReelId
+        +int? MovieId
+        +int? CreatorUserId
+        +string VideoUrl
+        +string ThumbnailUrl
+        +string Title
+        +string Caption
+        +int DurationSeconds
+        +string Source
+        +DateTime CreatedAt
+    }
+    class IWebScraperService {
+        &lt;&lt;interface&gt;&gt;
+        +ScrapeVideosForMovieAsync(string movieTitle) List~RawVideo~
+    }
+    class WebScraperBackgroundService {
+        +ExecuteAsync() void
+    }
+    class VideoIngestionService {
+        +IngestTrailersAsync() void
+    }
+    class ReelRepository {
+        +BulkInsertScrapedReelsAsync(List~ReelModel~) void
+        +GetReelsByMovieAndSourceAsync(int movieId, string source) List~ReelModel~
+    }
+    class MovieTrailerPlayerViewModel {
+        +ObservableCollection~ReelModel~ Trailers
+        +string SelectedVideoUrl
+        +ICommand LoadTrailersCommand
+    }
+    class MovieTrailerPlayerView {
+        &lt;&lt;View&gt;&gt;
+    }
+    MovieTrailerPlayerView --> MovieTrailerPlayerViewModel : DataContext
+    MovieTrailerPlayerViewModel --> ReelRepository : fetches from
+    WebScraperBackgroundService --> VideoIngestionService : triggers
+    VideoIngestionService --> IWebScraperService : uses
+    VideoIngestionService --> ReelRepository : bulk inserts
+    ReelRepository --> ReelModel : persists
+</pre>
+</div>
+
+<div class="diagram-section" id="beatrice">
+<h2>Beatrice — Reel Editing</h2>
+<pre class="mermaid">
+classDiagram
+    direction TB
+    class ReelModel {
+        +int ReelId
+        +int? MovieId
+        +int? CreatorUserId
+        +string VideoUrl
+        +string Title
+        +string? CropDataJson
+        +int? BackgroundMusicId
+        +DateTime CreatedAt
+        +DateTime? LastEditedAt
+    }
+    class MusicTrackModel {
+        +int MusicTrackId
+        +string TrackName
+        +string AudioUrl
+        +int DurationSeconds
+    }
+    class VideoEditMetadata {
+        &lt;&lt;DTO&gt;&gt;
+        +int CropX
+        +int CropY
+        +int CropWidth
+        +int CropHeight
+        +int? SelectedMusicTrackId
+    }
+    class IVideoProcessingService {
+        &lt;&lt;interface&gt;&gt;
+        +ApplyCrop(VideoEditMetadata) void
+        +MergeAudioTrack(int reelId, int musicTrackId) void
+    }
+    class IAudioLibraryService {
+        &lt;&lt;interface&gt;&gt;
+        +GetAvailableTracksAsync() List~MusicTrackModel~
+    }
+    class ReelRepository {
+        +GetUserReelsAsync(int userId) List~ReelModel~
+        +UpdateReelEditsAsync(int reelId, string cropDataJson, int? musicId) void
+    }
+    class ReelGalleryViewModel {
+        +ObservableCollection~ReelModel~ UserReels
+        +ICommand LoadReelsCommand
+    }
+    class ReelEditorViewModel {
+        +ReelModel SelectedReel
+        +VideoEditMetadata CurrentEdits
+        +MusicTrackModel? SelectedMusicTrack
+        +ICommand SaveEditsCommand
+    }
+    class MusicSelectionDialogViewModel {
+        +ObservableCollection~MusicTrackModel~ AvailableTracks
+        +ICommand SelectTrackCommand
+    }
+    class ReelGalleryView {
+        &lt;&lt;View&gt;&gt;
+    }
+    class ReelEditorView {
+        &lt;&lt;View&gt;&gt;
+    }
+    class MusicSelectionDialogView {
+        &lt;&lt;View&gt;&gt;
+    }
+    ReelGalleryView --> ReelGalleryViewModel : DataContext
+    ReelEditorView --> ReelEditorViewModel : DataContext
+    MusicSelectionDialogView --> MusicSelectionDialogViewModel : DataContext
+    ReelGalleryViewModel --> ReelRepository : fetches user reels
+    ReelEditorViewModel --> IVideoProcessingService : uses
+    ReelEditorViewModel --> ReelRepository : saves edits
+    ReelEditorViewModel --> VideoEditMetadata : holds
+    MusicSelectionDialogViewModel --> IAudioLibraryService : fetches tracks
+    IAudioLibraryService --> MusicTrackModel : returns
+    ReelEditorViewModel --> ReelModel : edits
+    MusicSelectionDialogViewModel --> MusicTrackModel : displays
+</pre>
+</div>
+
+<div class="diagram-section" id="bogdan">
+<h2>Bogdan — Movie Swipe</h2>
+<pre class="mermaid">
+classDiagram
+    direction TB
+    class MovieCardModel {
+        +int MovieId
+        +string Title
+        +string PosterUrl
+        +string PrimaryGenre
+    }
+    class UserMoviePreferenceModel {
+        +int UserMoviePreferenceId
+        +int UserId
+        +int MovieId
+        +float Score
+        +DateTime LastModified
+    }
+    class ISwipeService {
+        &lt;&lt;interface&gt;&gt;
+        +UpdatePreferenceScoreAsync(int userId, int movieId, bool isLiked) void
+        +GetUnswipedMoviesAsync(int userId, int count) List~MovieCardModel~
+    }
+    class SwipeService {
+        +UpdatePreferenceScoreAsync(int userId, int movieId, bool isLiked) void
+        +GetUnswipedMoviesAsync(int userId, int count) List~MovieCardModel~
+    }
+    class MovieCardFeedService {
+        +FetchUnswipedMoviesAsync(int userId, int count) List~MovieCardModel~
+    }
+    class PreferenceRepository {
+        +UpsertPreferenceAsync(UserMoviePreferenceModel) void
+        +GetUnswipedMovieIdsAsync(int userId) List~int~
+    }
+    class MovieSwipeViewModel {
+        +MovieCardModel CurrentCard
+        +ObservableCollection~MovieCardModel~ CardQueue
+        +bool IsLoading
+        +ICommand SwipeRightCommand
+        +ICommand SwipeLeftCommand
+    }
+    class MovieSwipeView {
+        &lt;&lt;View&gt;&gt;
+    }
+    class SwipeResultSummaryView {
+        &lt;&lt;View&gt;&gt;
+    }
+    SwipeService ..|> ISwipeService
+    MovieSwipeView --> MovieSwipeViewModel : DataContext
+    SwipeResultSummaryView --> MovieSwipeViewModel : DataContext
+    MovieSwipeViewModel --> ISwipeService : uses
+    SwipeService --> PreferenceRepository : upserts scores
+    SwipeService --> MovieCardFeedService : fetches cards
+    MovieCardFeedService --> MovieCardModel : returns
+    PreferenceRepository --> UserMoviePreferenceModel : persists
+</pre>
+</div>
+
+<div class="diagram-section" id="gabi">
+<h2>Gabi — Movie Tournament</h2>
+<pre class="mermaid">
+classDiagram
+    direction TB
+    class MovieModel {
+        +int MovieId
+        +string Title
+        +string PosterUrl
+    }
+    class UserMoviePreferenceModel {
+        +int UserMoviePreferenceId
+        +int UserId
+        +int MovieId
+        +float Score
+        +DateTime LastModified
+    }
+    class TournamentState {
+        &lt;&lt;in-memory&gt;&gt;
+        +List~Matchup~ PendingMatches
+        +List~Matchup~ CompletedMatches
+        +int CurrentRound
+    }
+    class Matchup {
+        &lt;&lt;in-memory&gt;&gt;
+        +MovieModel MovieA
+        +MovieModel MovieB
+        +int? WinnerId
+    }
+    class TournamentLogicService {
+        +GenerateBracket(List~MovieModel~) TournamentState
+        +AdvanceWinner(TournamentState, int winnerId) TournamentState
+    }
+    class MovieRepository {
+        +GetRandomMoviesAsync(int count) List~MovieModel~
+    }
+    class PreferenceRepository {
+        +BoostWinnerScoreAsync(int userId, int movieId) void
+    }
+    class TournamentSetupViewModel {
+        +int PoolSize
+        +ICommand StartTournamentCommand
+    }
+    class TournamentMatchViewModel {
+        +MovieModel MovieOptionA
+        +MovieModel MovieOptionB
+        +ICommand SelectMovieCommand
+    }
+    class TournamentResultViewModel {
+        +MovieModel Winner
+        +bool ScoreBoosted
+    }
+    class TournamentSetupView {
+        &lt;&lt;View&gt;&gt;
+    }
+    class TournamentMatchView {
+        &lt;&lt;View&gt;&gt;
+    }
+    class TournamentResultView {
+        &lt;&lt;View&gt;&gt;
+    }
+    TournamentState --> Matchup : contains
+    Matchup --> MovieModel : references
+    TournamentSetupView --> TournamentSetupViewModel : DataContext
+    TournamentMatchView --> TournamentMatchViewModel : DataContext
+    TournamentResultView --> TournamentResultViewModel : DataContext
+    TournamentSetupViewModel --> MovieRepository : fetches random movies
+    TournamentMatchViewModel --> TournamentLogicService : advances bracket
+    TournamentMatchViewModel --> TournamentState : reads/updates
+    TournamentResultViewModel --> PreferenceRepository : boosts winner score
+    TournamentLogicService --> TournamentState : creates/mutates
+    PreferenceRepository --> UserMoviePreferenceModel : upserts
+</pre>
+</div>
+
+<div class="diagram-section" id="madi">
+<h2>Madi — Personality Matching</h2>
+<pre class="mermaid">
+classDiagram
+    direction TB
+    class UserMoviePreferenceModel {
+        +int UserMoviePreferenceId
+        +int UserId
+        +int MovieId
+        +float Score
+        +DateTime LastModified
+    }
+    class UserProfileModel {
+        +int UserProfileId
+        +int UserId
+        +int TotalLikes
+        +long TotalWatchTimeSec
+        +float AvgWatchTimeSec
+        +int TotalClipsViewed
+        +float LikeToViewRatio
+        +DateTime LastUpdated
+    }
+    class MatchResult {
+        &lt;&lt;DTO&gt;&gt;
+        +int MatchedUserId
+        +string MatchedUsername
+        +float MatchScore
+    }
+    class IPersonalityMatchingService {
+        &lt;&lt;interface&gt;&gt;
+        +GetTopMatchesAsync(int userId, int limit) List~MatchResult~
+    }
+    class PreferenceRepository {
+        +GetAllUsersPreferencesAsync(int excludeUserId) Map
+    }
+    class ProfileRepository {
+        +GetUserProfileAsync(int userId) UserProfileModel
+    }
+    class MatchListViewModel {
+        +ObservableCollection~MatchResult~ MatchResults
+        +bool IsLoading
+        +ICommand LoadMatchesCommand
+    }
+    class MatchedUserDetailViewModel {
+        +UserProfileModel MatchedUserProfile
+        +List~UserMoviePreferenceModel~ TopPreferences
+        +float CompatibilityScore
+    }
+    class MatchListView {
+        &lt;&lt;View&gt;&gt;
+    }
+    class MatchedUserDetailView {
+        &lt;&lt;View&gt;&gt;
+    }
+    MatchListView --> MatchListViewModel : DataContext
+    MatchedUserDetailView --> MatchedUserDetailViewModel : DataContext
+    MatchListViewModel --> IPersonalityMatchingService : uses
+    IPersonalityMatchingService --> PreferenceRepository : reads all preferences
+    IPersonalityMatchingService --> MatchResult : returns
+    MatchedUserDetailViewModel --> ProfileRepository : fetches profile
+    MatchedUserDetailViewModel --> PreferenceRepository : fetches top prefs
+    MatchedUserDetailViewModel --> UserProfileModel : displays
+    MatchedUserDetailViewModel --> UserMoviePreferenceModel : displays
+</pre>
+</div>
+
+<div class="diagram-section" id="tudor">
+<h2>Tudor — Reels Feed</h2>
+<pre class="mermaid">
+classDiagram
+    direction TB
+    class ReelModel {
+        +int ReelId
+        +int? MovieId
+        +int? CreatorUserId
+        +string VideoUrl
+        +string ThumbnailUrl
+        +string Title
+        +string Caption
+        +int DurationSeconds
+        +string Source
+        +DateTime CreatedAt
+    }
+    class UserReelInteractionModel {
+        +int InteractionId
+        +int UserId
+        +int ReelId
+        +bool IsLiked
+        +int? WatchDurationSec
+        +float? WatchPercentage
+        +DateTime ViewedAt
+    }
+    class UserProfileModel {
+        +int UserProfileId
+        +int UserId
+        +int TotalLikes
+        +long TotalWatchTimeSec
+        +float AvgWatchTimeSec
+        +int TotalClipsViewed
+        +float LikeToViewRatio
+        +DateTime LastUpdated
+    }
+    class UserMoviePreferenceModel {
+        +int UserMoviePreferenceId
+        +int UserId
+        +int MovieId
+        +float Score
+        +DateTime LastModified
+    }
+    class IReelInteractionService {
+        &lt;&lt;interface&gt;&gt;
+        +RecordViewAsync(int userId, int reelId, int watchDuration, float watchPct) void
+        +ToggleLikeAsync(int userId, int reelId) void
+        +GetInteractionAsync(int userId, int reelId) UserReelInteractionModel
+    }
+    class IEngagementProfileService {
+        &lt;&lt;interface&gt;&gt;
+        +RecalculateProfileAsync(int userId) void
+        +GetProfileAsync(int userId) UserProfileModel
+    }
+    class IRecommendationService {
+        &lt;&lt;interface&gt;&gt;
+        +GetRecommendedReelsAsync(int userId, int count) List~ReelModel~
+    }
+    class IClipPlaybackService {
+        &lt;&lt;interface&gt;&gt;
+        +PlayClip(string videoUrl) void
+        +PauseClip() void
+        +ResumeClip() void
+        +GetElapsedSeconds() int
+        +PrefetchClip(string videoUrl) void
+    }
+    class InteractionRepository {
+        +InsertInteractionAsync(UserReelInteractionModel) void
+        +UpsertInteractionAsync(int userId, int reelId) void
+    }
+    class ProfileRepository {
+        +UpsertProfileAsync(UserProfileModel) void
+    }
+    class PreferenceRepository {
+        +BoostPreferenceOnLikeAsync(int userId, int movieId) void
+    }
+    class ReelsFeedViewModel {
+        +ReelModel CurrentReel
+        +ObservableCollection~ReelModel~ ReelQueue
+        +bool IsLoading
+        +bool IsCurrentReelLiked
+        +string? ErrorMessage
+        +ICommand LoadFeedCommand
+        +ICommand ScrollNextCommand
+        +ICommand ScrollPreviousCommand
+        +ICommand ToggleLikeCommand
+    }
+    class UserProfileViewModel {
+        +UserProfileModel Profile
+    }
+    class ReelsFeedView {
+        &lt;&lt;View&gt;&gt;
+    }
+    class ReelItemView {
+        &lt;&lt;View&gt;&gt;
+    }
+    ReelsFeedView --> ReelsFeedViewModel : DataContext
+    ReelItemView --> ReelsFeedViewModel : DataContext
+    ReelsFeedViewModel --> IRecommendationService : fetches feed
+    ReelsFeedViewModel --> IReelInteractionService : records views and likes
+    ReelsFeedViewModel --> IClipPlaybackService : controls playback
+    UserProfileViewModel --> IEngagementProfileService : reads profile
+    IReelInteractionService --> InteractionRepository : persists interactions
+    IReelInteractionService --> PreferenceRepository : boosts on like
+    IReelInteractionService --> UserReelInteractionModel : creates
+    IEngagementProfileService --> ProfileRepository : updates profile
+    IEngagementProfileService --> UserProfileModel : computes
+    IRecommendationService --> ReelModel : returns
+    PreferenceRepository --> UserMoviePreferenceModel : upserts
+</pre>
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+</script>
+</body></html>
