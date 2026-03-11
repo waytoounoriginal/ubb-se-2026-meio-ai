@@ -1,52 +1,64 @@
 ### 1. Formal Requirements
-*   **Requirement[s]:** 
-    *   The system must allow an authenticated user to request to be matched with other personality profiles.
-    *   The system must retrieve a pool of existing user personality profiles from the database.
-    *   The system must calculate a compatibility score between the current user's personality profile and the retrieved profiles.
-    *   The system must sort and display a top 10 list of the highest-matching personality profiles to the user.
-    *   The system must allow the user to select and view the details of any matched profile from the initial top 10 list without persisting this selection to the database.
-*   **Owner:** [Unassigned / Student Name]
-*   **Cross-Team Dependencies:** Database Team (for broad querying of existing profiles), Backend Logic Team (for designing the mathematical matching algorithm), UI Team (for displaying list data and profile detail layouts).
+*   **Requirement 1:** The system must allow an authenticated user to request personality-based matching with other users.
+*   **Requirement 2:** The system must retrieve all other users' `UserMoviePreference` ranked lists from the database.
+*   **Requirement 3:** The system must calculate a compatibility score between the current user's preference list and each other user's preference list by measuring overlap of top-scored movies.
+*   **Requirement 4:** The system must sort and display a top 10 list of the highest-matching users to the current user.
+*   **Requirement 5:** The system must allow the user to select and view the engagement details of any matched user from the top 10 list (reading from the matched user's `UserProfile`).
+*   **Owner:** Madi
+*   **Cross-Team Dependencies:**
+    *   **Bogdan:** Bogdan owns the `UserMoviePreference` table schema — Madi reads from it to compute preference overlap for matching.
+    *   **Tudor:** Tudor owns the `UserProfile` table schema — Madi reads from it to display matched users' engagement stats. Tudor also writes to `UserMoviePreference` (reel likes), which affects matching results.
+    *   **Gabi:** Gabi's tournament also writes to `UserMoviePreference`, which affects matching results.
 
 ### 2. Diagram Blueprint
 *   **Use Case Diagram Additions:**
     *   *Actor:* Authenticated User
-    *   *Use Cases:* Request Personality Matches, View Top 10 Matches, View Matched Profile Details
+    *   *Use Cases:* `Request Personality Matches`, `View Top 10 Matches`, `View Matched User Details`
 *   **Database Schema Additions:**
-    *(Note: Since no relational data is created after the action, no new tables are required. We rely on existing entity schemas).*
-    *   *Relevant Tables:* `Users`, `PersonalityProfiles`
-    *   *Columns:* `Users` (UserID, Username), `PersonalityProfiles` (ProfileID, UserID, [TraitScore Columns])
-    *   *Relationships:* 1-to-1 relationship between `Users` and `PersonalityProfiles`. 
-*   **Class Diagram (MVVM) Additions:** 
-    *   *Models:* `User`, `PersonalityProfile`, `MatchResult` (A new DTO combining a User, their Profile, and their computed Match Score).
-    *   *Views:* `MatchListView` (Screen showing top 10), `MatchedProfileDetailView` (Screen showing the selected person's traits).
-    *   *ViewModels:* `MatchListViewModel` (Controls the top 10 list logic), `MatchedProfileDetailViewModel` (Controls displaying a specific user's info).
-    *   *Utils/Services:* `PersonalityMatchingService` (Contains the mathematical algorithm to calculate trait differences/similarity).
+    *   *(This feature does NOT create new tables. It reads from the shared `UserMoviePreference` and `UserProfile` tables.)*
+    *   **Shared Table: `UserMoviePreference`** (UserId, MovieId, Score, LastModified) — The source for computing preference overlap between users.
+    *   **Shared Table: `UserProfile`** (UserId, TotalLikes, TotalWatchTimeSec, etc.) — Read for displaying matched user engagement details.
+    *   *(Note: `MatchResult` is an in-memory DTO, NOT persisted to the database.)*
+*   **Class Diagram (MVVM) Additions:**
+    *   *Models:* `UserMoviePreferenceModel` (shared), `UserProfileModel` (shared), `MatchResult` (in-memory DTO: User + MatchScore)
+    *   *Views:* `MatchListView` (screen showing top 10 matches), `MatchedUserDetailView` (screen showing selected user's traits/stats)
+    *   *ViewModels:* `MatchListViewModel` (controls the top 10 list logic), `MatchedUserDetailViewModel` (displays a specific matched user's info)
+    *   *Utils/Services:* `PersonalityMatchingService` (contains the algorithm to compute preference overlap and compatibility score)
 
 ### 3. Project Management Tasks (Max 30-Minutes Each)
 
 **Database & Models**
-*   **Task:** Define MatchResult Data Transfer Object (DTO)
-    *   **Description:** Create a non-persistent `MatchResult` model class containing properties for a `User` object, a `PersonalityProfile` object, and a computed numerical `MatchScore`. Timebox: 15 mins.
-*   **Task:** Create Profile Pool Retrieval Method
-    *   **Description:** Write the data access logic (e.g., in `ProfileRepository`) to fetch a list of `PersonalityProfile` records (along with their associated Users) from the database, strictly excluding the active user's profile. Timebox: 25 mins.
-*   **Task:** Write Unit Tests for Profile Retrieval
-    *   **Description:** Create basic unit tests using a mocked database context/interface to verify the repository method returns profiles and successfully excludes the querying user. Timebox: 30 mins.
+*   **Task:** Create `UserMoviePreferenceModel` Data Class
+    *   **Description:** Define the Model class mirroring the shared `UserMoviePreference` table: `UserMoviePreferenceId`, `UserId`, `MovieId`, `Score`, `LastModified`. This is the same shared model used by swipe, tournament, and reel-like features. Max 30 mins effort.
+*   **Task:** Create `UserProfileModel` Data Class
+    *   **Description:** Define the Model class mirroring the shared `UserProfile` table: `UserProfileId`, `UserId`, `TotalLikes`, `TotalWatchTimeSec`, `AvgWatchTimeSec`, `TotalClipsViewed`, `LikeToViewRatio`, `LastUpdated`. Max 30 mins effort.
+*   **Task:** Define `MatchResult` DTO
+    *   **Description:** Create a non-persistent `MatchResult` model class containing: `MatchedUserId`, `MatchedUsername`, `MatchScore` (float), and a summary of their top preferences. This is computed in-memory, never stored. Max 30 mins effort.
+*   **Task:** Create All-Users Preference Retrieval Method
+    *   **Description:** Write the repository method to fetch `UserMoviePreference` rows for all users (excluding the current user), grouped by UserId. Return as a dictionary/map of userId → list of (MovieId, Score). Max 30 mins effort.
+*   **Task:** Implement User Profile Read Method
+    *   **Description:** Write the repository method to fetch a single `UserProfile` row by UserId, for displaying matched user engagement stats on the detail screen. Max 30 mins effort.
+*   **Task:** Write Unit Tests for Preference Retrieval
+    *   **Description:** Create unit tests using a mocked repository to verify the method returns grouped preferences and excludes the querying user's data. Max 30 mins effort.
 
 **Backend Services & ViewModels**
-*   **Task:** Define PersonalityMatchingService Interface
-    *   **Description:** Create an `IPersonalityMatchingService` interface. Define a single method signature: `List<MatchResult> GetTopMatches(PersonalityProfile currentUser, List<PersonalityProfile> pool, int limit = 10)`. Timebox: 10 mins.
-*   **Task:** Implement Matching Algorithm Math Logic
-    *   **Description:** Implement the `GetTopMatches` method in the service. Write a simple algorithm (like Euclidean distance or absolute difference of trait scores) to calculate compatibility, sort the results descending by score, and return the top 10. Timebox: 30 mins.
-*   **Task:** Setup MatchListViewModel Properties
-    *   **Description:** Create the `MatchListViewModel`. Inject `IPersonalityMatchingService` and the data repository via constructor. Define an `ObservableCollection<MatchResult>` or equivalent reactive property to hold the data for the UI. Timebox: 20 mins.
-*   **Task:** Implement MatchListViewModel Load Command
-    *   **Description:** Add an asynchronous `LoadMatchesCommand` to the VM that triggers the repository fetch, passes the data to the matching service, populates the observable collection, and toggles an `IsLoading` boolean flag. Timebox: 30 mins.
+*   **Task:** Define `IPersonalityMatchingService` Interface
+    *   **Description:** Create the interface with method: `GetTopMatchesAsync(userId, limit = 10)` returning `List<MatchResult>`. Max 30 mins effort.
+*   **Task:** Implement Matching Algorithm — Preference Overlap
+    *   **Description:** Implement `GetTopMatchesAsync`. For each other user, compare their top N movies (by Score) against the current user's top N. Compute overlap count or a weighted similarity score. Sort descending, return top 10. Max 30 mins effort.
+*   **Task:** Scaffold `MatchListViewModel`
+    *   **Description:** Create the ViewModel. Inject `IPersonalityMatchingService`. Define an `ObservableCollection<MatchResult>` and an `IsLoading` boolean. Max 30 mins effort.
+*   **Task:** Implement `MatchListViewModel` — Load Command
+    *   **Description:** Add `LoadMatchesCommand` that calls the matching service, populates the observable collection, and toggles `IsLoading`. Max 30 mins effort.
+*   **Task:** Scaffold `MatchedUserDetailViewModel`
+    *   **Description:** Create the ViewModel that accepts a `UserId`, fetches the matched user's `UserProfile` and top `UserMoviePreference` entries, and exposes them as observable properties. Max 30 mins effort.
 
 **GUI (Views)**
-*   **Task:** Create MatchListView Scaffold & Data Binding
-    *   **Description:** Create the UI file for `MatchListView`. Set the DataContext/BindingContext to `MatchListViewModel`. Add a loading spinner bound to the `IsLoading` property. Timebox: 15 mins.
-*   **Task:** Design Top 10 Match List Container Layout
-    *   **Description:** Implement a scrollable List/RecyclerView component in the UI. Bind its item source directly to the `MatchResults` observable collection. Timebox: 20 mins.
+*   **Task:** Create `MatchListView` Scaffold & Data Binding
+    *   **Description:** Create the UI file. Set DataContext to `MatchListViewModel`. Add a loading spinner bound to `IsLoading`. Max 30 mins effort.
+*   **Task:** Design Top 10 Match List Layout
+    *   **Description:** Implement a scrollable list component bound to the `MatchResults` observable collection. Max 30 mins effort.
 *   **Task:** Design Match Item Data Template
-    *   **Description:** Design the UI template/cell for a single matched row. It must map the data to display the matched user's name/avatar, their primary personality type, and their numerical match percentage. Timebox: 30 mins.
+    *   **Description:** Design the UI template for a single match row: matched user's name, their top movie genre, and their match percentage. Max 30 mins effort.
+*   **Task:** Create `MatchedUserDetailView` Layout
+    *   **Description:** Design the detail screen showing the matched user's top movie preferences, engagement stats, and overall compatibility score. Max 30 mins effort.
