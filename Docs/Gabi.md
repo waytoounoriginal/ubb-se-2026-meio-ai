@@ -9,7 +9,7 @@
 *   **Owner:** Gabi
 *   **Cross-Team Dependencies:**
     *   **External Group:** Depends on Lucas's team's  `Movie` table for fetching the tournament movie pool.
-    *   **Bogdan:** Bogdan owns the `UserMoviePreference` table schema — Gabi also writes to it (boosting winner score). Coordinate on shared upsert logic.
+    *   **Bogdan:** Bogdan owns the `UserMoviePreference` table and the shared `UserMoviePreferenceModel`. Gabi also writes to it (tournament winner boost +2.0) — reuse the same upsert logic.
 
 
 ### 2. Diagram Blueprint

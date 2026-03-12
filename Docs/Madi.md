@@ -6,7 +6,7 @@
 *   **Requirement 5:** The system must allow the user to select and view the engagement details of any matched user from the top 10 list (reading from the matched user's `UserProfile`).
 *   **Owner:** Madi
 *   **Cross-Team Dependencies:**
-    *   **Bogdan:** Bogdan owns the `UserMoviePreference` table schema — Madi reads from it to compute preference overlap for matching.
+    *   **Bogdan:** Bogdan owns the `UserMoviePreference` table and the shared `UserMoviePreferenceModel`. Madi reads the scores Bogdan (and others) write to compute preference overlap for matching.
     *   **Tudor:** Tudor owns the `UserProfile` table schema — Madi reads from it to display matched users' engagement stats. Tudor also writes to `UserMoviePreference` (reel likes), which affects matching results.
     *   **Gabi:** Gabi's tournament also writes to `UserMoviePreference`, which affects matching results.
 

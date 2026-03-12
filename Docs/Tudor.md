@@ -13,7 +13,7 @@
     *   **Alex:** Alex owns the `Reel` table schema — Tudor reads from it to populate the feed. Uploaded reels are the primary feed content.
     *   **Andrei:** Andrei writes scraped trailers to the `Reel` table — these also appear in Tudor's feed.
     *   **Beatrice:** Beatrice edits reels (crop + music) — Tudor's feed displays the edited versions.
-    *   **Bogdan:** Bogdan owns the `UserMoviePreference` table schema — Tudor also writes to it when a reel is liked (boosting the linked movie's score).
+    *   **Bogdan:** Bogdan owns the `UserMoviePreference` table and the shared `UserMoviePreferenceModel`. Tudor also writes to it on reel likes (boost +1.5) — reuse the same upsert logic.
     *   **Madi:** Madi reads from `UserProfile` (which Tudor owns) to display matched users' engagement stats.
 
 ---
