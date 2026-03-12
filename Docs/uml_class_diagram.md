@@ -86,7 +86,8 @@ classDiagram
     class Matchup {
         +MovieModel MovieA
         +MovieModel MovieB
-        +int? WinnerId
+        +int WinnerId
+        +int orderNumber
     }
 
     class MatchResult {
@@ -111,18 +112,13 @@ classDiagram
         +int? SelectedMusicTrackId
     }
 
-    TournamentState --> "many" Matchup
-    Matchup --> "2" MovieModel
+    TournamentState --> "contains multiple" Matchup
+    Matchup --> "contains 2" MovieModel
 
     %% ══════════════════════════════════════
     %%  SERVICES & REPOSITORIES
     %% ══════════════════════════════════════
 
-    class INavigationService {
-        <<interface>>
-        +NavigateToAsync(string route) void
-        +GoBackAsync() void
-    }
 
     class IUserSession {
         <<interface>>
@@ -303,18 +299,19 @@ classDiagram
 
     class TournamentSetupViewModel {
         +int PoolSize
-        +ICommand StartTournamentCommand
+        +int maxSize
+        
     }
 
     class TournamentMatchViewModel {
         +MovieModel MovieOptionA
         +MovieModel MovieOptionB
-        +ICommand SelectMovieCommand
+        
     }
 
     class TournamentResultViewModel {
         +MovieModel Winner
-        +bool ScoreBoosted
+        
     }
 
     class MatchListViewModel {
@@ -372,8 +369,8 @@ classDiagram
     MovieSwipeViewModel --> IUserSession
     TournamentSetupViewModel --> IMovieRepository
     TournamentMatchViewModel --> TournamentLogicService
-    TournamentMatchViewModel --> INavigationService
-    TournamentResultViewModel --> ISwipeService
+
+
     MatchListViewModel --> IPersonalityMatchingService
     MatchedUserDetailViewModel --> IEngagementProfileService
     ReelsFeedViewModel --> IReelInteractionService
@@ -475,4 +472,4 @@ classDiagram
 | **Models** | 12 | `ReelModel`, `UserMoviePreferenceModel`, `UserProfileModel`, `UserReelInteractionModel`, `MusicTrackModel`, `MovieCardModel`, `MovieModel`, `TournamentState`, `Matchup`, `MatchResult`, `ReelUploadRequest`, `VideoEditMetadata` |
 | **Views** | 14 | `ReelUploadView`, `MovieTrailerPlayerView`, `ReelGalleryView`, `ReelEditorView`, `MusicSelectionDialogView`, `MovieSwipeView`, `SwipeResultSummaryView`, `TournamentSetupView`, `TournamentMatchView`, `TournamentResultView`, `MatchListView`, `MatchedUserDetailView`, `ReelsFeedView`, `ReelItemView` |
 | **ViewModels** | 13 | `ReelUploadViewModel`, `MovieTrailerPlayerViewModel`, `ReelGalleryViewModel`, `ReelEditorViewModel`, `MusicSelectionDialogViewModel`, `MovieSwipeViewModel`, `TournamentSetupViewModel`, `TournamentMatchViewModel`, `TournamentResultViewModel`, `MatchListViewModel`, `MatchedUserDetailViewModel`, `ReelsFeedViewModel`, `UserProfileViewModel` (All inherit from `ViewModelBase`) |
-| **Services & Repos** | 20 | `INavigationService`, `IUserSession`, `IVideoStorageService`, `IWebScraperService`, `VideoIngestionService`, `WebScraperBackgroundService`, `IVideoProcessingService`, `IAudioLibraryService`, `ISwipeService`, `SwipeService`, `TournamentLogicService`, `IPersonalityMatchingService`, `IReelInteractionService`, `IEngagementProfileService`, `IRecommendationService`, `IClipPlaybackService`, `IReelRepository`, `IMusicTrackRepository`, `IPreferenceRepository`, `IUserProfileRepository`, `IUserReelInteractionRepository`, `IMovieRepository`|
+| **Services & Repos** | 19 | `IUserSession`, `IVideoStorageService`, `IWebScraperService`, `VideoIngestionService`, `WebScraperBackgroundService`, `IVideoProcessingService`, `IAudioLibraryService`, `ISwipeService`, `SwipeService`, `TournamentLogicService`, `IPersonalityMatchingService`, `IReelInteractionService`, `IEngagementProfileService`, `IRecommendationService`, `IClipPlaybackService`, `IReelRepository`, `IMusicTrackRepository`, `IPreferenceRepository`, `IUserProfileRepository`, `IUserReelInteractionRepository`, `IMovieRepository`|

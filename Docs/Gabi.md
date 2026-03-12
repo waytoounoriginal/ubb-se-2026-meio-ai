@@ -4,12 +4,11 @@
 *   **Requirement 3:** The system must repeatedly present winning movies in pairs until only one final winner remains.
 *   **Requirement 4:** The system must boost the winning movie's score by two points in the shared `UserMoviePreference` table and present to the user a victory view with the results.
 *   **Requirement 5:** Tournament progress is maintained during active sessions, allowing users to navigate away and return without interruption. However if the user closes  the application, it will result in a reset of all current tournament data.
-
- *   **Requirement 6:** User will choose the number of movies to be included in the tournament. After doing so, the view will be changed to a new view with two movies side by side from which he will have to choose one.  When a movie wins it gets to the next phase where it gets matched against another movie that won. The user does this until there is only one movie left and the user gets a view of the results.
+ *   **Requirement 6:** User-flow:User will choose the number of movies to be included in the tournament. After doing so, the view will be changed to a new view with two movies side by side from which he will have to choose one.  When a movie wins it gets to the next phase where it gets matched against another movie that won. The user does this until there is only one movie left and the user gets a view of the results.
 *   **Owner:** Gabi
 *   **Cross-Team Dependencies:**
     *   **External Group:** Depends on Lucas's team's  `Movie` table for fetching the tournament movie pool.
-    *   **Bogdan:** Bogdan owns the `UserMoviePreference` table and the shared `UserMoviePreferenceModel`. Gabi also writes to it (tournament winner boost +2.0) — reuse the same upsert logic.
+    *   **Bogdan:** Bogdan owns the `UserMoviePreference` table schema — Gabi also writes to it (boosting winner score). Coordinate on shared upsert logic.
 
 
 ### 2. Diagram Blueprint
