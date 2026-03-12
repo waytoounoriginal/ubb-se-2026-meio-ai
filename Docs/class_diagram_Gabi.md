@@ -20,21 +20,20 @@ classDiagram
     }
 
     class TournamentState {
-        <<in-memory>>
+        
         +List~Matchup~ PendingMatches
         +List~Matchup~ CompletedMatches
         +int CurrentRound
     }
 
     class Matchup {
-        <<in-memory>>
         +MovieModel MovieA
         +MovieModel MovieB
-        +int? WinnerId
+        +int WinnerId
     }
 
-    TournamentState --> "many" Matchup : contains
-    Matchup --> "2" MovieModel : references
+    TournamentState -->  Matchup : contains multiple
+    Matchup -->  MovieModel : has two
 
     %% ── Services ──
     class TournamentLogicService {
@@ -43,52 +42,57 @@ classDiagram
     }
 
     class MovieRepository {
-        +GetRandomMoviesAsync(int count) List~MovieModel~
+        +GetMoviesAsync(int count) List~MovieModel~
     }
 
-    class PreferenceRepository {
+    class WinnerService {
         +BoostWinnerScoreAsync(int userId, int movieId) void
-    }
+        +bool ScoreBoosted
+    }    
 
     %% ── ViewModels ──
     class TournamentSetupViewModel {
         +int PoolSize
-        +ICommand StartTournamentCommand
+        +int totalNumberOfMovies
+        
     }
 
     class TournamentMatchViewModel {
         +MovieModel MovieOptionA
         +MovieModel MovieOptionB
-        +ICommand SelectMovieCommand
+        +int choice
+        +choose() int
     }
 
     class TournamentResultViewModel {
         +MovieModel Winner
-        +bool ScoreBoosted
+        
     }
 
     %% ── Views ──
     class TournamentSetupView {
-        <<View>>
+        
     }
 
     class TournamentMatchView {
-        <<View>>
+      
     }
 
     class TournamentResultView {
-        <<View>>
+    
     }
 
     %% ── Relationships ──
-    TournamentSetupView --> TournamentSetupViewModel : DataContext
-    TournamentMatchView --> TournamentMatchViewModel : DataContext
-    TournamentResultView --> TournamentResultViewModel : DataContext
-
-    TournamentSetupViewModel --> MovieRepository : fetches random movies
-    TournamentMatchViewModel --> TournamentLogicService : advances bracket
-    TournamentMatchViewModel --> TournamentState : reads/updates
-    TournamentResultViewModel --> PreferenceRepository : boosts winner score
-    TournamentLogicService --> TournamentState : creates/mutates
-    PreferenceRepository --> UserMoviePreferenceModel : upserts
+    TournamentSetupView --> TournamentSetupViewModel 
+    TournamentMatchView --> TournamentMatchViewModel 
+    TournamentResultView --> TournamentResultViewModel 
+    TournamentResultViewModel -->MovieModel
+    TournamentSetupViewModel --> MovieRepository 
+    TournamentMatchViewModel --> TournamentLogicService 
+     
+    TournamentResultViewModel --> WinnerService 
+    TournamentLogicService --> TournamentState 
+    MovieRepository -->MovieModel
+    WinnerService --> UserMoviePreferenceModel 
+    
 ```

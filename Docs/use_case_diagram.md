@@ -103,7 +103,7 @@ graph LR
     User --- UC_StartTourney
     User --- UC_SelectWinner
     User --- UC_ViewResult
-    UC_SelectWinner -.->|"«extend»"| UC_BoostWinner
+    UC_ViewResult -.->|"«includes»"| UC_BoostWinner
 
     %% ═══════════════════════════════════
     %% PERSONALITY MATCHING (Madi)
