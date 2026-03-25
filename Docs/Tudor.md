@@ -6,7 +6,7 @@
 *   **Requirement 5:** The system must persistently record every user interaction (likes, watch durations per clip) to the shared `UserReelInteraction` table, mapped to the authenticated user's ID and the specific reel.
 *   **Requirement 6:** The system must build and maintain the user's `UserProfile` engagement metrics (total likes, total watch time, average watch time, clips viewed, like-to-view ratio).
 *   **Requirement 7:** The system must utilize a recommendation algorithm that consumes the user's engagement profile to serve the most relevant clips in the feed.
-*   **Requirement 8:** The system must pre-fetch upcoming clips (buffering the next N clips) to ensure a seamless, lag-free scrolling experience.
+*   **Requirement 8:** The system must pre-fetch upcoming clips (buffering the next 3 clips) to ensure a seamless, lag-free scrolling experience.
 *   **Requirement 9:** The system must display contextual metadata overlaid on each clip (movie title, genre tag, clip duration) without obstructing the primary video content.
 *   **Requirement 10:** User flow: The authenticated user opens the Reels Feed screen, and the first clip immediately begins auto-playing. The user can watch the clip, tap the heart icon to "like" it, or scroll vertically to seamlessly transition to the next/previous clip.
 *   **Requirement 11:** If the user closes the application, the exact watch progress (the seconds watched on the currently playing clip if it hasn't been synchronized yet) is discarded. Any previously completed view aggregations and likes are already persisted to the database and will not be lost.
@@ -76,7 +76,7 @@
     *   **Description:** Create the `IEngagementProfileService` interface (`RecalculateProfileAsync`, `GetProfileAsync`) and its concrete implementation. `RecalculateProfileAsync` fetches all `UserReelInteraction` rows for a user, computes aggregate stats (total likes, total/avg watch time, clips viewed, like-to-view ratio), and persists the result to the `UserProfile` table. Max 30 mins effort.
 
 *   **Task 6:** Define & Implement `RecommendationService` (Algorithm + Cold Start)
-    *   **Description:** Create the `IRecommendationService` interface (`GetRecommendedReelsAsync(userId, count)`) and its concrete implementation. The basic algorithm fetches the user's `UserProfile` and top `UserMoviePreference` scores, queries the `Reel` table excluding already-viewed reels, scores remaining reels by genre/movie match, and returns top N. Includes a cold-start fallback for new users with no engagement data — serve globally popular/trending reels (most-liked from the last 7 days). Max 30 mins effort.
+    *   **Description:** Create the `IRecommendationService` interface (`GetRecommendedReelsAsync(userId, count)`) and its concrete implementation. The basic algorithm fetches the user's `UserProfile` and top `UserMoviePreference` scores, queries the `Reel` table excluding already-viewed reels, scores remaining reels by genre/movie match, and returns the top 10 reels. Includes a cold-start fallback for new users with no engagement data — serve globally popular/trending reels (most-liked from the last 7 days). Max 30 mins effort.
 
 *   **Task 7:** Define & Implement `ClipPlaybackService`
     *   **Description:** Create the `IClipPlaybackService` interface (`PlayClip(videoUrl)`, `PauseClip()`, `ResumeClip()`, `GetElapsedSeconds()`, `PrefetchClip(videoUrl)`) and its concrete implementation wrapping the platform's native video player API. Wire play, pause, and prefetch operations. Max 30 mins effort.
@@ -88,7 +88,7 @@
     *   **Description:** Implement `ScrollNextCommand` (advance `CurrentReel` to next in queue, trigger background fetch when ≤ 2 remaining), `ScrollPreviousCommand` (maintain a history stack of last 5 clips for backward navigation), and `ToggleLikeCommand` (call `IReelInteractionService.ToggleLikeAsync()`, flip `IsCurrentReelLiked`, trigger heart animation flag). Max 30 mins effort.
 
 *   **Task 10:** Implement `ReelsFeedViewModel` — Watch Tracking, Prefetch & Error Handling
-    *   **Description:** Add a timer that starts when a reel becomes `CurrentReel` and stops on scroll-away, calling `RecordViewAsync()` with elapsed seconds and watch percentage. Implement prefetching: when user watches reel N, signal `ClipPlaybackService` to buffer reels N+1 and N+2 (expose `PrefetchStatus`). Add try-catch wrappers around all service calls — on failure, set `ErrorMessage` and log; ensure feed stays navigable. Max 30 mins effort.
+    *   **Description:** Add a timer that starts when a reel becomes `CurrentReel` and stops on scroll-away, calling `RecordViewAsync()` with elapsed seconds and watch percentage. Implement prefetching: when user watches the current reel, signal `ClipPlaybackService` to buffer the next 3 upcoming reels (expose `PrefetchStatus`). Add try-catch wrappers around all service calls — on failure, set `ErrorMessage` and log; ensure feed stays navigable. Max 30 mins effort.
 
 ---
 
