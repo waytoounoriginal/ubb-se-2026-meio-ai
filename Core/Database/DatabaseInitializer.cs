@@ -17,6 +17,10 @@ namespace ubb_se_2026_meio_ai.Core.Database
 
         public async Task CreateTablesIfNotExistAsync()
         {
+            // 1. Ensure the MeioAiDb database exists on the server
+            await EnsureDatabaseExistsAsync();
+            
+            // 2. Create the tables in the MeioAiDb database
             const string sql = @"
                 -- Movie (external data source for swipe)
                 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Movie')
@@ -135,6 +139,21 @@ namespace ubb_se_2026_meio_ai.Core.Database
 
             await using SqlConnection connection = await _connectionFactory.CreateConnectionAsync();
             await using SqlCommand command = new SqlCommand(sql, connection);
+            await command.ExecuteNonQueryAsync();
+        }
+
+        private async Task EnsureDatabaseExistsAsync()
+        {
+            const string sql = @"
+                IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'MeioAiDb')
+                BEGIN
+                    CREATE DATABASE [MeioAiDb];
+                END
+            ";
+
+            // We must use the 'master' database connection to create a new database
+            await using SqlConnection masterConnection = await _connectionFactory.CreateMasterConnectionAsync();
+            await using SqlCommand command = new SqlCommand(sql, masterConnection);
             await command.ExecuteNonQueryAsync();
         }
     }

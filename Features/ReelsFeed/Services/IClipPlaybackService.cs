@@ -9,6 +9,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
         Task PlayAsync(string videoUrl);
         Task PauseAsync();
         Task SeekAsync(double positionSeconds);
+        Task PrefetchClipAsync(string videoUrl);
         bool IsPlaying { get; }
     }
 }

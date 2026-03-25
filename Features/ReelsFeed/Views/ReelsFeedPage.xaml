@@ -5,19 +5,36 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:local="using:ubb_se_2026_meio_ai.Features.ReelsFeed.Views"
+    xmlns:models="using:ubb_se_2026_meio_ai.Core.Models"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="Black">
 
-    <Grid Padding="32">
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12">
-            <TextBlock Text="{x:Bind ViewModel.PageTitle, Mode=OneWay}"
-                       Style="{StaticResource TitleTextBlockStyle}" />
-            <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
-                       Style="{StaticResource SubtitleTextBlockStyle}"
-                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-            <TextBlock Text="Owner: Tudor"
-                       Style="{StaticResource CaptionTextBlockStyle}"
-                       Foreground="{ThemeResource SystemControlForegroundBaseMediumLowBrush}" />
+    <Grid>
+        <!-- The Feed -->
+        <FlipView x:Name="FeedFlipView"
+                  ItemsSource="{x:Bind ViewModel.ReelQueue, Mode=OneWay}"
+                  SelectedItem="{x:Bind ViewModel.CurrentReel, Mode=TwoWay}"
+                  SelectionChanged="FlipView_SelectionChanged">
+            <FlipView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel Orientation="Vertical" />
+                </ItemsPanelTemplate>
+            </FlipView.ItemsPanel>
+            <FlipView.ItemTemplate>
+                <DataTemplate x:DataType="models:ReelModel">
+                    <local:ReelItemView Reel="{x:Bind}" />
+                </DataTemplate>
+            </FlipView.ItemTemplate>
+        </FlipView>
+
+        <!-- Loading Overlay -->
+        <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Width="64" Height="64" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+        <!-- Top Status Area -->
+        <StackPanel Margin="16" VerticalAlignment="Top" HorizontalAlignment="Left">
+            <TextBlock Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Foreground="LightCoral" FontWeight="Bold"/>
+            <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}" Foreground="White" Opacity="0.8"/>
         </StackPanel>
     </Grid>
 </Page>
