@@ -22,7 +22,7 @@ namespace ubb_se_2026_meio_ai
             ["ReelsUpload"]      = typeof(ReelsUploadPage),
             ["TrailerScraping"]  = typeof(TrailerScrapingPage),
             ["ReelsEditing"]     = typeof(ReelsEditingPage),
-            ["MovieSwipe"]       = typeof(MovieSwipePage),
+            ["MovieSwipe"]       = typeof(MovieSwipeView),
             ["MovieTournament"]  = typeof(MovieTournamentPage),
             ["PersonalityMatch"] = typeof(PersonalityMatchPage),
             ["ReelsFeed"]        = typeof(ReelsFeedPage),
@@ -32,8 +32,42 @@ namespace ubb_se_2026_meio_ai
         {
             this.InitializeComponent();
 
-            // Navigate to the first page on startup
-            ContentFrame.Navigate(typeof(ReelsFeedPage));
+            // Navigate to an empty page on startup so reels are opt-in
+            ContentFrame.Navigate(typeof(Page));
+
+            // BUG FIX: WinUI 3 Media Foundation COM access violation on closing.
+            // Walk the visual tree and dispose every MediaPlayer synchronously while
+            // the Dispatcher and HWND are still alive, then detach the tree.
+            // Do NOT call Navigate() here — it is internally async and races with cleanup.
+            this.Closed += (sender, args) =>
+            {
+                // Signal all ReelItemViews to stop processing callbacks immediately
+                ReelItemView.IsAppClosing = true;
+
+                try { DisposeAllMediaPlayers(ContentFrame); } catch { }
+                ContentFrame.Content = null;
+            };
+        }
+
+        /// <summary>
+        /// Recursively walks the visual tree to find and dispose all ReelItemView media players.
+        /// </summary>
+        private static void DisposeAllMediaPlayers(DependencyObject root)
+        {
+            if (root == null) return;
+
+            if (root is ReelItemView reelItem)
+            {
+                reelItem.PauseVideo();
+                reelItem.DisposeMediaPlayer();
+                return;
+            }
+
+            int childCount = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(root);
+            for (int i = 0; i < childCount; i++)
+            {
+                DisposeAllMediaPlayers(Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(root, i));
+            }
         }
 
         private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)

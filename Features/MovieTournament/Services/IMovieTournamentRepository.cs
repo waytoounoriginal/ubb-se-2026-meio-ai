@@ -1,3 +1,4 @@
+
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
 {
     /// <summary>
@@ -6,7 +7,8 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
     /// </summary>
     public interface IMovieTournamentRepository
     {
-        Task SaveTournamentResultAsync(int userId, int winnerMovieId, int loserMovieId, int round);
-        Task<IList<int>> GetPastWinnersAsync(int userId, int count);
+        Task<int> GetTournamentPoolSizeAsync(int userId);
+        Task<List<Models.MovieCard>> GetTournamentPoolAsync(int userId, int poolSize);
+        Task BoostMovieScoreAsync(int userId, int movieId, float scoreBoost);
     }
 }

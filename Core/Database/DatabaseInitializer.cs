@@ -17,19 +17,24 @@ namespace ubb_se_2026_meio_ai.Core.Database
 
         public async Task CreateTablesIfNotExistAsync()
         {
+            // 1. Ensure the MeioAiDb database exists on the server
+            await EnsureDatabaseExistsAsync();
+            
+            // 2. Create the tables in the MeioAiDb database
             const string sql = @"
-                -- Movie (external table — created here for standalone dev)
+                -- Movie (shared table — created here so JOINs work)
                 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Movie')
                 BEGIN
                     CREATE TABLE Movie
                     (
                         MovieId         INT             IDENTITY(1,1) PRIMARY KEY,
                         Title           NVARCHAR(256)   NOT NULL,
-                        PosterUrl       NVARCHAR(1024)  NOT NULL DEFAULT '',
-                        PrimaryGenre    NVARCHAR(128)   NOT NULL DEFAULT '',
+                        PosterUrl       NVARCHAR(1024)  NULL,
+                        PrimaryGenre    NVARCHAR(128)   NULL,
                         Description     NVARCHAR(MAX)   NULL,
-                        ReleaseYear     INT             NOT NULL DEFAULT 0,
-                        AverageRating   FLOAT           NOT NULL DEFAULT 0
+                        ReleaseYear     INT             NULL,
+                        Synopsis        NVARCHAR(MAX)   NULL,
+                        AverageRating   FLOAT           NULL
                     );
                 END
 
@@ -114,6 +119,22 @@ namespace ubb_se_2026_meio_ai.Core.Database
                         ChangeFromPreviousValue INT         NULL,
                         CONSTRAINT UQ_UserMovie UNIQUE (UserId, MovieId)
                     );
+
+                    -- Insert 8 mock preferences for the tournament (UserId = 1)
+                    -- We check for UserId 1 to avoid duplicates if the table existed but was empty
+                    IF NOT EXISTS (SELECT * FROM UserMoviePreference WHERE UserId = 1)
+                    BEGIN
+                        INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
+                        VALUES 
+                        (1, 1, 8.5, 1),
+                        (1, 2, 9.0, 1),
+                        (1, 3, 7.5, 1),
+                        (1, 4, 8.0, 1),
+                        (1, 5, 9.5, 1),
+                        (1, 6, 8.5, 1),
+                        (1, 7, 7.0, 1),
+                        (1, 8, 9.2, 1);
+                    END
                 END
 
                 -- UserProfile (references User — external)
@@ -130,6 +151,9 @@ namespace ubb_se_2026_meio_ai.Core.Database
                         LikeToViewRatio     FLOAT       NOT NULL DEFAULT 0,
                         LastUpdated         DATETIME2   NOT NULL DEFAULT SYSUTCDATETIME()
                     );
+
+                    -- Seed UserId = 1
+                    INSERT INTO UserProfile (UserId) VALUES (1);
                 END
 
                 -- UserReelInteraction (references User and Reel)
@@ -150,27 +174,39 @@ namespace ubb_se_2026_meio_ai.Core.Database
                     );
                 END
 
-                -- ── Wipe and re-seed mock movies for testing ──
-                DELETE FROM Movie WHERE MovieId NOT IN (SELECT DISTINCT MovieId FROM Reel);
-
-                IF NOT EXISTS (SELECT 1 FROM Movie)
+                -- Seed Movies for Demo
+                IF (SELECT COUNT(*) FROM Movie) = 0
                 BEGIN
-                    INSERT INTO Movie (Title, PrimaryGenre, ReleaseYear, Description) VALUES
-                        (N'The Batman',                         N'Action',    2022, N'When a sadistic serial killer begins murdering key political figures in Gotham, Batman is forced to investigate.'),
-                        (N'Dune: Part Two',                     N'Sci-Fi',    2024, N'Paul Atreides unites with the Fremen to seek revenge against those who destroyed his family.'),
-                        (N'Oppenheimer',                        N'Drama',     2023, N'The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb.'),
-                        (N'Spider-Man: Across the Spider-Verse', N'Animation', 2023, N'Miles Morales catapults across the Multiverse, where he encounters a team of Spider-People.'),
-                        (N'Interstellar',                       N'Sci-Fi',    2014, N'A team of explorers travel through a wormhole in space in an attempt to save the human race.'),
-                        (N'The Dark Knight',                    N'Action',    2008, N'Batman raises the stakes in his war on crime with the help of Lt. Jim Gordon and Harvey Dent.'),
-                        (N'Inception',                          N'Sci-Fi',    2010, N'A thief who steals corporate secrets through dream-sharing technology is given the task of planting an idea.'),
-                        (N'Joker',                              N'Drama',     2019, N'A mentally troubled comedian embarks on a downward spiral that leads to the creation of an iconic villain.'),
-                        (N'Avengers: Endgame',                  N'Action',    2019, N'After Thanos snaps away half of all life, the remaining Avengers must figure out a way to bring back their vanquished allies.'),
-                        (N'Parasite',                           N'Thriller',  2019, N'Greed and class discrimination threaten the newly formed symbiotic relationship between the wealthy Park family and the destitute Kim clan.');
+                    INSERT INTO Movie (Title, PosterUrl, PrimaryGenre, ReleaseYear, Synopsis)
+                    VALUES 
+                    ('Inception', 'https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_.jpg', 'Sci-Fi', 2010, 'A thief who steals corporate secrets through the use of dream-sharing technology.'),
+                    ('The Dark Knight', 'https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_.jpg', 'Action', 2008, 'When the menace known as the Joker wreaks havoc and chaos on the people of Gotham.'),
+                    ('Interstellar', 'https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS00OGEyLWFmMjktY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg', 'Adventure', 2014, 'A team of explorers travel through a wormhole in space in an attempt to ensure humanity''s survival.'),
+                    ('The Matrix', 'https://m.media-amazon.com/images/M/MV5BNzQzOTk3NTAtNDQ2Ny00Njc2LTk3M2QtN2FjYTJjNzQzYzQwXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg', 'Sci-Fi', 1999, 'A computer hacker learns about the true nature of reality and his role in the war against its controllers.'),
+                    ('Parasite', 'https://m.media-amazon.com/images/M/MV5BYWZjMjk3ZTAtZGYzMC00ODQ0LWI2YTMtYjQ5NDU3N2NmZDIzXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg', 'Thriller', 2019, 'Greed and class discrimination threaten the newly formed symbiotic relationship between two families.'),
+                    ('La La Land', 'https://m.media-amazon.com/images/M/MV5BMjA2OTYxNTY2Nl5BMl5BanBnXkFtZTgwNzg4OTA5OTE@._V1_.jpg', 'Musical', 2016, 'A jazz pianist and an aspiring actress fall in love while pursuing their dreams in Los Angeles.'),
+                    ('Whiplash', 'https://m.media-amazon.com/images/M/MV5BMjE4NDYxNTAxNV5BMl5BanBnXkFtZTgwNzM0NDM1MjE@._V1_.jpg', 'Drama', 2014, 'A promising young drummer enrolls at a cut-throat music conservatory where his dreams are mentored by an intense instructor.'),
+                    ('The Grand Budapest Hotel', 'https://m.media-amazon.com/images/M/MV5BMjM2NTQzMzc5OF5BMl5BanBnXkFtZTgwNzM2ODU3MDE@._V1_.jpg', 'Comedy', 2014, 'A writer encounters the owner of an aging high-class hotel, who tells him of his early years serving as a lobby boy.');
                 END
             ";
 
             await using SqlConnection connection = await _connectionFactory.CreateConnectionAsync();
             await using SqlCommand command = new SqlCommand(sql, connection);
+            await command.ExecuteNonQueryAsync();
+        }
+
+        private async Task EnsureDatabaseExistsAsync()
+        {
+            const string sql = @"
+                IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'MeioAiDb')
+                BEGIN
+                    CREATE DATABASE [MeioAiDb];
+                END
+            ";
+
+            // We must use the 'master' database connection to create a new database
+            await using SqlConnection masterConnection = await _connectionFactory.CreateMasterConnectionAsync();
+            await using SqlCommand command = new SqlCommand(sql, masterConnection);
             await command.ExecuteNonQueryAsync();
         }
     }

@@ -8,7 +8,15 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
     /// </summary>
     public interface ITournamentLogicService
     {
-        Task<IList<(MovieCardModel MovieA, MovieCardModel MovieB)>> GenerateBracketAsync(int userId, int bracketSize);
-        Task AdvanceWinnerAsync(int tournamentId, int winnerMovieId);
+        Models.TournamentState CurrentState { get; }
+        bool IsTournamentActive { get; }
+
+        Task StartTournamentAsync(int userId, int poolSize);
+        Task AdvanceWinnerAsync(int userId, int winnerId);
+        void ResetTournament();
+
+        Models.MatchPair GetCurrentMatch();
+        bool IsTournamentComplete();
+        Models.MovieCard GetFinalWinner();
     }
 }

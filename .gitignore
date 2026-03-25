@@ -86,3 +86,21 @@ Desktop.ini
 *.swp
 *.bak
 *.tmp
+
+# ── AI assistant files ──────────────────────────────────────────────────
+CLAUDE.md
+.claude/
+
+# Cursor
+.cursor/
+.cursorrules
+
+# GitHub Copilot
+.github/copilot-instructions.md
+
+# Windsurf
+.windsurfrules
+/.vs
+/.vs/ProjectEvaluation
+.vs/ProjectEvaluation/ubb-se-2026-meio-ai.projects.v9.bin
+/.vs
