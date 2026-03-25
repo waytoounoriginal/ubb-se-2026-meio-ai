@@ -19,11 +19,6 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
         private readonly IClipPlaybackService _clipPlaybackService;
         private readonly IReelInteractionService _reelInteractionService;
 
-        /// <summary>
-        /// Local cache of liked state per ReelId so we avoid a DB round-trip on every scroll.
-        /// </summary>
-        private readonly Dictionary<int, bool> _likedReels = new();
-
         [ObservableProperty]
         private string _pageTitle = "Reels Feed";
 
@@ -38,9 +33,6 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
 
         [ObservableProperty]
         private ReelModel? _currentReel;
-
-        [ObservableProperty]
-        private bool _isCurrentReelLiked;
 
         public System.Collections.ObjectModel.ObservableCollection<ReelModel> ReelQueue { get; } = new();
 
@@ -69,13 +61,12 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
                     ReelQueue.Add(r);
                 }
 
-                // Pre-load liked state for every reel in the batch so scrolling is instant
-                await LoadLikedStatesAsync(reels);
+                // Load IsLiked and LikeCount onto each ReelModel so the UI can bind directly
+                await LoadLikeDataAsync(reels);
 
                 if (ReelQueue.Count > 0)
                 {
                     CurrentReel = ReelQueue[0];
-                    IsCurrentReelLiked = _likedReels.GetValueOrDefault(CurrentReel.ReelId);
                     StatusMessage = string.Empty;
                     PrefetchUpcoming(0);
                 }
@@ -118,11 +109,6 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
             if (index >= 0)
             {
                 PrefetchUpcoming(index);
-                if (index > ReelQueue.Count - 3)
-                {
-                    // Trigger a fetch internally if we had infinite scrolling, 
-                    // MVP fetches 10 and stops for simplicity
-                }
             }
         }
 
@@ -130,6 +116,27 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
         public void ScrollPrevious(ReelModel newCurrent)
         {
             CurrentReel = newCurrent;
+        }
+
+        /// <summary>
+        /// Populates IsLiked and LikeCount on each ReelModel in the batch.
+        /// </summary>
+        private async Task LoadLikeDataAsync(IList<ReelModel> reels)
+        {
+            foreach (var reel in reels)
+            {
+                try
+                {
+                    var interaction = await _reelInteractionService.GetInteractionAsync(MockUserId, reel.ReelId);
+                    reel.IsLiked = interaction?.IsLiked ?? false;
+                    reel.LikeCount = await _reelInteractionService.GetLikeCountAsync(reel.ReelId);
+                }
+                catch
+                {
+                    reel.IsLiked = false;
+                    reel.LikeCount = 0;
+                }
+            }
         }
     }
 }

@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using ubb_se_2026_meio_ai.Core.Models;
 using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
 using Windows.Media.Core;
@@ -10,6 +12,15 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
 {
     public sealed partial class ReelItemView : UserControl
     {
+        private const int MockUserId = 1;
+
+        // Heart glyphs in Segoe MDL2 Assets
+        private const string HeartOutline = "\uEB51";
+        private const string HeartFilled = "\uEB52";
+
+        private static readonly SolidColorBrush WhiteBrush = new(Colors.White);
+        private static readonly SolidColorBrush RedBrush = new(Colors.Red);
+
         public static readonly DependencyProperty ReelProperty =
             DependencyProperty.Register("Reel", typeof(ReelModel), typeof(ReelItemView), new PropertyMetadata(null, OnReelChanged));
 
@@ -20,23 +31,24 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         }
 
         private readonly IClipPlaybackService _playbackService;
+        private readonly IReelInteractionService _interactionService;
 
         public ReelItemView()
         {
             this.InitializeComponent();
             _playbackService = App.Services.GetRequiredService<IClipPlaybackService>();
-            
-            // Auto-scroll logic when a video hits the duration limit or finishes natively
-            this.Loaded += (s, e) => {
+            _interactionService = App.Services.GetRequiredService<IReelInteractionService>();
+
+            this.Loaded += (s, e) =>
+            {
                 if (ReelPlayer.MediaPlayer != null)
                 {
-                    ReelPlayer.MediaPlayer.IsLoopingEnabled = false; // Prevent it from looping so the end fires
+                    ReelPlayer.MediaPlayer.IsLoopingEnabled = false;
                     ReelPlayer.MediaPlayer.MediaEnded -= MediaPlayer_MediaEnded;
                     ReelPlayer.MediaPlayer.MediaEnded += MediaPlayer_MediaEnded;
                 }
             };
 
-            // Unload the video and rigorously dispose the underlying COM objects when the control unloads to prevent Win32 exit crashes
             this.Unloaded += (s, e) => DisposeMediaPlayer();
         }
 
@@ -44,18 +56,54 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         {
             if (d is ReelItemView view && e.NewValue is ReelModel reel)
             {
+                // Set video source
                 if (!string.IsNullOrEmpty(reel.VideoUrl))
                 {
-                    // Create the raw primitive media source
                     var source = MediaSource.CreateFromUri(new Uri(reel.VideoUrl));
-                    
-                    // Wrap in a MediaPlaybackItem to strictly limit memory/network buffering to the first 60 seconds.
-                    // Since FlipView natively keeps the 1 previous and 1 next container alive in the background,
-                    // just assigning this source triggers the OS to seamlessly pre-buffer the adjacent reels automatically!
                     var playbackItem = new Windows.Media.Playback.MediaPlaybackItem(source, TimeSpan.Zero, TimeSpan.FromSeconds(60));
-
                     view.ReelPlayer.Source = playbackItem;
                 }
+
+                // Sync like visuals from model state
+                view.UpdateLikeVisuals(reel.IsLiked, reel.LikeCount);
+
+                // Listen for model property changes (e.g. if liked state loaded async after binding)
+                reel.PropertyChanged += (s, args) =>
+                {
+                    if (args.PropertyName is nameof(ReelModel.IsLiked) or nameof(ReelModel.LikeCount))
+                    {
+                        view.DispatcherQueue?.TryEnqueue(() =>
+                            view.UpdateLikeVisuals(reel.IsLiked, reel.LikeCount));
+                    }
+                };
+            }
+        }
+
+        private void UpdateLikeVisuals(bool isLiked, int likeCount)
+        {
+            HeartIcon.Glyph = isLiked ? HeartFilled : HeartOutline;
+            HeartIcon.Foreground = isLiked ? RedBrush : WhiteBrush;
+            LikeCountText.Text = likeCount.ToString();
+        }
+
+        private async void LikeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (Reel == null) return;
+
+            // Optimistic UI update
+            bool wasLiked = Reel.IsLiked;
+            Reel.IsLiked = !wasLiked;
+            Reel.LikeCount += wasLiked ? -1 : 1;
+
+            try
+            {
+                await _interactionService.ToggleLikeAsync(MockUserId, Reel.ReelId);
+            }
+            catch
+            {
+                // Revert on failure
+                Reel.IsLiked = wasLiked;
+                Reel.LikeCount += wasLiked ? 1 : -1;
             }
         }
 
@@ -76,6 +124,40 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
             }
         }
 
+        /// <summary>
+        /// Fully tears down the MediaPlayer COM object so it does not outlive the window handle.
+        /// Guards on <c>ReelPlayer.MediaPlayer == null</c> so it is safe to call repeatedly
+        /// and survives container recycling (VirtualizingStackPanel reuse).
+        /// </summary>
+        public void DisposeMediaPlayer()
+        {
+            try
+            {
+                var player = ReelPlayer.MediaPlayer;
+                if (player == null) return;
+
+                player.MediaEnded -= MediaPlayer_MediaEnded;
+
+                // 1. Stop the Media Foundation pipeline inside the player itself
+                player.Pause();
+                player.Source = null;
+
+                // 2. Detach the playback source from the XAML element
+                var oldElementSource = ReelPlayer.Source as IDisposable;
+                ReelPlayer.Source = null;
+                oldElementSource?.Dispose();
+
+                // 3. Sever the link between the element and the COM player,
+                //    then release the COM object.
+                ReelPlayer.SetMediaPlayer(null);
+                player.Dispose();
+            }
+            catch
+            {
+                // Swallow disposal errors — we are tearing down
+            }
+        }
+
         private FlipView? GetParentFlipView(DependencyObject element)
         {
             var parent = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(element);
@@ -88,34 +170,15 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
             return null;
         }
 
-        /// <summary>
-        /// Fully tears down the MediaPlayer COM object so it does not outlive the window handle.
-        /// Must be called on the UI thread.
-        /// </summary>
-        public void DisposeMediaPlayer()
-        {
-            var player = ReelPlayer.MediaPlayer;
-            if (player == null) return;
-
-            player.MediaEnded -= MediaPlayer_MediaEnded;
-            player.Pause();
-
-            // Detach source and dispose it
-            var oldSource = ReelPlayer.Source as IDisposable;
-            ReelPlayer.Source = null;
-            oldSource?.Dispose();
-
-            // Detach the MediaPlayer from the element, then dispose the COM object
-            ReelPlayer.SetMediaPlayer(null);
-            player.Dispose();
-        }
-
         private void MediaPlayer_MediaEnded(Windows.Media.Playback.MediaPlayer sender, object args)
         {
-            // MediaEnded fires on a background thread, so we marshal back to the UI thread
-            DispatcherQueue.TryEnqueue(() => {
+            // MediaPlayer is detached — this is a stale callback, ignore it
+            if (ReelPlayer.MediaPlayer == null) return;
+
+            DispatcherQueue?.TryEnqueue(() =>
+            {
+                if (ReelPlayer.MediaPlayer == null) return;
                 var flipView = GetParentFlipView(this);
-                // If the video stops, simulate the user swiping one position down automatically.
                 if (flipView != null && flipView.SelectedIndex < flipView.Items.Count - 1)
                 {
                     flipView.SelectedIndex++;

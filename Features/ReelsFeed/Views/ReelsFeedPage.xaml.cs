@@ -13,8 +13,27 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         {
             ViewModel = App.Services.GetRequiredService<ReelsFeedViewModel>();
             this.InitializeComponent();
-            
+
             this.Loaded += ReelsFeedPage_Loaded;
+            this.Unloaded += ReelsFeedPage_Unloaded;
+        }
+
+        /// <summary>
+        /// When the page is removed from the visual tree (e.g. window closing or navigating away),
+        /// iterate every realized FlipView container and dispose its MediaPlayer.
+        /// This catches containers the MainWindow visual-tree walk might miss.
+        /// </summary>
+        private void ReelsFeedPage_Unloaded(object sender, RoutedEventArgs e)
+        {
+            for (int i = 0; i < ViewModel.ReelQueue.Count; i++)
+            {
+                var container = FeedFlipView.ContainerFromIndex(i) as DependencyObject;
+                if (container != null)
+                {
+                    var reelView = FindVisualChild<ReelItemView>(container);
+                    reelView?.DisposeMediaPlayer();
+                }
+            }
         }
 
         private async void ReelsFeedPage_Loaded(object sender, RoutedEventArgs e)

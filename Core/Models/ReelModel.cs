@@ -1,7 +1,10 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+
 namespace ubb_se_2026_meio_ai.Core.Models
 {
-    public class ReelModel
+    public partial class ReelModel : ObservableObject
     {
+        // ── Persisted properties (set once at load, no notification needed) ──
         public int ReelId { get; set; }
         public int MovieId { get; set; }
         public int CreatorUserId { get; set; }
@@ -15,5 +18,13 @@ namespace ubb_se_2026_meio_ai.Core.Models
         public string Source { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public DateTime? LastEditedAt { get; set; }
+
+        // ── Client-side state (changes at runtime, needs UI notification) ──
+
+        [ObservableProperty]
+        private bool _isLiked;
+
+        [ObservableProperty]
+        private int _likeCount;
     }
 }

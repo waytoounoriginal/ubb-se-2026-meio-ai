@@ -18,7 +18,6 @@
                   SelectionChanged="FlipView_SelectionChanged">
             <FlipView.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <!-- WinUI 3 FlipView strictly requires VirtualizingStackPanel and throws exceptions on ItemsStackPanel -->
                     <VirtualizingStackPanel Orientation="Vertical" />
                 </ItemsPanelTemplate>
             </FlipView.ItemsPanel>

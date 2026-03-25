@@ -6,10 +6,33 @@
 
     <Grid Background="Black">
         <!-- The Media Player -->
-        <MediaPlayerElement x:Name="ReelPlayer" 
+        <MediaPlayerElement x:Name="ReelPlayer"
                             AreTransportControlsEnabled="False"
                             Stretch="UniformToFill" />
-        
+
+        <!-- Right-side action bar (TikTok/Instagram style) -->
+        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center"
+                    Margin="0,0,16,0" Spacing="4">
+            <Button x:Name="LikeButton"
+                    Click="LikeButton_Click"
+                    Width="48" Height="48"
+                    CornerRadius="24"
+                    Padding="0"
+                    Background="Transparent"
+                    BorderBrush="Transparent">
+                <FontIcon x:Name="HeartIcon"
+                          FontFamily="Segoe MDL2 Assets"
+                          Glyph="&#xEB51;"
+                          FontSize="26"
+                          Foreground="White" />
+            </Button>
+            <TextBlock x:Name="LikeCountText"
+                       Text="0"
+                       Foreground="White"
+                       FontSize="13" FontWeight="SemiBold"
+                       HorizontalAlignment="Center" />
+        </StackPanel>
+
         <!-- Bottom Overlay -->
         <Grid VerticalAlignment="Bottom" Height="250">
             <Grid.Background>
@@ -19,7 +42,7 @@
                 </LinearGradientBrush>
             </Grid.Background>
             <StackPanel VerticalAlignment="Bottom" Margin="16,0,16,32">
-                <TextBlock Text="{x:Bind Reel.Title, Mode=OneWay}" 
+                <TextBlock Text="{x:Bind Reel.Title, Mode=OneWay}"
                            Foreground="White" FontSize="22" FontWeight="Bold" />
                 <Border Background="#33FFFFFF" CornerRadius="4" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="8,4">
                     <TextBlock Text="{x:Bind Reel.Caption, Mode=OneWay}" Foreground="White" FontSize="14" />

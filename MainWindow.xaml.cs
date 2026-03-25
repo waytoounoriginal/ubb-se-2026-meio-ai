@@ -36,9 +36,9 @@ namespace ubb_se_2026_meio_ai
             ContentFrame.Navigate(typeof(Page));
 
             // BUG FIX: WinUI 3 Media Foundation COM access violation on closing.
-            // VirtualizingStackPanel in FlipView does not fire Unloaded for off-screen containers,
-            // so we must walk the entire visual tree and explicitly dispose every MediaPlayer
-            // while the Dispatcher and HWND are still alive.
+            // Walk the visual tree and dispose every MediaPlayer synchronously while
+            // the Dispatcher and HWND are still alive, then detach the tree.
+            // Do NOT call Navigate() here — it is internally async and races with cleanup.
             this.Closed += (sender, args) =>
             {
                 DisposeAllMediaPlayers(ContentFrame);
