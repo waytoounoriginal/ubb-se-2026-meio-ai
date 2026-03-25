@@ -49,6 +49,12 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         private DispatcherTimer? _progressTimer;
 
         /// <summary>
+        /// Per-instance flag to prevent double-disposal and post-dispose access.
+        /// Reset when the container is recycled via OnReelChanged.
+        /// </summary>
+        private volatile bool _disposed;
+
+        /// <summary>
         /// Stored reference so we can unhook PropertyChanged when the Reel changes
         /// or the control is recycled by the VirtualizingStackPanel.
         /// </summary>
@@ -60,15 +66,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
             _playbackService = App.Services.GetRequiredService<IClipPlaybackService>();
             _interactionService = App.Services.GetRequiredService<IReelInteractionService>();
 
-            this.Loaded += (s, e) =>
-            {
-                if (ReelPlayer.MediaPlayer != null)
-                {
-                    ReelPlayer.MediaPlayer.IsLoopingEnabled = false;
-                    ReelPlayer.MediaPlayer.MediaEnded -= MediaPlayer_MediaEnded;
-                    ReelPlayer.MediaPlayer.MediaEnded += MediaPlayer_MediaEnded;
-                }
-            };
+            // Do NOT hook MediaEnded here — it's done in OnReelChanged after setting Source,
+            // so we always hook the correct auto-created MediaPlayer instance.
 
             this.Unloaded += (s, e) =>
             {
@@ -89,13 +88,27 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
                 view.PlaybackProgress.Value = 0;
                 view.StopProgressTimer();
 
-                // Use prefetched MediaSource if available, otherwise create fresh
+                // Dispose the PREVIOUS MediaPlayer before setting a new source.
+                // This prevents orphaned COM objects from container recycling.
+                view.DisposeCurrentPlayer();
+
+                // Container is being reused — clear the disposed flag
+                view._disposed = false;
+
+                // Set the new source — MediaPlayerElement will auto-create a new MediaPlayer
                 if (!string.IsNullOrEmpty(reel.VideoUrl))
                 {
                     var playbackService = view._playbackService as ClipPlaybackService;
                     var source = playbackService?.GetMediaSource(reel.VideoUrl)
                         ?? MediaSource.CreateFromUri(new Uri(reel.VideoUrl));
                     view.ReelPlayer.Source = new Windows.Media.Playback.MediaPlaybackItem(source);
+                }
+
+                // Hook MediaEnded on the newly created MediaPlayer
+                if (view.ReelPlayer.MediaPlayer != null)
+                {
+                    view.ReelPlayer.MediaPlayer.IsLoopingEnabled = false;
+                    view.ReelPlayer.MediaPlayer.MediaEnded += view.MediaPlayer_MediaEnded;
                 }
 
                 // Sync like visuals from model state
@@ -112,17 +125,23 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
 
         private void OnReelPropertyChanged(object? sender, PropertyChangedEventArgs args)
         {
-            if (IsAppClosing) return;
+            if (IsAppClosing || _disposed) return;
             if (args.PropertyName is nameof(ReelModel.IsLiked) or nameof(ReelModel.LikeCount))
             {
                 if (sender is ReelModel reel)
                 {
-                    DispatcherQueue?.TryEnqueue(() =>
+                    try
                     {
-                        if (IsAppClosing) return;
-                        try { UpdateLikeVisuals(reel.IsLiked, reel.LikeCount); }
-                        catch { /* view may be torn down */ }
-                    });
+                        var dq = DispatcherQueue;
+                        if (dq == null) return;
+                        dq.TryEnqueue(() =>
+                        {
+                            if (IsAppClosing || _disposed) return;
+                            try { UpdateLikeVisuals(reel.IsLiked, reel.LikeCount); }
+                            catch { /* view may be torn down */ }
+                        });
+                    }
+                    catch { /* DispatcherQueue torn down during close */ }
                 }
             }
         }
@@ -274,21 +293,31 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
 
         public void PlayVideo()
         {
-            if (ReelPlayer.MediaPlayer != null)
+            if (_disposed || IsAppClosing) return;
+            try
             {
-                ReelPlayer.MediaPlayer.PlaybackSession.Position = TimeSpan.Zero;
-                ReelPlayer.MediaPlayer.Play();
-                StartProgressTimer();
+                if (ReelPlayer.MediaPlayer != null)
+                {
+                    ReelPlayer.MediaPlayer.PlaybackSession.Position = TimeSpan.Zero;
+                    ReelPlayer.MediaPlayer.Play();
+                    StartProgressTimer();
+                }
             }
+            catch { }
         }
 
         public void PauseVideo()
         {
-            if (ReelPlayer.MediaPlayer != null)
+            if (_disposed) return;
+            try
             {
-                ReelPlayer.MediaPlayer.Pause();
-                StopProgressTimer();
+                if (ReelPlayer.MediaPlayer != null)
+                {
+                    ReelPlayer.MediaPlayer.Pause();
+                    StopProgressTimer();
+                }
             }
+            catch { }
         }
 
         // ── Progress bar timer ────────────────────────────────────────────
@@ -305,12 +334,17 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
 
         private void StopProgressTimer()
         {
-            _progressTimer?.Stop();
+            if (_progressTimer != null)
+            {
+                _progressTimer.Stop();
+                _progressTimer.Tick -= ProgressTimer_Tick;
+                _progressTimer = null;
+            }
         }
 
         private void ProgressTimer_Tick(object? sender, object e)
         {
-            if (IsAppClosing) { StopProgressTimer(); return; }
+            if (IsAppClosing || _disposed) { StopProgressTimer(); return; }
             try
             {
                 var player = ReelPlayer.MediaPlayer;
@@ -333,39 +367,47 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         // ── Disposal ──────────────────────────────────────────────────────
 
         /// <summary>
-        /// Fully tears down the MediaPlayer COM object so it does not outlive the window handle.
-        /// Guards on <c>ReelPlayer.MediaPlayer == null</c> so it is safe to call repeatedly
-        /// and survives container recycling (VirtualizingStackPanel reuse).
+        /// Tears down the current MediaPlayer without setting <c>_disposed</c>,
+        /// so the container can be recycled with a new Source in OnReelChanged.
         /// </summary>
-        public void DisposeMediaPlayer()
+        private void DisposeCurrentPlayer()
         {
-            StopProgressTimer();
-
             try
             {
                 var player = ReelPlayer.MediaPlayer;
                 if (player == null) return;
 
+                // 1. Unhook events first — prevents callbacks during teardown
                 player.MediaEnded -= MediaPlayer_MediaEnded;
 
-                // 1. Stop the Media Foundation pipeline inside the player itself
+                // 2. Sever XAML element connection (stops internal MF callbacks)
+                var oldSource = ReelPlayer.Source as IDisposable;
+                ReelPlayer.Source = null;
+                ReelPlayer.SetMediaPlayer(null);
+
+                // 3. Now safely tear down the COM player
                 player.Pause();
                 player.Source = null;
-
-                // 2. Detach the playback source from the XAML element
-                var oldElementSource = ReelPlayer.Source as IDisposable;
-                ReelPlayer.Source = null;
-                oldElementSource?.Dispose();
-
-                // 3. Sever the link between the element and the COM player,
-                //    then release the COM object.
-                ReelPlayer.SetMediaPlayer(null);
+                oldSource?.Dispose();
                 player.Dispose();
             }
             catch
             {
-                // Swallow disposal errors — we are tearing down
+                // Swallow — we are tearing down
             }
+        }
+
+        /// <summary>
+        /// Final disposal — sets <c>_disposed</c> to block all future access.
+        /// Called by Unloaded and by MainWindow.Closed tree walk.
+        /// </summary>
+        public void DisposeMediaPlayer()
+        {
+            if (_disposed) return;
+            _disposed = true;
+
+            StopProgressTimer();
+            DisposeCurrentPlayer();
         }
 
         private FlipView? GetParentFlipView(DependencyObject element)
@@ -383,23 +425,36 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         private void MediaPlayer_MediaEnded(Windows.Media.Playback.MediaPlayer sender, object args)
         {
             // This callback fires on a Media Foundation background thread.
-            // Do NOT access ReelPlayer.MediaPlayer here — it's a DependencyProperty
-            // and touching it off the UI thread throws a COMException.
-            if (IsAppClosing) return;
-            DispatcherQueue?.TryEnqueue(() =>
+            // Do NOT access any DependencyProperty here.
+            if (IsAppClosing || _disposed) return;
+
+            // Capture DispatcherQueue reference while we know it's valid.
+            // TryEnqueue returns false if the queue is shut down — no exception.
+            try
             {
-                if (IsAppClosing) return;
-                try
+                var dq = DispatcherQueue;
+                if (dq == null) return;
+
+                bool enqueued = dq.TryEnqueue(() =>
                 {
-                    if (ReelPlayer.MediaPlayer == null) return;
-                    var flipView = GetParentFlipView(this);
-                    if (flipView != null && flipView.SelectedIndex < flipView.Items.Count - 1)
+                    if (IsAppClosing || _disposed) return;
+                    try
                     {
-                        flipView.SelectedIndex++;
+                        var player = ReelPlayer?.MediaPlayer;
+                        if (player == null) return;
+                        var flipView = GetParentFlipView(this);
+                        if (flipView != null && flipView.SelectedIndex < flipView.Items.Count - 1)
+                        {
+                            flipView.SelectedIndex++;
+                        }
                     }
-                }
-                catch { /* view may be torn down */ }
-            });
+                    catch { /* view may be torn down */ }
+                });
+            }
+            catch
+            {
+                // DispatcherQueue may already be torn down — this is expected during close
+            }
         }
     }
 }

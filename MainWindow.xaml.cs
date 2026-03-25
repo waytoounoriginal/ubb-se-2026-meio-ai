@@ -1,14 +1,16 @@
 using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
+using ubb_se_2026_meio_ai.Features.ReelsFeed.Views;
 using ubb_se_2026_meio_ai.Features.ReelsUpload.Views;
 using ubb_se_2026_meio_ai.Features.TrailerScraping.Views;
 using ubb_se_2026_meio_ai.Features.ReelsEditing.Views;
 using ubb_se_2026_meio_ai.Features.MovieSwipe.Views;
 using ubb_se_2026_meio_ai.Features.MovieTournament.Views;
 using ubb_se_2026_meio_ai.Features.PersonalityMatch.Views;
-using ubb_se_2026_meio_ai.Features.ReelsFeed.Views;
 
 namespace ubb_se_2026_meio_ai
 {
@@ -44,8 +46,14 @@ namespace ubb_se_2026_meio_ai
                 // Signal all ReelItemViews to stop processing callbacks immediately
                 ReelItemView.IsAppClosing = true;
 
+                // Dispose all prefetched MediaSource COM objects
+                try { (App.Services.GetService<IClipPlaybackService>() as IDisposable)?.Dispose(); } catch { }
+
+                // Walk the visual tree and dispose every MediaPlayer synchronously
                 try { DisposeAllMediaPlayers(ContentFrame); } catch { }
-                ContentFrame.Content = null;
+
+                // Do NOT set ContentFrame.Content = null — it triggers Unloaded events
+                // that race with the disposal we just did. The window is closing anyway.
             };
         }
 

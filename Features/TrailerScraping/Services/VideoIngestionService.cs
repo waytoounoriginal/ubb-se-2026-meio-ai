@@ -37,19 +37,19 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
                 return string.Empty; // duplicate
             }
 
-            // Download as MP4
-            string? localPath = null;
-            try
+            // Download as MP4 — YouTube URLs are not directly playable
+            string? localPath = await _downloader.DownloadVideoAsMp4Async(trailerUrl, maxDurationSeconds: 60);
+
+            if (string.IsNullOrEmpty(localPath))
             {
-                localPath = await _downloader.DownloadVideoAsMp4Async(trailerUrl, maxDurationSeconds: 60);
+                return string.Empty; // download failed, skip
             }
-            catch { /* fallback to URL */ }
 
             var reel = new ReelModel
             {
                 MovieId = movieId,
                 CreatorUserId = 0, // system/scraped
-                VideoUrl = !string.IsNullOrEmpty(localPath) ? localPath : trailerUrl,
+                VideoUrl = localPath,
                 Title = "Scraped Trailer",
                 Caption = string.Empty,
                 ThumbnailUrl = string.Empty,
@@ -130,17 +130,18 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
 
                         // Download video as MP4 (max 60 seconds)
                         await LogAsync("Info", $"Downloading MP4: \"{video.Title}\"...");
-                        string? localMp4Path = null;
-                        try
+                        string? localMp4Path = await _downloader.DownloadVideoAsMp4Async(video.VideoUrl, maxDurationSeconds: 60);
+
+                        // Skip this video if download failed
+                        if (string.IsNullOrEmpty(localMp4Path))
                         {
-                            localMp4Path = await _downloader.DownloadVideoAsMp4Async(video.VideoUrl, maxDurationSeconds: 60);
-                        }
-                        catch (Exception dlEx)
-                        {
-                            await LogAsync("Warn", $"MP4 download failed: {dlEx.Message}. Storing YouTube URL instead.");
+                            string reason = _downloader.LastError ?? "unknown error";
+                            await LogAsync("Error", $"MP4 download failed: {reason}");
+                            await LogAsync("Warn", $"Skipping \"{video.Title}\" — no playable MP4 available.");
+                            continue;
                         }
 
-                        string videoUrl = !string.IsNullOrEmpty(localMp4Path) ? localMp4Path : video.VideoUrl;
+                        string videoUrl = localMp4Path;
 
                         // Insert Reel linked to the selected movie
                         var reel = new ReelModel

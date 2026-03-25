@@ -13,6 +13,8 @@ using ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels;
 using ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels;
 using ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels;
 using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
+using System.Diagnostics;
+using System.IO;
 
 namespace ubb_se_2026_meio_ai
 {
@@ -24,6 +26,10 @@ namespace ubb_se_2026_meio_ai
         // ⚠️ PASTE YOUR YOUTUBE API KEY BELOW — CLEAR BEFORE COMMITTING TO GITHUB ⚠️
         private const string YouTubeApiKey = "AIzaSyA035aofA1kYjUovkGKoS9qy8kCmTz-Ue4";
 
+        private static readonly string CrashLogPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "MeioAI", "crash.log");
+
         /// <summary>
         /// Global service provider — use <c>App.Services.GetRequiredService&lt;T&gt;()</c>
         /// from Page code-behinds to resolve registered types.
@@ -34,29 +40,95 @@ namespace ubb_se_2026_meio_ai
 
         public App()
         {
+            // Log first-chance exceptions to help diagnose native crashes (0xc000027b).
+            AppDomain.CurrentDomain.FirstChanceException += (sender, e) =>
+            {
+                try
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(CrashLogPath)!);
+                    File.AppendAllText(CrashLogPath,
+                        $"[{DateTime.Now:HH:mm:ss.fff}] FirstChance: {e.Exception.GetType().Name}: {e.Exception.Message}\n" +
+                        $"  {e.Exception.StackTrace?.Split('\n').FirstOrDefault()?.Trim()}\n");
+                }
+                catch { /* logging must never crash */ }
+            };
+
+            AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+            {
+                try
+                {
+                    var ex = e.ExceptionObject as Exception;
+                    Directory.CreateDirectory(Path.GetDirectoryName(CrashLogPath)!);
+                    File.AppendAllText(CrashLogPath,
+                        $"[{DateTime.Now:HH:mm:ss.fff}] UNHANDLED (CLR): {ex?.GetType().Name}: {ex?.Message}\n{ex?.StackTrace}\n\n");
+                }
+                catch { }
+            };
+
             this.InitializeComponent();
 
+            // Suppress COM teardown exceptions during app close.
+            // WinUI 3 MediaPlayer fires callbacks on background threads that
+            // race with window destruction — these are harmless but otherwise
+            // show an "unhandled Win32 exception" dialog.
+            this.UnhandledException += (sender, e) =>
+            {
+                try
+                {
+                    File.AppendAllText(CrashLogPath,
+                        $"[{DateTime.Now:HH:mm:ss.fff}] WinUI UnhandledException: {e.Exception.GetType().Name}: {e.Exception.Message}\n{e.Exception.StackTrace}\n\n");
+                }
+                catch { }
+                e.Handled = true;
+            };
+
+            System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (sender, e) =>
+            {
+                e.SetObserved();
+            };
+
             // Build the DI container
-            var services = new ServiceCollection();
-            ConfigureServices(services);
-            Services = services.BuildServiceProvider();
+            try
+            {
+                var services = new ServiceCollection();
+                ConfigureServices(services);
+                Services = services.BuildServiceProvider();
+            }
+            catch (Exception ex)
+            {
+                File.AppendAllText(CrashLogPath,
+                    $"[{DateTime.Now:HH:mm:ss.fff}] DI CONTAINER FAILED: {ex}\n\n");
+                throw;
+            }
         }
 
         protected override async void OnLaunched(LaunchActivatedEventArgs args)
         {
-            // Ensure shared tables exist before any feature code runs.
-            var dbInit = Services.GetRequiredService<DatabaseInitializer>();
             try
             {
-                await dbInit.CreateTablesIfNotExistAsync();
-            }
-            catch
-            {
-                // Database may not be available during development — continue anyway.
-            }
+                // Ensure shared tables exist before any feature code runs.
+                var dbInit = Services.GetRequiredService<DatabaseInitializer>();
+                try
+                {
+                    await dbInit.CreateTablesIfNotExistAsync();
+                }
+                catch
+                {
+                    // Database may not be available during development — continue anyway.
+                }
 
-            m_window = new MainWindow();
-            m_window.Activate();
+                m_window = new MainWindow();
+                m_window.Activate();
+            }
+            catch (Exception ex)
+            {
+                try
+                {
+                    File.AppendAllText(CrashLogPath,
+                        $"[{DateTime.Now:HH:mm:ss.fff}] OnLaunched FAILED: {ex}\n\n");
+                }
+                catch { }
+            }
         }
 
         /// <summary>
@@ -126,7 +198,7 @@ namespace ubb_se_2026_meio_ai
             services.AddTransient<IReelInteractionService, ReelInteractionService>();
             services.AddTransient<IEngagementProfileService, EngagementProfileService>();
             services.AddTransient<IRecommendationService, RecommendationService>();
-            services.AddTransient<IClipPlaybackService, ClipPlaybackService>();
+            services.AddSingleton<IClipPlaybackService, ClipPlaybackService>();
         }
     }
 }
