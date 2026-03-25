@@ -2,7 +2,7 @@
 *   **Requirement 1:** The system must allow an authenticated user to select and upload a short-format video file (reel) from their device.
 *   **Requirement 2:** The system must validate the uploaded video to ensure it meets format (e.g., MP4) and duration (e.g., under 60 seconds) constraints.
 *   **Requirement 3:** The system must persistently store the video file (e.g., in blob storage) and record its metadata as a new row in the shared `Reel` table with `Source = 'upload'`.
-*   **Requirement 4:** The system must associate each uploaded reel with the uploader's user ID and, optionally, with a movie from the external Movie table (does not influence user preferences).
+*   **Requirement 4:** The system must associate each uploaded reel with the uploader's user ID and with a movie from the external Movie table (does not influence user preferences).
 *   **Requirement 5:** User flow: logged-in user goes to the 'Upload reel' view, selects the file they want to upload, writes some details regarding the reel (eg: title, movie etc) and clicks the upload button. The user will be shown a confirmation text or an error if the validation fails
 *   **Requirement 6:** If the user closes the application while it is uploading the reel the progress and unsaved data will be lost
 *   **Owner:** Alex
@@ -55,4 +55,4 @@
 *   **Task:** Create `ReelUploadView` — Progress & Submit UI
     *   **Description:** Add a "Submit" button (disabled if no valid file), a loading spinner bound to `IsUploading`, and a text field for a caption. Max 30 mins effort.
 *   **Task:** Create `ReelUploadView` — Movie Selector Dropdown
-    *   **Description:** Add a searchable dropdown or autocomplete field for optionally linking the reel to a movie. Bind to the ViewModel's movie selection property. Max 30 mins effort.
+    *   **Description:** Add a searchable dropdown or autocomplete field for linking the reel to a movie. Bind to the ViewModel's movie selection property. Max 30 mins effort.

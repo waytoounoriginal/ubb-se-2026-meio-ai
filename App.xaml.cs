@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using ubb_se_2026_meio_ai.Core.Database;
@@ -22,15 +23,22 @@ namespace ubb_se_2026_meio_ai
         /// </summary>
         public static IServiceProvider Services { get; private set; } = null!;
 
-        private Window? m_window;
+        public static Window MainWindow { get; private set; } = null!;
 
         public App()
         {
             this.InitializeComponent();
 
+            // Load configuration from appsettings.json
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(System.AppDomain.CurrentDomain.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+            var configuration = builder.Build();
+
             // Build the DI container
             var services = new ServiceCollection();
-            ConfigureServices(services);
+            services.AddSingleton<IConfiguration>(configuration);
+            ConfigureServices(services, configuration);
             Services = services.BuildServiceProvider();
         }
 
@@ -47,8 +55,8 @@ namespace ubb_se_2026_meio_ai
                 // Database may not be available during development — continue anyway.
             }
 
-            m_window = new MainWindow();
-            m_window.Activate();
+            MainWindow = new MainWindow();
+            MainWindow.Activate();
         }
 
         /// <summary>
@@ -56,10 +64,13 @@ namespace ubb_se_2026_meio_ai
         /// Feature developers: register your concrete service implementations here
         /// when they are ready.
         /// </summary>
-        private static void ConfigureServices(IServiceCollection services)
+        private static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
         {
             // ── Core / Database ──────────────────────────────────────────
-            services.AddSingleton<ISqlConnectionFactory, SqlConnectionFactory>();
+            string connectionString = configuration.GetConnectionString("DefaultConnection") 
+                ?? "Server=localhost;Database=MeioAiDb;Trusted_Connection=True;TrustServerCertificate=True;";
+                
+            services.AddSingleton<ISqlConnectionFactory>(new SqlConnectionFactory(connectionString));
             services.AddTransient<DatabaseInitializer>();
 
             // ── ViewModels (one per feature page) ────────────────────────
@@ -72,7 +83,7 @@ namespace ubb_se_2026_meio_ai
             services.AddTransient<ReelsFeedViewModel>();
 
             // ── Feature Services ─────────────────────────────────────────
-            // TODO (Alex):      services.AddTransient<IVideoStorageService, VideoStorageService>();
+            services.AddTransient<ubb_se_2026_meio_ai.Features.ReelsUpload.Services.IVideoStorageService, ubb_se_2026_meio_ai.Features.ReelsUpload.Services.VideoStorageService>();
             // TODO (Andrei):    services.AddTransient<IWebScraperService, WebScraperService>();
             //                   services.AddTransient<IVideoIngestionService, VideoIngestionService>();
             // TODO (Beatrice):  services.AddTransient<IVideoProcessingService, VideoProcessingService>();
