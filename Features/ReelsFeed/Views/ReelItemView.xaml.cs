@@ -26,16 +26,18 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
             this.InitializeComponent();
             _playbackService = App.Services.GetRequiredService<IClipPlaybackService>();
             
-            // Unload the video and rigorously dispose the underlying COM objects when the control unloads to prevent Win32 exit crashes
-            this.Unloaded += (s, e) => {
+            // Auto-scroll logic when a video hits the duration limit or finishes natively
+            this.Loaded += (s, e) => {
                 if (ReelPlayer.MediaPlayer != null)
                 {
-                    ReelPlayer.MediaPlayer.Pause();
-                    var oldSource = ReelPlayer.Source as IDisposable;
-                    ReelPlayer.Source = null;
-                    oldSource?.Dispose();
+                    ReelPlayer.MediaPlayer.IsLoopingEnabled = false; // Prevent it from looping so the end fires
+                    ReelPlayer.MediaPlayer.MediaEnded -= MediaPlayer_MediaEnded;
+                    ReelPlayer.MediaPlayer.MediaEnded += MediaPlayer_MediaEnded;
                 }
             };
+
+            // Unload the video and rigorously dispose the underlying COM objects when the control unloads to prevent Win32 exit crashes
+            this.Unloaded += (s, e) => DisposeMediaPlayer();
         }
 
         private static void OnReelChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -72,6 +74,53 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
             {
                 ReelPlayer.MediaPlayer.Pause();
             }
+        }
+
+        private FlipView? GetParentFlipView(DependencyObject element)
+        {
+            var parent = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(element);
+            while (parent != null)
+            {
+                if (parent is FlipView flipView)
+                    return flipView;
+                parent = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(parent);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Fully tears down the MediaPlayer COM object so it does not outlive the window handle.
+        /// Must be called on the UI thread.
+        /// </summary>
+        public void DisposeMediaPlayer()
+        {
+            var player = ReelPlayer.MediaPlayer;
+            if (player == null) return;
+
+            player.MediaEnded -= MediaPlayer_MediaEnded;
+            player.Pause();
+
+            // Detach source and dispose it
+            var oldSource = ReelPlayer.Source as IDisposable;
+            ReelPlayer.Source = null;
+            oldSource?.Dispose();
+
+            // Detach the MediaPlayer from the element, then dispose the COM object
+            ReelPlayer.SetMediaPlayer(null);
+            player.Dispose();
+        }
+
+        private void MediaPlayer_MediaEnded(Windows.Media.Playback.MediaPlayer sender, object args)
+        {
+            // MediaEnded fires on a background thread, so we marshal back to the UI thread
+            DispatcherQueue.TryEnqueue(() => {
+                var flipView = GetParentFlipView(this);
+                // If the video stops, simulate the user swiping one position down automatically.
+                if (flipView != null && flipView.SelectedIndex < flipView.Items.Count - 1)
+                {
+                    flipView.SelectedIndex++;
+                }
+            });
         }
     }
 }

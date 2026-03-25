@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ubb_se_2026_meio_ai.Core.Models;
@@ -12,8 +13,16 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
     /// </summary>
     public partial class ReelsFeedViewModel : ObservableObject
     {
+        private const int MockUserId = 1;
+
         private readonly IRecommendationService _recommendationService;
         private readonly IClipPlaybackService _clipPlaybackService;
+        private readonly IReelInteractionService _reelInteractionService;
+
+        /// <summary>
+        /// Local cache of liked state per ReelId so we avoid a DB round-trip on every scroll.
+        /// </summary>
+        private readonly Dictionary<int, bool> _likedReels = new();
 
         [ObservableProperty]
         private string _pageTitle = "Reels Feed";
@@ -30,12 +39,19 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
         [ObservableProperty]
         private ReelModel? _currentReel;
 
+        [ObservableProperty]
+        private bool _isCurrentReelLiked;
+
         public System.Collections.ObjectModel.ObservableCollection<ReelModel> ReelQueue { get; } = new();
 
-        public ReelsFeedViewModel(IRecommendationService recommendationService, IClipPlaybackService clipPlaybackService)
+        public ReelsFeedViewModel(
+            IRecommendationService recommendationService,
+            IClipPlaybackService clipPlaybackService,
+            IReelInteractionService reelInteractionService)
         {
             _recommendationService = recommendationService;
             _clipPlaybackService = clipPlaybackService;
+            _reelInteractionService = reelInteractionService;
         }
 
         [CommunityToolkit.Mvvm.Input.RelayCommand]
@@ -47,18 +63,20 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
 
             try
             {
-                // Passing UserId=1 as mock authenticated user since MVP doesn't have auth wired locally.
-                var reels = await _recommendationService.GetRecommendedReelsAsync(1, 10);
+                var reels = await _recommendationService.GetRecommendedReelsAsync(MockUserId, 10);
                 foreach (var r in reels)
                 {
                     ReelQueue.Add(r);
                 }
 
+                // Pre-load liked state for every reel in the batch so scrolling is instant
+                await LoadLikedStatesAsync(reels);
+
                 if (ReelQueue.Count > 0)
                 {
                     CurrentReel = ReelQueue[0];
+                    IsCurrentReelLiked = _likedReels.GetValueOrDefault(CurrentReel.ReelId);
                     StatusMessage = string.Empty;
-                    // Trigger prefetch for the next few
                     PrefetchUpcoming(0);
                 }
                 else
