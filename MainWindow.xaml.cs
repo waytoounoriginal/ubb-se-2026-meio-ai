@@ -41,7 +41,10 @@ namespace ubb_se_2026_meio_ai
             // Do NOT call Navigate() here — it is internally async and races with cleanup.
             this.Closed += (sender, args) =>
             {
-                DisposeAllMediaPlayers(ContentFrame);
+                // Signal all ReelItemViews to stop processing callbacks immediately
+                ReelItemView.IsAppClosing = true;
+
+                try { DisposeAllMediaPlayers(ContentFrame); } catch { }
                 ContentFrame.Content = null;
             };
         }
@@ -55,6 +58,7 @@ namespace ubb_se_2026_meio_ai
 
             if (root is ReelItemView reelItem)
             {
+                reelItem.PauseVideo();
                 reelItem.DisposeMediaPlayer();
                 return;
             }

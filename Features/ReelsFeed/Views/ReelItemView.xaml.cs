@@ -21,6 +21,13 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
     {
         private const int MockUserId = 1;
 
+        /// <summary>
+        /// Static flag set by MainWindow.Closed before disposal begins.
+        /// Prevents any queued DispatcherQueue callbacks from touching XAML elements
+        /// after the window starts tearing down.
+        /// </summary>
+        internal static bool IsAppClosing { get; set; }
+
         // Heart glyphs in Segoe MDL2 Assets
         private const string HeartOutline = "\uEB51";
         private const string HeartFilled = "\uEB52";
@@ -105,12 +112,14 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
 
         private void OnReelPropertyChanged(object? sender, PropertyChangedEventArgs args)
         {
+            if (IsAppClosing) return;
             if (args.PropertyName is nameof(ReelModel.IsLiked) or nameof(ReelModel.LikeCount))
             {
                 if (sender is ReelModel reel)
                 {
                     DispatcherQueue?.TryEnqueue(() =>
                     {
+                        if (IsAppClosing) return;
                         try { UpdateLikeVisuals(reel.IsLiked, reel.LikeCount); }
                         catch { /* view may be torn down */ }
                     });
@@ -301,6 +310,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
 
         private void ProgressTimer_Tick(object? sender, object e)
         {
+            if (IsAppClosing) { StopProgressTimer(); return; }
             try
             {
                 var player = ReelPlayer.MediaPlayer;
@@ -375,9 +385,10 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
             // This callback fires on a Media Foundation background thread.
             // Do NOT access ReelPlayer.MediaPlayer here — it's a DependencyProperty
             // and touching it off the UI thread throws a COMException.
-            // Marshal everything to the UI thread first.
+            if (IsAppClosing) return;
             DispatcherQueue?.TryEnqueue(() =>
             {
+                if (IsAppClosing) return;
                 try
                 {
                     if (ReelPlayer.MediaPlayer == null) return;

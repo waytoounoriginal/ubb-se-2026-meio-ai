@@ -83,7 +83,7 @@ namespace ubb_se_2026_meio_ai
             //                   services.AddTransient<IAudioLibraryService, AudioLibraryService>();
             // ── Bogdan (Movie Swipe) ──
             services.AddTransient<ISwipeService, SwipeService>();
-            services.AddTransient<IPreferenceRepository, PreferenceRepository>();
+            services.AddTransient<Features.MovieSwipe.Services.IPreferenceRepository, Features.MovieSwipe.Services.PreferenceRepository>();
             services.AddTransient<IMovieCardFeedService, MovieCardFeedService>();
             // TODO (Gabi):      services.AddTransient<ITournamentLogicService, TournamentLogicService>();
             //                   services.AddTransient<IMovieTournamentRepository, MovieTournamentRepository>();
@@ -91,7 +91,7 @@ namespace ubb_se_2026_meio_ai
             // Tudor – Repositories
             services.AddTransient<IInteractionRepository, InteractionRepository>();
             services.AddTransient<IProfileRepository, ProfileRepository>();
-            services.AddTransient<IPreferenceRepository, PreferenceRepository>();
+            services.AddTransient<Features.ReelsFeed.Repositories.IPreferenceRepository, Features.ReelsFeed.Repositories.PreferenceRepository>();
 
             // Tudor – Services
             services.AddTransient<IReelInteractionService, ReelInteractionService>();

@@ -22,11 +22,7 @@ namespace ubb_se_2026_meio_ai.Core.Database
             
             // 2. Create the tables in the MeioAiDb database
             const string sql = @"
-<<<<<<< Updated upstream
-                -- Movie (external data source for swipe)
-=======
-                -- Movie (external / partner-owned — created here so JOINs work)
->>>>>>> Stashed changes
+                -- Movie (shared table — created here so JOINs work)
                 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Movie')
                 BEGIN
                     CREATE TABLE Movie
@@ -35,14 +31,10 @@ namespace ubb_se_2026_meio_ai.Core.Database
                         Title           NVARCHAR(256)   NOT NULL,
                         PosterUrl       NVARCHAR(1024)  NULL,
                         PrimaryGenre    NVARCHAR(128)   NULL,
-<<<<<<< Updated upstream
-                        ReleaseYear     INT             NULL,
-                        Synopsis        NVARCHAR(MAX)   NULL
-=======
                         Description     NVARCHAR(MAX)   NULL,
                         ReleaseYear     INT             NULL,
+                        Synopsis        NVARCHAR(MAX)   NULL,
                         AverageRating   FLOAT           NULL
->>>>>>> Stashed changes
                     );
                 END
 
