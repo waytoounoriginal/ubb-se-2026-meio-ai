@@ -153,6 +153,35 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
             return stats;
         }
 
+        public async Task<IList<MovieCardModel>> SearchMoviesByNameAsync(string partialName)
+        {
+            const string sql = @"
+                SELECT TOP 20 MovieId, Title, PosterUrl, PrimaryGenre, ReleaseYear, Description
+                FROM Movie
+                WHERE Title LIKE '%' + @Name + '%' COLLATE SQL_Latin1_General_CP1_CI_AS
+                ORDER BY Title;";
+
+            await using SqlConnection conn = await _connectionFactory.CreateConnectionAsync();
+            await using SqlCommand cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@Name", partialName);
+            await using SqlDataReader reader = await cmd.ExecuteReaderAsync();
+
+            var movies = new List<MovieCardModel>();
+            while (await reader.ReadAsync())
+            {
+                movies.Add(new MovieCardModel
+                {
+                    MovieId     = reader.GetInt32(reader.GetOrdinal("MovieId")),
+                    Title       = reader.GetString(reader.GetOrdinal("Title")),
+                    PosterUrl   = reader.IsDBNull(reader.GetOrdinal("PosterUrl")) ? "" : reader.GetString(reader.GetOrdinal("PosterUrl")),
+                    Genre       = reader.IsDBNull(reader.GetOrdinal("PrimaryGenre")) ? "" : reader.GetString(reader.GetOrdinal("PrimaryGenre")),
+                    ReleaseYear = reader.GetInt32(reader.GetOrdinal("ReleaseYear")),
+                    Synopsis    = reader.IsDBNull(reader.GetOrdinal("Description")) ? "" : reader.GetString(reader.GetOrdinal("Description")),
+                });
+            }
+            return movies;
+        }
+
         public async Task<int?> FindMovieByTitleAsync(string title)
         {
             const string sql = "SELECT TOP 1 MovieId FROM Movie WHERE Title = @Title;";
@@ -165,24 +194,7 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
             return result is null or DBNull ? null : Convert.ToInt32(result);
         }
 
-        public async Task<int> InsertMovieAsync(string title, string posterUrl, string genre, string description, int releaseYear)
-        {
-            const string sql = @"
-                INSERT INTO Movie (Title, PosterUrl, PrimaryGenre, Description, ReleaseYear)
-                VALUES (@Title, @PosterUrl, @PrimaryGenre, @Description, @ReleaseYear);
-                SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
-            await using SqlConnection conn = await _connectionFactory.CreateConnectionAsync();
-            await using SqlCommand cmd = new SqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@Title", title);
-            cmd.Parameters.AddWithValue("@PosterUrl", posterUrl);
-            cmd.Parameters.AddWithValue("@PrimaryGenre", genre);
-            cmd.Parameters.AddWithValue("@Description", description);
-            cmd.Parameters.AddWithValue("@ReleaseYear", releaseYear);
-
-            object? result = await cmd.ExecuteScalarAsync();
-            return Convert.ToInt32(result);
-        }
 
         public async Task<bool> ReelExistsByVideoUrlAsync(string videoUrl)
         {
@@ -216,6 +228,57 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
 
             object? result = await cmd.ExecuteScalarAsync();
             return Convert.ToInt32(result);
+        }
+
+        public async Task<IList<MovieCardModel>> GetAllMoviesAsync()
+        {
+            const string sql = "SELECT MovieId, Title, PosterUrl, PrimaryGenre, ReleaseYear, Description FROM Movie ORDER BY Title;";
+
+            await using SqlConnection conn = await _connectionFactory.CreateConnectionAsync();
+            await using SqlCommand cmd = new SqlCommand(sql, conn);
+            await using SqlDataReader reader = await cmd.ExecuteReaderAsync();
+
+            var movies = new List<MovieCardModel>();
+            while (await reader.ReadAsync())
+            {
+                movies.Add(new MovieCardModel
+                {
+                    MovieId     = reader.GetInt32(reader.GetOrdinal("MovieId")),
+                    Title       = reader.GetString(reader.GetOrdinal("Title")),
+                    PosterUrl   = reader.IsDBNull(reader.GetOrdinal("PosterUrl")) ? "" : reader.GetString(reader.GetOrdinal("PosterUrl")),
+                    Genre       = reader.IsDBNull(reader.GetOrdinal("PrimaryGenre")) ? "" : reader.GetString(reader.GetOrdinal("PrimaryGenre")),
+                    ReleaseYear = reader.GetInt32(reader.GetOrdinal("ReleaseYear")),
+                    Synopsis    = reader.IsDBNull(reader.GetOrdinal("Description")) ? "" : reader.GetString(reader.GetOrdinal("Description")),
+                });
+            }
+            return movies;
+        }
+
+        public async Task<IList<ReelModel>> GetAllReelsAsync()
+        {
+            const string sql = "SELECT ReelId, MovieId, CreatorUserId, VideoUrl, ThumbnailUrl, Title, Caption, Source, CreatedAt FROM Reel ORDER BY CreatedAt DESC;";
+
+            await using SqlConnection conn = await _connectionFactory.CreateConnectionAsync();
+            await using SqlCommand cmd = new SqlCommand(sql, conn);
+            await using SqlDataReader reader = await cmd.ExecuteReaderAsync();
+
+            var reels = new List<ReelModel>();
+            while (await reader.ReadAsync())
+            {
+                reels.Add(new ReelModel
+                {
+                    ReelId          = reader.GetInt32(reader.GetOrdinal("ReelId")),
+                    MovieId         = reader.GetInt32(reader.GetOrdinal("MovieId")),
+                    CreatorUserId   = reader.GetInt32(reader.GetOrdinal("CreatorUserId")),
+                    VideoUrl        = reader.GetString(reader.GetOrdinal("VideoUrl")),
+                    ThumbnailUrl    = reader.IsDBNull(reader.GetOrdinal("ThumbnailUrl")) ? "" : reader.GetString(reader.GetOrdinal("ThumbnailUrl")),
+                    Title           = reader.GetString(reader.GetOrdinal("Title")),
+                    Caption         = reader.IsDBNull(reader.GetOrdinal("Caption")) ? "" : reader.GetString(reader.GetOrdinal("Caption")),
+                    Source          = reader.GetString(reader.GetOrdinal("Source")),
+                    CreatedAt       = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
+                });
+            }
+            return reels;
         }
 
         // ── Private helpers ──────────────────────────────────────────────

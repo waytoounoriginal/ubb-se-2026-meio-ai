@@ -149,6 +149,24 @@ namespace ubb_se_2026_meio_ai.Core.Database
                         CONSTRAINT UQ_UserReel UNIQUE (UserId, ReelId)
                     );
                 END
+
+                -- ── Wipe and re-seed mock movies for testing ──
+                DELETE FROM Movie WHERE MovieId NOT IN (SELECT DISTINCT MovieId FROM Reel);
+
+                IF NOT EXISTS (SELECT 1 FROM Movie)
+                BEGIN
+                    INSERT INTO Movie (Title, PrimaryGenre, ReleaseYear, Description) VALUES
+                        (N'The Batman',                         N'Action',    2022, N'When a sadistic serial killer begins murdering key political figures in Gotham, Batman is forced to investigate.'),
+                        (N'Dune: Part Two',                     N'Sci-Fi',    2024, N'Paul Atreides unites with the Fremen to seek revenge against those who destroyed his family.'),
+                        (N'Oppenheimer',                        N'Drama',     2023, N'The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb.'),
+                        (N'Spider-Man: Across the Spider-Verse', N'Animation', 2023, N'Miles Morales catapults across the Multiverse, where he encounters a team of Spider-People.'),
+                        (N'Interstellar',                       N'Sci-Fi',    2014, N'A team of explorers travel through a wormhole in space in an attempt to save the human race.'),
+                        (N'The Dark Knight',                    N'Action',    2008, N'Batman raises the stakes in his war on crime with the help of Lt. Jim Gordon and Harvey Dent.'),
+                        (N'Inception',                          N'Sci-Fi',    2010, N'A thief who steals corporate secrets through dream-sharing technology is given the task of planting an idea.'),
+                        (N'Joker',                              N'Drama',     2019, N'A mentally troubled comedian embarks on a downward spiral that leads to the creation of an iconic villain.'),
+                        (N'Avengers: Endgame',                  N'Action',    2019, N'After Thanos snaps away half of all life, the remaining Avengers must figure out a way to bring back their vanquished allies.'),
+                        (N'Parasite',                           N'Thriller',  2019, N'Greed and class discrimination threaten the newly formed symbiotic relationship between the wealthy Park family and the destitute Kim clan.');
+                END
             ";
 
             await using SqlConnection connection = await _connectionFactory.CreateConnectionAsync();

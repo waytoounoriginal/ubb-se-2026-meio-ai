@@ -18,7 +18,7 @@ namespace ubb_se_2026_meio_ai
     public partial class App : Application
     {
         // ⚠️ PASTE YOUR YOUTUBE API KEY BELOW — CLEAR BEFORE COMMITTING TO GITHUB ⚠️
-        private const string YouTubeApiKey = "Insert API KEY, scuze prieteni am dat leak";
+        private const string YouTubeApiKey = "AIzaSyA035aofA1kYjUovkGKoS9qy8kCmTz-Ue4";
 
         /// <summary>
         /// Global service provider — use <c>App.Services.GetRequiredService&lt;T&gt;()</c>
@@ -84,6 +84,7 @@ namespace ubb_se_2026_meio_ai
             string apiKey = ResolveYouTubeApiKey();
             services.AddSingleton(new YouTubeScraperService(apiKey));
             services.AddSingleton<IScrapeJobRepository, ScrapeJobRepository>();
+            services.AddSingleton<VideoDownloadService>();
             services.AddTransient<VideoIngestionService>();
 
             // ── ViewModels (one per feature page) ────────────────────────

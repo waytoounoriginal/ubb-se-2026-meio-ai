@@ -57,15 +57,17 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
         Task<DashboardStatsModel> GetDashboardStatsAsync();
 
         /// <summary>
+        /// Searches movies by partial title match (case-insensitive) for autocomplete.
+        /// </summary>
+        Task<IList<MovieCardModel>> SearchMoviesByNameAsync(string partialName);
+
+        /// <summary>
         /// Checks whether a movie with the given title already exists.
         /// Returns the MovieId if found, null otherwise.
         /// </summary>
         Task<int?> FindMovieByTitleAsync(string title);
 
-        /// <summary>
-        /// Inserts a new Movie row and returns the generated MovieId.
-        /// </summary>
-        Task<int> InsertMovieAsync(string title, string posterUrl, string genre, string description, int releaseYear);
+
 
         /// <summary>
         /// Checks whether a reel with the given VideoUrl already exists.
@@ -76,5 +78,15 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
         /// Inserts a new Reel row with Source = 'scraped'.
         /// </summary>
         Task<int> InsertScrapedReelAsync(ReelModel reel);
+
+        /// <summary>
+        /// Retrieves all movies from the Movie table.
+        /// </summary>
+        Task<IList<MovieCardModel>> GetAllMoviesAsync();
+
+        /// <summary>
+        /// Retrieves all reels from the Reel table.
+        /// </summary>
+        Task<IList<ReelModel>> GetAllReelsAsync();
     }
 }

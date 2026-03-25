@@ -8,5 +8,7 @@ namespace ubb_se_2026_meio_ai.Core.Models
         public string Genre { get; set; } = string.Empty;
         public int ReleaseYear { get; set; }
         public string Synopsis { get; set; } = string.Empty;
+
+        public override string ToString() => $"{Title} ({ReleaseYear}) — {Genre}";
     }
 }

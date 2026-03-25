@@ -9,9 +9,11 @@ namespace ubb_se_2026_meio_ai.Core.Database
     public class SqlConnectionFactory : ISqlConnectionFactory
     {
         // TODO: Move to appsettings or a configuration file before release.
+        // private const string DefaultConnectionString =
+        //    "Server=localhost;Database=MeioAiDb;Trusted_Connection=True;TrustServerCertificate=True;";
+        //(localdb)\MSSQLLocalDB;Initial Catalog=master;Integrated Security=True;Connect Timeout=30;Encrypt=True;Trust Server Certificate=False;Application Intent=ReadWrite;Multi Subnet Failover=False;Command Timeout=30
         private const string DefaultConnectionString =
-            "Server=localhost;Database=MeioAiDb;Trusted_Connection=True;TrustServerCertificate=True;";
-
+            "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=master;Integrated Security=True;Connect Timeout=30;Encrypt=True;Trust Server Certificate=False;Application Intent=ReadWrite;Multi Subnet Failover=False;Command Timeout=30";
         private readonly string _connectionString;
 
         public SqlConnectionFactory(string? connectionString = null)

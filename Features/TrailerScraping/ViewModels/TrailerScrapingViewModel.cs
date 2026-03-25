@@ -8,6 +8,7 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
 {
     /// <summary>
     /// ViewModel for the Trailer Scraping admin dashboard.
+    /// Handles movie autocomplete, scrape execution, and log display.
     /// Owner: Andrei
     /// </summary>
     public partial class TrailerScrapingViewModel : ObservableObject
@@ -21,16 +22,6 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
         {
             _ingestionService = ingestionService;
             _repository = repository;
-
-            QuickPresets = new List<string>
-            {
-                "action movie 2024 official trailer",
-                "horror movie 2024 official trailer",
-                "thriller 2025 official trailer",
-                "comedy movie 2024 official trailer",
-                "sci-fi movie 2025 official trailer",
-                "romance movie 2024 trailer",
-            };
         }
 
         // ── Stats bar ────────────────────────────────────────────────────
@@ -53,10 +44,16 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
         [ObservableProperty]
         private int _failedJobs;
 
-        // ── Search ──────────────────────────────────────────────────────
+        // ── Movie Autocomplete ──────────────────────────────────────────
 
         [ObservableProperty]
-        private string _searchQuery = "new movie trailer 2024";
+        private string _searchText = string.Empty;
+
+        [ObservableProperty]
+        private MovieCardModel? _selectedMovie;
+
+        [ObservableProperty]
+        private bool _noMovieFound;
 
         [ObservableProperty]
         private int _maxResults = 5;
@@ -67,7 +64,7 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
         [ObservableProperty]
         private string _statusText = "Idle";
 
-        public List<string> QuickPresets { get; }
+        public ObservableCollection<MovieCardModel> SuggestedMovies { get; } = new();
 
         public List<int> MaxResultsOptions { get; } = new() { 5, 10, 15, 25, 50 };
 
@@ -77,15 +74,59 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
 
         // ── Commands ────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Called when the user types in the AutoSuggestBox.
+        /// Queries the Movie table for case-insensitive matches.
+        /// </summary>
         [RelayCommand]
-        private void ApplyPreset(string preset)
+        private async Task SearchMoviesAsync(string query)
         {
-            SearchQuery = preset;
+            SearchText = query;
+            SelectedMovie = null;
+            NoMovieFound = false;
+
+            if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
+            {
+                SuggestedMovies.Clear();
+                return;
+            }
+
+            try
+            {
+                IList<MovieCardModel> matches = await _repository.SearchMoviesByNameAsync(query);
+                SuggestedMovies.Clear();
+                foreach (var m in matches)
+                {
+                    SuggestedMovies.Add(m);
+                }
+
+                NoMovieFound = SuggestedMovies.Count == 0;
+            }
+            catch
+            {
+                SuggestedMovies.Clear();
+            }
+        }
+
+        /// <summary>
+        /// Called when the user picks a movie from the dropdown.
+        /// </summary>
+        public void SelectMovie(MovieCardModel movie)
+        {
+            SelectedMovie = movie;
+            SearchText = movie.Title;
+            NoMovieFound = false;
+            StartScrapeCommand.NotifyCanExecuteChanged();
         }
 
         [RelayCommand(CanExecute = nameof(CanStartScrape))]
         private async Task StartScrapeAsync()
         {
+            if (SelectedMovie is null)
+            {
+                return;
+            }
+
             IsScraping = true;
             StatusText = "Scraping...";
             StartScrapeCommand.NotifyCanExecuteChanged();
@@ -93,7 +134,7 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
             try
             {
                 await _ingestionService.RunScrapeJobAsync(
-                    SearchQuery,
+                    SelectedMovie,
                     MaxResults,
                     onLogEntry: async logEntry =>
                     {
@@ -118,7 +159,12 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
             }
         }
 
-        private bool CanStartScrape() => !IsScraping;
+        // ── Table viewers ────────────────────────────────────────────
+
+        public ObservableCollection<MovieCardModel> MovieTableItems { get; } = new();
+        public ObservableCollection<ReelModel> ReelTableItems { get; } = new();
+
+        private bool CanStartScrape() => !IsScraping && SelectedMovie is not null;
 
         [RelayCommand]
         private async Task RefreshAsync()
@@ -138,6 +184,21 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
                 foreach (var log in logs)
                 {
                     LogEntries.Add(log);
+                }
+
+                // Table viewers
+                IList<MovieCardModel> movies = await _repository.GetAllMoviesAsync();
+                MovieTableItems.Clear();
+                foreach (var m in movies)
+                {
+                    MovieTableItems.Add(m);
+                }
+
+                IList<ReelModel> reels = await _repository.GetAllReelsAsync();
+                ReelTableItems.Clear();
+                foreach (var r in reels)
+                {
+                    ReelTableItems.Add(r);
                 }
             }
             catch
