@@ -86,3 +86,17 @@ Desktop.ini
 *.swp
 *.bak
 *.tmp
+
+# ── AI assistant files ──────────────────────────────────────────────────
+CLAUDE.md
+.claude/
+
+# Cursor
+.cursor/
+.cursorrules
+
+# GitHub Copilot
+.github/copilot-instructions.md
+
+# Windsurf
+.windsurfrules
