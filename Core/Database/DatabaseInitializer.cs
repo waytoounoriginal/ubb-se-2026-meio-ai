@@ -85,6 +85,22 @@ namespace ubb_se_2026_meio_ai.Core.Database
                         ChangeFromPreviousValue INT         NULL,
                         CONSTRAINT UQ_UserMovie UNIQUE (UserId, MovieId)
                     );
+
+                    -- Insert 8 mock preferences for the tournament (UserId = 1)
+                    -- We check for UserId 1 to avoid duplicates if the table existed but was empty
+                    IF NOT EXISTS (SELECT * FROM UserMoviePreference WHERE UserId = 1)
+                    BEGIN
+                        INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
+                        VALUES 
+                        (1, 1, 8.5, 1),
+                        (1, 2, 9.0, 1),
+                        (1, 3, 7.5, 1),
+                        (1, 4, 8.0, 1),
+                        (1, 5, 9.5, 1),
+                        (1, 6, 8.5, 1),
+                        (1, 7, 7.0, 1),
+                        (1, 8, 9.2, 1);
+                    END
                 END
 
                 -- UserProfile (references User — external)
@@ -101,6 +117,9 @@ namespace ubb_se_2026_meio_ai.Core.Database
                         LikeToViewRatio     FLOAT       NOT NULL DEFAULT 0,
                         LastUpdated         DATETIME2   NOT NULL DEFAULT SYSUTCDATETIME()
                     );
+
+                    -- Seed UserId = 1
+                    INSERT INTO UserProfile (UserId) VALUES (1);
                 END
 
                 -- UserReelInteraction (references User and Reel)

@@ -8,16 +8,86 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid Padding="32">
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12">
-            <TextBlock Text="{x:Bind ViewModel.PageTitle, Mode=OneWay}"
-                       Style="{StaticResource TitleTextBlockStyle}" />
-            <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
-                       Style="{StaticResource SubtitleTextBlockStyle}"
-                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-            <TextBlock Text="Owner: Gabi"
-                       Style="{StaticResource CaptionTextBlockStyle}"
-                       Foreground="{ThemeResource SystemControlForegroundBaseMediumLowBrush}" />
-        </StackPanel>
+    <Grid>
+        <!-- STATE 0: SETUP VIEW -->
+        <Grid Visibility="{x:Bind IsState(ViewModel.CurrentViewState, 0), Mode=OneWay}" Padding="32">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="20" MaxWidth="400">
+                <TextBlock Text="🏆 Movie Tournament Setup" Style="{StaticResource TitleTextBlockStyle}" HorizontalAlignment="Center" />
+
+                <TextBlock Text="Select how many movies will compete:" HorizontalAlignment="Center" />
+
+                <Slider Minimum="4" Maximum="{x:Bind ViewModel.MaxPoolSize, Mode=OneWay}" 
+                        Value="{x:Bind ViewModel.PoolSize, Mode=TwoWay}" />
+
+                <TextBlock Text="{x:Bind ViewModel.PoolSize, Mode=OneWay}" 
+                           FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" />
+
+                <TextBlock Text="{x:Bind ViewModel.SetupErrorMessage, Mode=OneWay}" 
+                           Foreground="Red" HorizontalAlignment="Center"/>
+
+                <Button Content="Start Tournament" 
+                        Command="{x:Bind ViewModel.StartTournamentCommand}" 
+                        Style="{StaticResource AccentButtonStyle}" 
+                        HorizontalAlignment="Center" Padding="24,12"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- STATE 1: MATCH VIEW -->
+        <Grid Visibility="{x:Bind IsState(ViewModel.CurrentViewState, 1), Mode=OneWay}" Padding="32">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="{x:Bind ViewModel.RoundNumber, Mode=OneWay}" 
+                       Style="{StaticResource SubtitleTextBlockStyle}" HorizontalAlignment="Center" Margin="0,0,0,20" />
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Movie A -->
+                <Button Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                        Command="{x:Bind ViewModel.SelectMovieCommand}" CommandParameter="{x:Bind ViewModel.MovieOptionA.MovieId, Mode=OneWay}">
+                    <StackPanel>
+                        <!-- Note: Adjust the image size formatting based on your app's layout -->
+                        <Image Source="{x:Bind ViewModel.MovieOptionA.PosterUrl, Mode=OneWay}" Height="300" Stretch="Uniform" />
+                        <TextBlock Text="{x:Bind ViewModel.MovieOptionA.Title, Mode=OneWay}" FontSize="20" FontWeight="Bold" TextWrapping="Wrap" HorizontalAlignment="Center" Margin="0,10,0,0" />
+                        <TextBlock Text="{x:Bind ViewModel.MovieOptionA.ReleaseYear, Mode=OneWay}" HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <TextBlock Grid.Column="1" Text="VS" FontSize="24" FontWeight="Bold" VerticalAlignment="Center" Margin="20,0" />
+
+                <!-- Movie B -->
+                <Button Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                        Command="{x:Bind ViewModel.SelectMovieCommand}" CommandParameter="{x:Bind ViewModel.MovieOptionB.MovieId, Mode=OneWay}">
+                    <StackPanel>
+                        <Image Source="{x:Bind ViewModel.MovieOptionB.PosterUrl, Mode=OneWay}" Height="300" Stretch="Uniform" />
+                        <TextBlock Text="{x:Bind ViewModel.MovieOptionB.Title, Mode=OneWay}" FontSize="20" FontWeight="Bold" TextWrapping="Wrap" HorizontalAlignment="Center" Margin="0,10,0,0" />
+                        <TextBlock Text="{x:Bind ViewModel.MovieOptionB.ReleaseYear, Mode=OneWay}" HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Grid>
+
+        <!-- STATE 2: WINNER VIEW -->
+        <Grid Visibility="{x:Bind IsState(ViewModel.CurrentViewState, 2), Mode=OneWay}" Padding="32">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="20">
+                <TextBlock Text="🎉 TOURNAMENT WINNER 🎉" Style="{StaticResource TitleTextBlockStyle}" HorizontalAlignment="Center" />
+
+                <Image Source="{x:Bind ViewModel.WinnerMovie.PosterUrl, Mode=OneWay}" Height="400" Stretch="Uniform" />
+                <TextBlock Text="{x:Bind ViewModel.WinnerMovie.Title, Mode=OneWay}" FontSize="28" FontWeight="Bold" HorizontalAlignment="Center" />
+
+                <TextBlock Text="Preference Score Boosted by 2 Points!" Foreground="Green" FontSize="18" HorizontalAlignment="Center" />
+
+                <Button Content="Play Again" 
+                        Command="{x:Bind ViewModel.ResetTournamentCommand}" 
+                        HorizontalAlignment="Center" Margin="0,20,0,0" Padding="24,12"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Page>
