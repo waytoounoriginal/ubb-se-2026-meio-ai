@@ -71,13 +71,12 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
                 SELECT TOP (@Count)
                     r.ReelId, r.MovieId, r.CreatorUserId, r.VideoUrl, r.ThumbnailUrl,
                     r.Title, r.Caption, r.FeatureDurationSeconds, r.CropDataJson,
-                    r.BackgroundMusicId, r.Source, r.CreatedAt, r.LastEditedAt
+                    r.BackgroundMusicId, r.Source, r.CreatedAt, r.LastEditedAt,
+                    m.PrimaryGenre
                 FROM Reel r
+                LEFT JOIN Movie m ON m.MovieId = r.MovieId
                 LEFT JOIN UserMoviePreference p
                     ON p.MovieId = r.MovieId AND p.UserId = @UserId
-                WHERE r.ReelId NOT IN (
-                    SELECT ReelId FROM UserReelInteraction WHERE UserId = @UserId
-                )
                 ORDER BY
                     ISNULL(p.Score, 0) DESC,
                     r.CreatedAt DESC
@@ -102,17 +101,16 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
                 SELECT TOP (@Count)
                     r.ReelId, r.MovieId, r.CreatorUserId, r.VideoUrl, r.ThumbnailUrl,
                     r.Title, r.Caption, r.FeatureDurationSeconds, r.CropDataJson,
-                    r.BackgroundMusicId, r.Source, r.CreatedAt, r.LastEditedAt
+                    r.BackgroundMusicId, r.Source, r.CreatedAt, r.LastEditedAt,
+                    m.PrimaryGenre
                 FROM Reel r
+                LEFT JOIN Movie m ON m.MovieId = r.MovieId
                 LEFT JOIN (
                     SELECT ReelId, COUNT(*) AS LikeCount
                     FROM UserReelInteraction
                     WHERE IsLiked = 1 AND ViewedAt >= DATEADD(DAY, -7, SYSUTCDATETIME())
                     GROUP BY ReelId
                 ) likes ON likes.ReelId = r.ReelId
-                WHERE r.ReelId NOT IN (
-                    SELECT ReelId FROM UserReelInteraction WHERE UserId = @UserId
-                )
                 ORDER BY
                     ISNULL(likes.LikeCount, 0) DESC,
                     r.CreatedAt DESC
@@ -154,7 +152,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
                     BackgroundMusicId = reader.IsDBNull(9) ? null : reader.GetInt32(9),
                     Source = reader.GetString(10),
                     CreatedAt = reader.GetDateTime(11),
-                    LastEditedAt = reader.IsDBNull(12) ? null : reader.GetDateTime(12)
+                    LastEditedAt = reader.IsDBNull(12) ? null : reader.GetDateTime(12),
+                    Genre = reader.IsDBNull(13) ? null : reader.GetString(13)
                 });
             }
 

@@ -29,12 +29,45 @@
         </FlipView>
 
         <!-- Loading Overlay -->
-        <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Width="64" Height="64" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
+                      Width="64" Height="64" Foreground="White"
+                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-        <!-- Top Status Area -->
-        <StackPanel Margin="16" VerticalAlignment="Top" HorizontalAlignment="Left">
-            <TextBlock Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Foreground="LightCoral" FontWeight="Bold"/>
-            <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}" Foreground="White" Opacity="0.8"/>
+        <!-- Error State (icon + message + retry) -->
+        <StackPanel x:Name="ErrorPanel"
+                    Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Spacing="12">
+            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE783;"
+                      FontSize="48" Foreground="LightCoral"
+                      HorizontalAlignment="Center" />
+            <TextBlock Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+                       Foreground="LightCoral" FontWeight="Bold"
+                       TextWrapping="Wrap" MaxWidth="300"
+                       HorizontalAlignment="Center" TextAlignment="Center" />
+            <Button Content="Retry" Click="RetryButton_Click"
+                    HorizontalAlignment="Center"
+                    Style="{StaticResource AccentButtonStyle}" />
+        </StackPanel>
+
+        <!-- Empty / Cold-Start State (Task 15) -->
+        <StackPanel x:Name="EmptyPanel"
+                    Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Spacing="12">
+            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE714;"
+                      FontSize="64" Foreground="#88FFFFFF"
+                      HorizontalAlignment="Center" />
+            <TextBlock Text="No clips yet"
+                       Foreground="White" FontSize="20" FontWeight="SemiBold"
+                       HorizontalAlignment="Center" />
+            <TextBlock Text="Check back later for new reels!"
+                       Foreground="#88FFFFFF" FontSize="14"
+                       HorizontalAlignment="Center" />
+            <Button Content="Refresh" Click="RetryButton_Click"
+                    HorizontalAlignment="Center"
+                    Style="{StaticResource AccentButtonStyle}"
+                    Margin="0,8,0,0" />
         </StackPanel>
     </Grid>
 </Page>

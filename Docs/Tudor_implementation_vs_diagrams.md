@@ -82,8 +82,8 @@ The `DatabaseInitializer.cs` CREATE TABLE statements match the `dbdiagram_io.md`
 |--------|---------|------|-------|
 | `PlayClip(string)` | Present | Renamed `PlayAsync(string) → Task` | **Renamed + async** |
 | `PauseClip()` | Present | Renamed `PauseAsync() → Task` | **Renamed + async** |
-| `ResumeClip()` | Present | **Not implemented** | **Missing** |
-| `GetElapsedSeconds()` | Present | **Not implemented** | **Missing** |
+| `ResumeClip()` | Present | Renamed `ResumeAsync() → Task` | **Renamed + async** |
+| `GetElapsedSeconds()` | Present | `GetElapsedSeconds() → double` | **Implemented** |
 | `PrefetchClip(string)` | Present | Renamed `PrefetchClipAsync(string) → Task` | **Renamed + async** |
 | `SeekAsync(double)` | Not in diagram | Present | **Added** |
 | `IsPlaying` property | Not in diagram | Present | **Added** |
@@ -115,14 +115,18 @@ Services now delegate persistence to repositories. `EngagementProfileService` st
 | `ToggleLikeCommand` | Present | **Removed** (like toggle handled in `ReelItemView` code-behind) | **Moved to View** |
 | `PageTitle` property | Not in diagram | Present (`"Reels Feed"`) | **Added** |
 | `StatusMessage` property | Not in diagram | Present | **Added** |
-| Watch tracking timer | Required (Task 10) | **Not implemented** | **Missing** |
-| `RecordViewAsync` integration | Required (Task 10) | Never called from ViewModel or View | **Missing** |
+| Watch tracking timer | Required (Task 10) | **Implemented** — `Stopwatch` in ViewModel, flushed on scroll-away via `FlushWatchData()` | **Implemented** |
+| `RecordViewAsync` integration | Required (Task 10) | Called from `FlushWatchData()` with elapsed seconds and watch percentage | **Implemented** |
+| `HasError` property | Not in diagram | Present (visibility helper for error UI) | **Added** |
+| `IsEmpty` property | Not in diagram | Present (visibility helper for empty state UI) | **Added** |
 
 ### UserProfileViewModel
 
 | Aspect | Diagram | Code | Delta |
 |--------|---------|------|-------|
-| Entire class | Present with `Profile` property | **Not implemented** | **Missing** |
+| `Profile` property | Present | `[ObservableProperty]` of type `UserProfileModel?` | **Implemented** |
+| `LoadProfileAsync` command | Implied | `[RelayCommand]` that refreshes and loads profile | **Implemented** |
+| `IsLoading`, `ErrorMessage` | Not in diagram | Present (standard loading/error pattern) | **Added** |
 
 ---
 
@@ -142,12 +146,12 @@ Services now delegate persistence to repositories. `EngagementProfileService` st
 | Video player filling viewport, UniformToFill | **Implemented** |
 | Semi-transparent gradient overlay at bottom | **Implemented** |
 | Movie title (bold, white) | **Implemented** |
-| Genre tag (pill badge) | **Not implemented** — only Caption shown |
+| Genre tag (pill badge) | **Implemented** — shows `PrimaryGenre` from Movie table |
 | Heart icon button (outline/filled red) | **Implemented** |
-| Scale-bounce animation on like tap | **Not implemented** |
-| Double-tap gesture to toggle like | **Not implemented** — single click only |
-| Heart burst animation at tap point | **Not implemented** |
-| Horizontal progress bar bound to playback | **Not implemented** |
+| Scale-bounce animation on like tap | **Implemented** — 1.0→1.4→1.0 scale keyframes |
+| Double-tap gesture to toggle like | **Implemented** — only likes (never unlikes) on double-tap |
+| Heart burst animation at tap point | **Implemented** — large heart fades in/out at center |
+| Horizontal progress bar bound to playback | **Implemented** — DispatcherTimer updates ProgressBar |
 
 ### ReelsFeedPage — UI Features
 
@@ -157,8 +161,8 @@ Services now delegate persistence to repositories. `EngagementProfileService` st
 | Vertical snap-to-clip scrolling | **Implemented** (via FlipView) |
 | Loading spinner | **Implemented** (ProgressRing) |
 | Error message display | **Implemented** (TextBlock) |
-| Empty/cold-start layout ("No clips yet") | **Not implemented** — uses StatusMessage text only |
-| Retry button bound to LoadFeedCommand | **Not implemented** |
+| Empty/cold-start layout ("No clips yet") | **Implemented** — icon + message + Refresh button |
+| Retry button bound to LoadFeedCommand | **Implemented** — error state has Retry, empty state has Refresh |
 
 ---
 
@@ -174,11 +178,11 @@ Services now delegate persistence to repositories. `EngagementProfileService` st
 
 **Docs say (Task 10):** "Add a timer that starts when a reel becomes CurrentReel and stops on scroll-away, calling RecordViewAsync() with elapsed seconds and watch percentage."
 
-**Code:** `RecordViewAsync` exists in the service and is fully functional, but **is never called** from any ViewModel or View. No timer or stopwatch is implemented.
+**Code:** **Implemented.** `ReelsFeedViewModel` uses a `Stopwatch` that starts when a reel becomes current and stops on scroll-away. `FlushWatchData()` calls `RecordViewAsync` with elapsed seconds and computed watch percentage. Also flushed on page unload via `OnNavigatingAway()`.
 
 ### ClipPlaybackService Underutilized
 
-The actual video playback (play, pause, seek) is handled directly in `ReelItemView.xaml.cs` via `MediaPlayerElement.MediaPlayer`. The `ClipPlaybackService` is only used for prefetch caching and an `IsPlaying` flag — it does not control playback. The diagram intended it to be the central playback controller.
+The actual video playback (play, pause, seek) is handled directly in `ReelItemView.xaml.cs` via `MediaPlayerElement.MediaPlayer`. The `ClipPlaybackService` is used for prefetch caching, `IsPlaying` flag, and elapsed time tracking via `Stopwatch` — it does not directly control the XAML `MediaPlayer`. The diagram intended it to be the central playback controller, but WinUI 3's `MediaPlayerElement` requires direct COM interaction that doesn't map cleanly to a service abstraction.
 
 ---
 

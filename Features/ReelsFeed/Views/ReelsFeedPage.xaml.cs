@@ -25,6 +25,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         /// </summary>
         private void ReelsFeedPage_Unloaded(object sender, RoutedEventArgs e)
         {
+            // Flush the final reel's watch-duration data before tearing down
+            ViewModel.OnNavigatingAway();
+
             for (int i = 0; i < ViewModel.ReelQueue.Count; i++)
             {
                 var container = FeedFlipView.ContainerFromIndex(i) as DependencyObject;
@@ -42,6 +45,11 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
             {
                 await ViewModel.LoadFeedAsync();
             }
+        }
+
+        private async void RetryButton_Click(object sender, RoutedEventArgs e)
+        {
+            await ViewModel.LoadFeedAsync();
         }
 
         private void FlipView_SelectionChanged(object sender, SelectionChangedEventArgs e)

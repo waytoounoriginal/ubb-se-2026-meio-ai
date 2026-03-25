@@ -73,6 +73,7 @@ namespace ubb_se_2026_meio_ai
             services.AddTransient<MovieTournamentViewModel>();
             services.AddTransient<PersonalityMatchViewModel>();
             services.AddTransient<ReelsFeedViewModel>();
+            services.AddTransient<UserProfileViewModel>();
 
             // ── Feature Services ─────────────────────────────────────────
             // TODO (Alex):      services.AddTransient<IVideoStorageService, VideoStorageService>();
