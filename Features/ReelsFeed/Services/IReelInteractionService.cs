@@ -1,5 +1,3 @@
-using ubb_se_2026_meio_ai.Core.Models;
-
 namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
 {
     /// <summary>
@@ -10,7 +8,5 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
     {
         Task ToggleLikeAsync(int userId, int reelId);
         Task RecordViewAsync(int userId, int reelId, double watchDurationSec, double watchPercentage);
-        Task<UserReelInteractionModel?> GetInteractionAsync(int userId, int reelId);
-        Task<int> GetLikeCountAsync(int reelId);
     }
 }

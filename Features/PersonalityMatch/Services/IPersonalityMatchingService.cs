@@ -1,4 +1,4 @@
-using ubb_se_2026_meio_ai.Features.PersonalityMatch.Models;
+using ubb_se_2026_meio_ai.Core.Models;
 
 namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
 {
@@ -9,15 +9,8 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
     public interface IPersonalityMatchingService
     {
         /// <summary>
-        /// Returns the top <paramref name="count"/> users whose movie preferences
-        /// most closely match the given user, each with a 0–100% score.
+        /// Returns the top N users whose movie preferences most closely match the given user.
         /// </summary>
-        Task<List<MatchResult>> GetTopMatchesAsync(int userId, int count);
-
-        /// <summary>
-        /// Returns up to <paramref name="count"/> random users as a fallback
-        /// when no meaningful matches are found.
-        /// </summary>
-        Task<List<MatchResult>> GetRandomUsersAsync(int userId, int count);
+        Task<IList<(UserProfileModel Profile, double OverlapScore)>> GetTopMatchesAsync(int userId, int count);
     }
 }

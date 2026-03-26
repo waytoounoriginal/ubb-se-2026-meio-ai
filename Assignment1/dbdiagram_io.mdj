@@ -60,7 +60,7 @@ Table UserMoviePreference {
   MovieId int [ref: > Movie.MovieId, not null]
   Score float [not null]
   LastModified datetime
-  LastValueModification int
+  ChangeFromPreviousValue int
 
   indexes {
     (UserId, MovieId) [unique]

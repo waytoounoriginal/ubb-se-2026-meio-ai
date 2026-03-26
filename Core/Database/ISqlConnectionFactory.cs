@@ -9,14 +9,8 @@ namespace ubb_se_2026_meio_ai.Core.Database
     public interface ISqlConnectionFactory
     {
         /// <summary>
-        /// Creates and opens a new <see cref="SqlConnection"/> to the target database.
+        /// Creates and opens a new <see cref="SqlConnection"/>.
         /// </summary>
         Task<SqlConnection> CreateConnectionAsync();
-
-        /// <summary>
-        /// Creates and opens a new <see cref="SqlConnection"/> to the master database
-        /// for server-level operations like CREATE DATABASE.
-        /// </summary>
-        Task<SqlConnection> CreateMasterConnectionAsync();
     }
 }
