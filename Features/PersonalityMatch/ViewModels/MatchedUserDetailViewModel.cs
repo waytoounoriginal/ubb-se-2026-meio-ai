@@ -1,14 +1,14 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using ubb_se_2026_meio_ai.Core.Models;
+using ubb_se_2026_meio_ai.Features.PersonalityMatch.Models;
 using ubb_se_2026_meio_ai.Features.PersonalityMatch.Services;
 
 namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
 {
     /// <summary>
     /// ViewModel for the Matched User Detail page.
-    /// Displays the selected user's engagement stats, top preferences,
+    /// Displays the selected user's engagement stats, top preferences (with movie titles),
     /// compatibility score, and Facebook nickname.
     /// Owner: Madi
     /// </summary>
@@ -37,28 +37,37 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
         [ObservableProperty]
         private bool _hasProfile;
 
-        /// <summary>The selected user's top movie preferences.</summary>
-        public ObservableCollection<UserMoviePreferenceModel> TopPreferences { get; } = new();
+        /// <summary>
+        /// False when viewing your own account (self-view).
+        /// Hides the compatibility bar since 100% match with yourself is obvious.
+        /// </summary>
+        [ObservableProperty]
+        private bool _showCompatibility = true;
+
+        /// <summary>The selected user's top 5 movie preferences with resolved titles.</summary>
+        public ObservableCollection<MoviePreferenceDisplayModel> TopPreferences { get; } = new();
 
         public MatchedUserDetailViewModel(IPersonalityMatchRepository repository)
         {
             _repository = repository;
         }
 
-        public async Task LoadUserDetailAsync(int userId, double matchScore, string facebookAccount)
+        public async Task LoadUserDetailAsync(int userId, double matchScore, string facebookAccount, string username = "", bool isSelfView = false)
         {
             IsLoading = true;
             ErrorMessage = null;
             HasProfile = false;
+            ShowCompatibility = !isSelfView;
             TopPreferences.Clear();
 
-            MatchedUsername = await _repository.GetUsernameAsync(userId);
+            MatchedUsername = string.IsNullOrEmpty(username)
+                ? await _repository.GetUsernameAsync(userId)
+                : username;
             MatchScore = matchScore;
             FacebookAccount = facebookAccount;
 
             try
             {
-                // Load engagement profile
                 UserProfileModel? profile = await _repository.GetUserProfileAsync(userId);
                 if (profile != null)
                 {
@@ -66,13 +75,10 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
                     HasProfile = true;
                 }
 
-                // Load top movie preferences (sorted by score descending, top 5)
-                var prefs = await _repository.GetCurrentUserPreferencesAsync(userId);
-                var topPrefs = prefs.OrderByDescending(p => p.Score).Take(5);
+                // Load top 5 preferences with movie titles, best movie flagged first
+                var topPrefs = await _repository.GetTopPreferencesWithTitlesAsync(userId, 5);
                 foreach (var pref in topPrefs)
-                {
                     TopPreferences.Add(pref);
-                }
             }
             catch (Exception ex)
             {

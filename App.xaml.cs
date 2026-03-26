@@ -174,7 +174,7 @@ namespace ubb_se_2026_meio_ai
             services.AddTransient<Features.ReelsEditing.ViewModels.MusicSelectionDialogViewModel>();
             services.AddTransient<MovieSwipeViewModel>();
             services.AddTransient<MovieTournamentViewModel>();
-            services.AddTransient<PersonalityMatchViewModel>();
+            services.AddSingleton<PersonalityMatchViewModel>();
             services.AddTransient<ReelsFeedViewModel>();
             services.AddTransient<UserProfileViewModel>();
 

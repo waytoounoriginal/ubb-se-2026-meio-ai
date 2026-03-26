@@ -12,7 +12,17 @@ The system should provide a user matching and discovery screen where, upon acces
 *   **Requirement 5:** If no matching users are found, the system must display the message "No match" and provide an alternative section titled "Maybe you like:" containing up to 10 randomly selected users.
 *   **Requirement 6:** The system must allow the user to select and view the details of any listed user (matched or recommended) by accessing that user's `UserProfile`, without affecting the current user's preferences or future matching results.
 *   **Requirement 7:** Each user profile may optionally include a `facebookAccount` field representing their Facebook nickname, allowing other users to identify and interact with them externally on Facebook. *(Note: For now this field is hardcoded in the model and NOT stored in the database to avoid schema changes.)*
+*   **Requirement 7b:** The user detail view must display the matched user's top 5 movie preferences by score, showing the movie title instead of the raw movie ID. The movie with the highest score must be visually highlighted with a red border, making it immediately clear which film is the strongest shared taste signal between the two users.
 *   **Requirement 8:** If the user closes the application while matches are being calculated or while viewing the match list, the in-memory match results are discarded, no persistent data is lost, and the user must request matches again upon reopening.
+*   **Requirement 9:** The system must display an "Account" button in the top-right corner of the Personality Match screen, aligned with the page title, that opens a sliding panel from the right side of the screen.
+*   **Requirement 10:** The account panel must show the currently active account at the top as a clickable button; clicking it navigates to that user's detail view (reusing the existing `MatchedUserDetailPage`).
+*   **Requirement 11:** The account panel must display a "Change account" section listing all other accounts that have been added to the switcher; clicking any account in this list switches the active user and reloads the match results for that user.
+*   **Requirement 12:** The account panel must display an "Add account" button at the bottom; clicking it opens a dialog listing accounts not yet added to the switcher, allowing the user to add one.
+*   **Requirement 13:** Account switcher state (which accounts are added, which is active) is currently hardcoded in-memory and resets on app restart. *(Note: When the team adds `IsLogged` and `IsActive` fields to the `User` table, the hardcoded data in `PersonalityMatchViewModel` must be replaced with DB queries. See `DatabaseInitializer.cs` for the schema TODO.)*
+*   **Requirement 14:** The "Account" button in the header must display the currently active user's username (not static text), so the user always knows which account they are on.
+*   **Requirement 15:** The current account button inside the account panel must be visually tinted red to distinguish it from the switchable accounts in the "Change account" list.
+*   **Requirement 16:** The active account and all match results must persist when the user navigates away to another feature and returns. The `PersonalityMatchViewModel` must be registered as a singleton so its state survives Frame navigation.
+*   **Requirement 17:** The matched user's detail view must display the correct username (taken from the `MatchResult` passed during navigation) rather than falling back to a generic "User {id}" string from the database lookup.
 
 *   **Cross-Team Dependencies:**
     *   **Bogdan:** Bogdan owns the `UserMoviePreference` table and the shared `UserMoviePreferenceModel`. Madi reads the scores Bogdan (and others) write to compute preference overlap for matching.
@@ -22,17 +32,18 @@ The system should provide a user matching and discovery screen where, upon acces
 ### 2. Diagram Blueprint
 *   **Use Case Diagram Additions:**
     *   *Actor:* Authenticated User
-    *   *Use Cases:* `Request Personality Matches`, `View Match List (up to 10)`, `View "Maybe you like" fallback list`, `View User Details`
+    *   *Use Cases:* `Request Personality Matches`, `View Match List (up to 10)`, `View "Maybe you like" fallback list`, `View User Details`, `Open Account Panel`, `Switch Active Account`, `Add Account to Switcher`, `View Own Account Details`
 *   **Database Schema Additions:**
     *   *(This feature does NOT create new tables. It reads from the shared `UserMoviePreference` and `UserProfile` tables.)*
     *   **Shared Table: `UserMoviePreference`** (UserId, MovieId, Score, LastModified) — The source for computing preference overlap between users.
     *   **Shared Table: `UserProfile`** (UserId, TotalLikes, TotalWatchTimeSec, etc.) — Read for displaying matched user engagement details.
     *   *(Note: `MatchResult` is an in-memory DTO, NOT persisted to the database.)*
     *   *(Note: `facebookAccount` is hardcoded in the model for now, NOT a database column.)*
+    *   *(TODO: Add `User` table with `IsLogged BIT` and `IsActive BIT` fields to persist account switcher state. Currently hardcoded in `PersonalityMatchViewModel`. See `DatabaseInitializer.cs` for full schema TODO.)*
 *   **Class Diagram (MVVM) Additions:**
-    *   *Models:* `UserMoviePreferenceModel` (shared), `UserProfileModel` (shared), `MatchResult` (in-memory DTO: User + MatchScore percentage)
-    *   *Views:* `MatchListView` (screen showing up to 10 matches with percentage bar, or "No match" + "Maybe you like" fallback), `MatchedUserDetailView` (screen showing selected user's traits/stats/facebookAccount)
-    *   *ViewModels:* `MatchListViewModel` (controls the match list logic + fallback logic), `MatchedUserDetailViewModel` (displays a specific user's info)
+    *   *Models:* `UserMoviePreferenceModel` (shared), `UserProfileModel` (shared), `MatchResult` (in-memory DTO: User + MatchScore percentage), `UserAccountModel` (in-memory DTO: UserId + Username + FacebookAccount, used by the account switcher panel)
+    *   *Views:* `MatchListView` (screen showing up to 10 matches with percentage bar, or "No match" + "Maybe you like" fallback; includes Account button + right-side SplitView panel), `MatchedUserDetailView` (screen showing selected user's traits/stats/facebookAccount; also reused for own account detail)
+    *   *ViewModels:* `MatchListViewModel` (controls match list logic, fallback logic, and account switcher state including active user, logged accounts list, panel open/close, switch and add account commands), `MatchedUserDetailViewModel` (displays a specific user's info)
     *   *Utils/Services:* `PersonalityMatchingService` (contains the algorithm to compute preference overlap and compatibility percentage)
 
 ### 3. Project Management Tasks
@@ -54,3 +65,5 @@ The system should provide a user matching and discovery screen where, upon acces
     *   **Description:** Create the `MatchListView` UI with a scrollable list showing up to 10 matches, each row displaying the user name and a match percentage sidebar/progress indicator on the right. Implement the "No match" + "Maybe you like:" fallback section with 10 random users.
 *   **Task:** Create Matched User Detail View
     *   **Description:** Design the `MatchedUserDetailView` screen layout to display the selected user's top preferences, engagement stats, overall compatibility percentage, and Facebook nickname.
+*   **Task:** Implement Account Switcher Panel
+    *   **Description:** Add an "Account" button to the top-right of the match list header. Clicking it opens a right-side `SplitView` overlay panel containing: the current account as a clickable button (navigates to own detail view), a "Change account" section with a list of added accounts (clicking one switches the active user and reloads matches), and an "Add account" button that opens a `ContentDialog` to add accounts not yet in the switcher. Account state is currently hardcoded in-memory; replace with DB queries once the `User` table gains `IsLogged`/`IsActive` fields.

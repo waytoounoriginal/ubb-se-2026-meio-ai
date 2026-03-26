@@ -18,5 +18,11 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Models
         /// Will be moved to a DB column in a future sprint.
         /// </summary>
         public string FacebookAccount { get; set; } = string.Empty;
+
+        /// <summary>
+        /// True when navigating to the detail page for the currently active account.
+        /// Hides the compatibility bar since it is meaningless for self-view.
+        /// </summary>
+        public bool IsSelfView { get; set; } = false;
     }
 }

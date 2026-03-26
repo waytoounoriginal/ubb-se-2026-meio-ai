@@ -1,6 +1,7 @@
 using Microsoft.Data.SqlClient;
 using ubb_se_2026_meio_ai.Core.Database;
 using ubb_se_2026_meio_ai.Core.Models;
+using ubb_se_2026_meio_ai.Features.PersonalityMatch.Models;
 
 namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
 {
@@ -121,9 +122,12 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
         public async Task<List<int>> GetRandomUserIdsAsync(int excludeUserId, int count)
         {
             const string sql = @"
-                SELECT DISTINCT TOP (@Count) UserId
-                FROM   UserMoviePreference
-                WHERE  UserId <> @ExcludeUserId
+                SELECT TOP (@Count) UserId
+                FROM (
+                    SELECT DISTINCT UserId
+                    FROM   UserMoviePreference
+                    WHERE  UserId <> @ExcludeUserId
+                ) AS UniqueUsers
                 ORDER BY NEWID();";
 
             var ids = new List<int>();
@@ -140,6 +144,40 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
             }
 
             return ids;
+        }
+
+        /// <inheritdoc />
+        public async Task<List<MoviePreferenceDisplayModel>> GetTopPreferencesWithTitlesAsync(int userId, int count)
+        {
+            const string sql = @"
+                SELECT TOP (@Count) ump.MovieId, m.Title, ump.Score
+                FROM   UserMoviePreference ump
+                INNER JOIN Movie m ON ump.MovieId = m.MovieId
+                WHERE  ump.UserId = @UserId
+                ORDER BY ump.Score DESC;";
+
+            var results = new List<MoviePreferenceDisplayModel>();
+
+            await using SqlConnection connection = await _connectionFactory.CreateConnectionAsync();
+            await using SqlCommand command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@UserId", userId);
+            command.Parameters.AddWithValue("@Count", count);
+
+            await using SqlDataReader reader = await command.ExecuteReaderAsync();
+            bool isFirst = true;
+            while (await reader.ReadAsync())
+            {
+                results.Add(new MoviePreferenceDisplayModel
+                {
+                    MovieId = reader.GetInt32(0),
+                    Title = reader.GetString(1),
+                    Score = reader.GetDouble(2),
+                    IsBestMovie = isFirst,
+                });
+                isFirst = false;
+            }
+
+            return results;
         }
 
         /// <inheritdoc />
