@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
 using ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories;
@@ -38,7 +37,7 @@ namespace ubb_se_2026_meio_ai
         /// </summary>
         public static IServiceProvider Services { get; private set; } = null!;
 
-        public static Window MainWindow { get; private set; } = null!;
+        private Window? m_window;
 
         public App()
         {
@@ -69,17 +68,6 @@ namespace ubb_se_2026_meio_ai
 
             this.InitializeComponent();
 
-            // Load configuration from appsettings.json
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(System.AppDomain.CurrentDomain.BaseDirectory)
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-            var configuration = builder.Build();
-
-            // Build the DI container
-            var services = new ServiceCollection();
-            services.AddSingleton<IConfiguration>(configuration);
-            ConfigureServices(services, configuration);
-            Services = services.BuildServiceProvider();
             // Suppress COM teardown exceptions during app close.
             // WinUI 3 MediaPlayer fires callbacks on background threads that
             // race with window destruction — these are harmless but otherwise
@@ -165,13 +153,10 @@ namespace ubb_se_2026_meio_ai
         /// Feature developers: register your concrete service implementations here
         /// when they are ready.
         /// </summary>
-        private static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
+        private static void ConfigureServices(IServiceCollection services)
         {
             // ── Core / Database ──────────────────────────────────────────
-            string connectionString = configuration.GetConnectionString("DefaultConnection") 
-                ?? "Server=localhost;Database=MeioAiDb;Trusted_Connection=True;TrustServerCertificate=True;";
-                
-            services.AddSingleton<ISqlConnectionFactory>(new SqlConnectionFactory(connectionString));
+            services.AddSingleton<ISqlConnectionFactory, SqlConnectionFactory>();
             services.AddTransient<DatabaseInitializer>();
 
             // ── Andrei — Trailer Scraping Services ───────────────────────
@@ -194,11 +179,6 @@ namespace ubb_se_2026_meio_ai
             services.AddTransient<UserProfileViewModel>();
 
             // ── Feature Services ─────────────────────────────────────────
-            services.AddTransient<ubb_se_2026_meio_ai.Features.ReelsUpload.Services.IVideoStorageService, ubb_se_2026_meio_ai.Features.ReelsUpload.Services.VideoStorageService>();
-            // TODO (Andrei):    services.AddTransient<IWebScraperService, WebScraperService>();
-            //                   services.AddTransient<IVideoIngestionService, VideoIngestionService>();
-            // TODO (Beatrice):  services.AddTransient<IVideoProcessingService, VideoProcessingService>();
-            //                   services.AddTransient<IAudioLibraryService, AudioLibraryService>();
             // TODO (Alex):      services.AddTransient<IVideoStorageService, VideoStorageService>();
             // ── Beatrice (Reels Editing) ──
             services.AddTransient<Features.ReelsEditing.Services.ReelRepository>();

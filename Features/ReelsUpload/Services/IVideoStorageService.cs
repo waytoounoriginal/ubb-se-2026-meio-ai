@@ -1,7 +1,3 @@
-using System.Threading.Tasks;
-using ubb_se_2026_meio_ai.Core.Models;
-using ubb_se_2026_meio_ai.Features.ReelsUpload.Models;
-
 namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
 {
     /// <summary>
@@ -11,9 +7,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
     public interface IVideoStorageService
     {
         /// <summary>
-        /// Uploads a video file from the local disk, inserts it into the database, and returns the stored ReelModel.
+        /// Uploads a video file from the local disk and returns the stored URL / path.
         /// </summary>
-        Task<ReelModel> UploadVideoAsync(ReelUploadRequest request);
+        Task<string> UploadVideoAsync(string localFilePath, int movieId, int creatorUserId);
 
         /// <summary>
         /// Validates that a video file meets size, duration, and format requirements.
