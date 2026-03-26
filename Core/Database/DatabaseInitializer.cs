@@ -76,6 +76,7 @@ namespace ubb_se_2026_meio_ai.Core.Database
                     (
                         MusicTrackId    INT             IDENTITY(1,1) PRIMARY KEY,
                         TrackName       NVARCHAR(256)   NOT NULL,
+                        Author          NVARCHAR(256)   NOT NULL DEFAULT '',
                         AudioUrl        NVARCHAR(1024)  NOT NULL,
                         DurationSeconds FLOAT           NOT NULL
                     );
@@ -191,13 +192,13 @@ namespace ubb_se_2026_meio_ai.Core.Database
                 -- Seed Music Tracks (for Reel Editing feature)
                 IF (SELECT COUNT(*) FROM MusicTrack) = 0
                 BEGIN
-                    INSERT INTO MusicTrack (TrackName, AudioUrl, DurationSeconds)
+                    INSERT INTO MusicTrack (TrackName, Author, AudioUrl, DurationSeconds)
                     VALUES
-                    ('Epic Cinematic Theme', 'https://example.com/music/epic-theme.mp3', 180.5),
-                    ('Upbeat Pop Track', 'https://example.com/music/upbeat-pop.mp3', 150.0),
-                    ('Dramatic Orchestral', 'https://example.com/music/dramatic-orchestral.mp3', 200.3),
-                    ('Chill Lo-Fi Beats', 'https://example.com/music/lofi-beats.mp3', 120.0),
-                    ('Action Packed Rock', 'https://example.com/music/action-rock.mp3', 165.7);
+                    ('Epic Cinematic Theme', 'Hans Zimmer', 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', 180.5),
+                    ('Upbeat Pop Track', 'Mark Ronson', 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', 150.0),
+                    ('Dramatic Orchestral', 'John Williams', 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', 200.3),
+                    ('Chill Lo-Fi Beats', 'Nujabes', 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', 120.0),
+                    ('Action Packed Rock', 'AC/DC', 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', 165.7);
                 END
 
                 -- Seed Reels (for Reel Editing feature - UserId = 1)

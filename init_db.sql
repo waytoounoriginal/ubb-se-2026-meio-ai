@@ -54,6 +54,7 @@ BEGIN
     (
         MusicTrackId    INT             IDENTITY(1,1) PRIMARY KEY,
         TrackName       NVARCHAR(256)   NOT NULL,
+        Author          NVARCHAR(256)   NOT NULL DEFAULT '',
         AudioUrl        NVARCHAR(1024)  NOT NULL,
         DurationSeconds FLOAT           NOT NULL
     );

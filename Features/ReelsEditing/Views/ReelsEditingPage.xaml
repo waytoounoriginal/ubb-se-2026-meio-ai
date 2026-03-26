@@ -97,11 +97,22 @@
         <!-- ════════════════════════════════════════════════════ -->
         <!-- STEP 2: Editor View (shown after selecting a reel)  -->
         <!-- ════════════════════════════════════════════════════ -->
-        <ScrollViewer x:Name="EditorPanel" Visibility="Collapsed">
-            <StackPanel Spacing="16" MaxWidth="700" HorizontalAlignment="Left">
+        <Grid x:Name="EditorPanel" Visibility="Collapsed" Padding="0,16,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-                <!-- Back button + title -->
-                <StackPanel Orientation="Horizontal" Spacing="12">
+            <!-- Back button + title -->
+            <Grid Grid.Row="0" Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12">
                     <Button Command="{x:Bind ViewModel.GoBackCommand}"
                             VerticalAlignment="Center"
                             Padding="8,6">
@@ -111,106 +122,220 @@
                                VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <!-- Reel title + status -->
-                <StackPanel Spacing="4">
-                    <TextBlock Text="{x:Bind ViewModel.SelectedReel.Title, Mode=OneWay}"
-                               FontSize="18" FontWeight="SemiBold"
-                               TextWrapping="Wrap"/>
-                    <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
-                               Style="{StaticResource CaptionTextBlockStyle}"
-                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
-                </StackPanel>
+                <Button Grid.Column="2"
+                        Content="Delete Reel"
+                        Command="{x:Bind ViewModel.DeleteReelCommand}"
+                        Foreground="Red"
+                        VerticalAlignment="Center"/>
+            </Grid>
 
-                <!-- Video Player -->
-                <Border Background="Black" CornerRadius="8"
-                        HorizontalAlignment="Stretch">
-                    <MediaPlayerElement x:Name="ReelPlayer"
-                                        AutoPlay="False"
-                                        AreTransportControlsEnabled="True"
-                                        MaxHeight="400"
-                                        Stretch="Uniform"/>
+            <!-- Reel title + status -->
+            <StackPanel Grid.Row="1" Spacing="4" Margin="0,0,0,16">
+                <TextBlock Text="{x:Bind ViewModel.SelectedReel.Title, Mode=OneWay}"
+                           FontSize="18" FontWeight="SemiBold"
+                           TextWrapping="Wrap"/>
+
+                <Border Padding="12,10"
+                        CornerRadius="8"
+                        Background="#1E7D32"
+                        Visibility="{x:Bind GetStatusVisibility(ViewModel.HasStatusMessage), Mode=OneWay}">
+                    <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="White"
+                               TextWrapping="Wrap"/>
+                </Border>
+            </StackPanel>
+
+            <!-- Main editor: Video on left, Options on right -->
+            <Grid Grid.Row="2" ColumnSpacing="24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="1.5*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Video Player -->
+                <Border Grid.Column="0" Background="Black" CornerRadius="8"
+                        VerticalAlignment="Top">
+                    <Grid Height="500">
+                        <MediaPlayerElement x:Name="ReelPlayer"
+                                            AutoPlay="False"
+                                            AreTransportControlsEnabled="True"
+                                            Stretch="Uniform"/>
+
+                        <Grid x:Name="CropOverlayRoot"
+                              Background="#22000000"
+                              Visibility="Collapsed"
+                              SizeChanged="CropOverlayRoot_SizeChanged"
+                              IsHitTestVisible="False">
+                            <Border x:Name="CropRectangleBorder"
+                                    BorderThickness="3"
+                                    BorderBrush="White"
+                                    Margin="0"
+                                    CornerRadius="4"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Stretch"/>
+                        </Grid>
+                    </Grid>
                 </Border>
 
-                <!-- Expander: Thumbnail -->
-                <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
-                          ExpandDirection="Down">
-                    <Expander.Header>
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE8B9;" FontSize="16"/>
-                            <TextBlock Text="Thumbnail" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <!-- Right: Editing Options -->
+                <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="16">
+
+                        <!-- Option Buttons -->
+                        <StackPanel Spacing="8">
+                            <Button Content="Thumbnail" 
+                                    Command="{x:Bind ViewModel.SelectEditOptionCommand}"
+                                    CommandParameter="Thumbnail"
+                                    HorizontalAlignment="Stretch"/>
+                            <Button Content="Crop Dimensions" 
+                                    Command="{x:Bind ViewModel.SelectEditOptionCommand}"
+                                    CommandParameter="Crop"
+                                    HorizontalAlignment="Stretch"/>
+                            <Button Content="Background Music" 
+                                    Command="{x:Bind ViewModel.SelectEditOptionCommand}"
+                                    CommandParameter="Music"
+                                    HorizontalAlignment="Stretch"/>
                         </StackPanel>
-                    </Expander.Header>
-                    <StackPanel Spacing="12" Padding="4">
-                        <Image Source="{x:Bind ViewModel.SelectedReel.ThumbnailUrl, Mode=OneWay}"
-                               MaxHeight="200" Stretch="Uniform"
-                               HorizontalAlignment="Left"/>
-                        <TextBlock Text="Current thumbnail from the reel. Thumbnail editing coming soon."
+
+                        <!-- Editing Panel: Thumbnail -->
+                        <StackPanel Spacing="12" Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    CornerRadius="8"
+                                    Visibility="{x:Bind ViewModel.SelectedEditOption, Mode=OneWay, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=Thumbnail}">
+                            <TextBlock Text="Thumbnail" FontWeight="SemiBold" FontSize="16"/>
+                            <TextBlock Text="Current thumbnail"
                                    Style="{StaticResource CaptionTextBlockStyle}"
                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
-                    </StackPanel>
-                </Expander>
+                            <Image Source="{x:Bind ViewModel.SelectedReel.ThumbnailUrl, Mode=OneWay}"
+                                   MaxHeight="150" Stretch="Uniform"
+                                   HorizontalAlignment="Left"/>
 
-                <!-- Expander: Crop Dimensions -->
-                <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
-                          ExpandDirection="Down">
-                    <Expander.Header>
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE7A8;" FontSize="16"/>
-                            <TextBlock Text="Crop Dimensions" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Expander.Header>
-                    <StackPanel Spacing="12" Padding="4">
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Crop X"/>
-                            <Slider Minimum="0" Maximum="1920" StepFrequency="1"
-                                    Value="{x:Bind ViewModel.CurrentEdits.CropX, Mode=TwoWay}"/>
-                        </StackPanel>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Crop Y"/>
-                            <Slider Minimum="0" Maximum="1080" StepFrequency="1"
-                                    Value="{x:Bind ViewModel.CurrentEdits.CropY, Mode=TwoWay}"/>
-                        </StackPanel>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Width"/>
-                            <Slider Minimum="100" Maximum="1920" StepFrequency="1"
-                                    Value="{x:Bind ViewModel.CurrentEdits.CropWidth, Mode=TwoWay}"/>
-                        </StackPanel>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Height"/>
-                            <Slider Minimum="100" Maximum="1080" StepFrequency="1"
-                                    Value="{x:Bind ViewModel.CurrentEdits.CropHeight, Mode=TwoWay}"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Expander>
+                                <TextBlock Text="Use the current frame from the left reel preview."
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       TextWrapping="Wrap"/>
 
-                <!-- Expander: Background Music -->
-                <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
-                          ExpandDirection="Down">
-                    <Expander.Header>
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE8D6;" FontSize="16"/>
-                            <TextBlock Text="Background Music" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Expander.Header>
-                    <StackPanel Spacing="12" Padding="4">
-                        <TextBlock Text="{x:Bind ViewModel.SelectedMusicTrack.TrackName, Mode=OneWay, FallbackValue='No music selected'}"
+                            <Button Content="Select Current Frame"
+                                Click="SelectThumbnailFrameButton_Click"
+                                HorizontalAlignment="Stretch"/>
+
+                            <TextBlock x:Name="SelectedThumbnailTimestampText"
+                                   Text="No frame selected"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
-                        <Button Content="Choose Music..." Click="ChooseMusicButton_Click"/>
+
+                            <TextBlock Text="Selected frame preview"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+
+                            <MediaPlayerElement x:Name="ThumbnailPreviewPlayer"
+                                    AutoPlay="False"
+                                    AreTransportControlsEnabled="False"
+                                    Height="180"
+                                    Stretch="Uniform"/>
+
+                            <Button Content="Save Edits"
+                                Command="{x:Bind ViewModel.SaveThumbnailCommand}"
+                                HorizontalAlignment="Stretch"
+                                Style="{StaticResource AccentButtonStyle}"/>
+                        </StackPanel>
+
+                        <!-- Editing Panel: Crop Dimensions -->
+                        <StackPanel Spacing="12" Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    CornerRadius="8"
+                                    Visibility="{x:Bind ViewModel.SelectedEditOption, Mode=OneWay, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=Crop}">
+                            <TextBlock Text="Crop Dimensions" FontWeight="SemiBold" FontSize="16"/>
+
+                            <TextBlock Text="Crop mode pauses the reel for precise frame adjustment."
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                   TextWrapping="Wrap"/>
+
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Resume Preview"
+                                Click="CropResumePreview_Click"/>
+                            <Button Content="Pause Preview"
+                                Click="CropPausePreview_Click"/>
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                            <TextBlock Text="Left Margin"/>
+                            <Slider x:Name="CropLeftSlider"
+                                Minimum="0" Maximum="45" StepFrequency="0.5"
+                                Value="{x:Bind ViewModel.CropMarginLeft, Mode=TwoWay}"
+                                ValueChanged="CropMarginSlider_ValueChanged"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                            <TextBlock Text="Top Margin"/>
+                            <Slider x:Name="CropTopSlider"
+                                Minimum="0" Maximum="45" StepFrequency="0.5"
+                                Value="{x:Bind ViewModel.CropMarginTop, Mode=TwoWay}"
+                                ValueChanged="CropMarginSlider_ValueChanged"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                            <TextBlock Text="Right Margin"/>
+                            <Slider x:Name="CropRightSlider"
+                                Minimum="0" Maximum="45" StepFrequency="0.5"
+                                Value="{x:Bind ViewModel.CropMarginRight, Mode=TwoWay}"
+                                ValueChanged="CropMarginSlider_ValueChanged"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                            <TextBlock Text="Bottom Margin"/>
+                            <Slider x:Name="CropBottomSlider"
+                                Minimum="0" Maximum="45" StepFrequency="0.5"
+                                Value="{x:Bind ViewModel.CropMarginBottom, Mode=TwoWay}"
+                                ValueChanged="CropMarginSlider_ValueChanged"/>
+                            </StackPanel>
+
+                            <Button Content="Save Edits"
+                                Command="{x:Bind ViewModel.SaveCropCommand}"
+                                HorizontalAlignment="Stretch"
+                                Style="{StaticResource AccentButtonStyle}"/>
+                        </StackPanel>
+
+                        <!-- Editing Panel: Background Music -->
+                        <StackPanel Spacing="12" Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    CornerRadius="8"
+                                    Visibility="{x:Bind ViewModel.SelectedEditOption, Mode=OneWay, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=Music}">
+                            <TextBlock Text="Background Music" FontWeight="SemiBold" FontSize="16"/>
+                            <TextBlock Text="Select a track from the available music library and apply it to the reel."
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                   TextWrapping="Wrap"/>
+                            <TextBlock Text="{x:Bind ViewModel.SelectedMusicTrack.TrackName, Mode=OneWay, FallbackValue='No music selected'}"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                            <Button Content="Choose Music..." Click="ChooseMusicButton_Click"/>
+
+                            <StackPanel Spacing="4">
+                            <TextBlock Text="Music Start Time (sec)"/>
+                            <Slider Minimum="0" Maximum="300" StepFrequency="0.5"
+                                Value="{x:Bind ViewModel.MusicStartTime, Mode=TwoWay}"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                            <TextBlock Text="Music Duration (sec)"/>
+                            <Slider Minimum="5" Maximum="120" StepFrequency="0.5"
+                                Value="{x:Bind ViewModel.MusicDuration, Mode=TwoWay}"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                            <TextBlock Text="Music Volume (%)"/>
+                            <Slider Minimum="0" Maximum="100" StepFrequency="1"
+                                Value="{x:Bind ViewModel.MusicVolume, Mode=TwoWay}"/>
+                            </StackPanel>
+
+                            <Button Content="Save Edits"
+                                Command="{x:Bind ViewModel.SaveMusicCommand}"
+                                HorizontalAlignment="Stretch"
+                                Style="{StaticResource AccentButtonStyle}"/>
+                        </StackPanel>
+
+                        <TextBlock Text="Owner: Beatrice"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
+                                   Margin="0,8,0,0"/>
                     </StackPanel>
-                </Expander>
-
-                <!-- Action Buttons -->
-                <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,8,0,0">
-                    <Button Content="Save Edits"
-                            Command="{x:Bind ViewModel.SaveEditsCommand}"
-                            Style="{StaticResource AccentButtonStyle}"/>
-                    <Button Content="Reset" Command="{x:Bind ViewModel.ResetEditsCommand}"/>
-                </StackPanel>
-
-                <TextBlock Text="Owner: Beatrice"
-                           Style="{StaticResource CaptionTextBlockStyle}"
-                           Foreground="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"/>
-            </StackPanel>
-        </ScrollViewer>
+                </ScrollViewer>
+            </Grid>
+        </Grid>
     </Grid>
 </Page>

@@ -11,10 +11,26 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Models
         public int CropWidth { get; set; } = 1920;
         public int CropHeight { get; set; } = 1080;
         public int? SelectedMusicTrackId { get; set; }
+        public double ThumbnailFrameSeconds { get; set; }
+
+        // Music parameters
+        public double MusicStartTime { get; set; }
+        public double MusicDuration { get; set; } = 30.0;
+        public double MusicVolume { get; set; } = 80.0;
 
         public string ToCropDataJson()
         {
-            return $"{{\"x\":{CropX},\"y\":{CropY},\"width\":{CropWidth},\"height\":{CropHeight}}}";
+            return System.Text.Json.JsonSerializer.Serialize(new
+            {
+                x = CropX,
+                y = CropY,
+                width = CropWidth,
+                height = CropHeight,
+                thumbnailTimeSec = ThumbnailFrameSeconds,
+                musicStartTime = MusicStartTime,
+                musicDuration = MusicDuration,
+                musicVolume = MusicVolume
+            });
         }
     }
 }

@@ -62,5 +62,17 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             cmd.Parameters.AddWithValue("@ReelId", reelId);
             await cmd.ExecuteNonQueryAsync();
         }
+
+        // Deletes a reel from the database
+        public async Task DeleteReelAsync(int reelId)
+        {
+            const string sql = @"
+                DELETE FROM UserReelInteraction WHERE ReelId = @ReelId;
+                DELETE FROM Reel WHERE ReelId = @ReelId;";
+            await using var conn = await _db.CreateConnectionAsync();
+            await using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@ReelId", reelId);
+            await cmd.ExecuteNonQueryAsync();
+        }
     }
 }

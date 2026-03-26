@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels;
 using Windows.Media.Core;
 
@@ -11,6 +12,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
         public ReelsEditingViewModel ViewModel { get; }
         public ReelGalleryViewModel GalleryViewModel { get; }
         public MusicSelectionDialogViewModel MusicDialogViewModel { get; }
+        private double _selectedThumbnailFrameSeconds;
 
         public ReelsEditingPage()
         {
@@ -19,11 +21,21 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
             MusicDialogViewModel = App.Services.GetRequiredService<MusicSelectionDialogViewModel>();
             this.InitializeComponent();
 
+            ViewModel.CropModeEntered += OnCropModeEntered;
+            ViewModel.CropModeExited += OnCropModeExited;
+
             // Listen for IsEditing changes to toggle panels
-            ViewModel.PropertyChanged += (s, e) =>
+            ViewModel.PropertyChanged += async (s, e) =>
             {
                 if (e.PropertyName == nameof(ViewModel.IsEditing))
+                {
                     UpdatePanelVisibility();
+                    // Reload gallery when returning from editor (e.g., after deletion)
+                    if (!ViewModel.IsEditing)
+                    {
+                        await GalleryViewModel.LoadReelsCommand.ExecuteAsync(null);
+                    }
+                }
             };
         }
 
@@ -31,6 +43,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
         {
             await GalleryViewModel.EnsureLoadedAsync();
             UpdatePanelVisibility();
+
+            if (ThumbnailPreviewPlayer != null)
+                ThumbnailPreviewPlayer.Visibility = Visibility.Collapsed;
         }
 
         private void UpdatePanelVisibility()
@@ -60,6 +75,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
                 GalleryViewModel.SelectedReel = reel;
                 ViewModel.LoadReel(reel);
                 LoadVideo(reel.VideoUrl);
+                SyncSavedThumbnailSelection();
             }
         }
 
@@ -70,6 +86,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
                 if (!string.IsNullOrEmpty(videoUrl) && Uri.TryCreate(videoUrl, UriKind.Absolute, out var uri))
                 {
                     ReelPlayer.Source = MediaSource.CreateFromUri(uri);
+                    ThumbnailPreviewPlayer.Source = MediaSource.CreateFromUri(uri);
                 }
             }
             catch
@@ -83,8 +100,140 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
             try
             {
                 ReelPlayer.Source = null;
+                ThumbnailPreviewPlayer.Source = null;
             }
             catch { }
+        }
+
+        private void SelectThumbnailFrameButton_Click(object sender, RoutedEventArgs e)
+        {
+            var currentPosition = ReelPlayer.MediaPlayer?.PlaybackSession?.Position ?? TimeSpan.Zero;
+            _selectedThumbnailFrameSeconds = currentPosition.TotalSeconds;
+            ViewModel.CurrentEdits.ThumbnailFrameSeconds = _selectedThumbnailFrameSeconds;
+            SelectedThumbnailTimestampText.Text = $"Selected frame: {TimeSpan.FromSeconds(_selectedThumbnailFrameSeconds):mm\\:ss\\.f}";
+            ViewModel.StatusMessage = "Frame selected. Click Save Edits to persist thumbnail selection.";
+            ViewModel.IsStatusSuccess = true;
+
+            try
+            {
+                var target = TimeSpan.FromSeconds(_selectedThumbnailFrameSeconds);
+                if (ThumbnailPreviewPlayer.MediaPlayer?.PlaybackSession != null)
+                {
+                    ThumbnailPreviewPlayer.MediaPlayer.PlaybackSession.Position = target;
+                    ThumbnailPreviewPlayer.MediaPlayer.Pause();
+                    ThumbnailPreviewPlayer.Visibility = Visibility.Visible;
+                }
+
+                if (ReelPlayer.MediaPlayer?.PlaybackSession != null)
+                {
+                    ReelPlayer.MediaPlayer.PlaybackSession.Position = target;
+                    ReelPlayer.MediaPlayer.Pause();
+                }
+            }
+            catch
+            {
+                // Ignore if media is not seekable.
+            }
+        }
+
+        private void SyncSavedThumbnailSelection()
+        {
+            var savedSeconds = ViewModel.CurrentEdits.ThumbnailFrameSeconds;
+            if (savedSeconds <= 0)
+            {
+                SelectedThumbnailTimestampText.Text = "No frame selected";
+                ThumbnailPreviewPlayer.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            _selectedThumbnailFrameSeconds = savedSeconds;
+            SelectedThumbnailTimestampText.Text = $"Selected frame: {TimeSpan.FromSeconds(savedSeconds):mm\\:ss\\.f}";
+
+            try
+            {
+                if (ThumbnailPreviewPlayer.MediaPlayer?.PlaybackSession != null)
+                {
+                    ThumbnailPreviewPlayer.MediaPlayer.PlaybackSession.Position = TimeSpan.FromSeconds(savedSeconds);
+                    ThumbnailPreviewPlayer.MediaPlayer.Pause();
+                    ThumbnailPreviewPlayer.Visibility = Visibility.Visible;
+                }
+            }
+            catch
+            {
+                // Ignore seek failures for remote/invalid media.
+            }
+        }
+
+        public Visibility GetStatusVisibility(bool hasStatus)
+        {
+            return hasStatus ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void OnCropModeEntered()
+        {
+            try
+            {
+                ReelPlayer.MediaPlayer?.Pause();
+            }
+            catch
+            {
+                // Ignore pause failures.
+            }
+
+            CropOverlayRoot.Visibility = Visibility.Visible;
+            UpdateCropOverlay();
+        }
+
+        private void OnCropModeExited()
+        {
+            CropOverlayRoot.Visibility = Visibility.Collapsed;
+        }
+
+        private void CropResumePreview_Click(object sender, RoutedEventArgs e)
+        {
+            ReelPlayer.MediaPlayer?.Play();
+        }
+
+        private void CropPausePreview_Click(object sender, RoutedEventArgs e)
+        {
+            ReelPlayer.MediaPlayer?.Pause();
+        }
+
+        private void CropMarginSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            UpdateCropOverlay();
+        }
+
+        private void CropOverlayRoot_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            UpdateCropOverlay();
+        }
+
+        private void UpdateCropOverlay()
+        {
+            if (CropOverlayRoot.Visibility != Visibility.Visible)
+                return;
+
+            var width = CropOverlayRoot.ActualWidth;
+            var height = CropOverlayRoot.ActualHeight;
+            if (width <= 0 || height <= 0)
+                return;
+
+            var left = width * (ViewModel.CropMarginLeft / 100.0);
+            var top = height * (ViewModel.CropMarginTop / 100.0);
+            var right = width * (ViewModel.CropMarginRight / 100.0);
+            var bottom = height * (ViewModel.CropMarginBottom / 100.0);
+
+            if (left + right > width - 20)
+            {
+                right = Math.Max(0, width - left - 20);
+            }
+            if (top + bottom > height - 20)
+            {
+                bottom = Math.Max(0, height - top - 20);
+            }
+
+            CropRectangleBorder.Margin = new Thickness(left, top, right, bottom);
         }
 
         private async void ChooseMusicButton_Click(object sender, RoutedEventArgs e)

@@ -11,7 +11,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Services
 
         public async Task<IList<MusicTrackModel>> GetAllTracksAsync()
         {
-            const string sql = "SELECT MusicTrackId, TrackName, AudioUrl, DurationSeconds FROM MusicTrack ORDER BY TrackName";
+            const string sql = "SELECT MusicTrackId, TrackName, Author, AudioUrl, DurationSeconds FROM MusicTrack ORDER BY TrackName";
             var result = new List<MusicTrackModel>();
             await using var conn = await _db.CreateConnectionAsync();
             await using var cmd = new SqlCommand(sql, conn);
@@ -22,8 +22,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Services
                 {
                     MusicTrackId = reader.GetInt32(0),
                     TrackName = reader.GetString(1),
-                    AudioUrl = reader.GetString(2),
-                    DurationSeconds = reader.GetDouble(3),
+                    Author = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                    AudioUrl = reader.GetString(3),
+                    DurationSeconds = reader.GetDouble(4),
                 });
             }
             return result;
@@ -31,7 +32,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Services
 
         public async Task<MusicTrackModel?> GetTrackByIdAsync(int musicTrackId)
         {
-            const string sql = "SELECT MusicTrackId, TrackName, AudioUrl, DurationSeconds FROM MusicTrack WHERE MusicTrackId = @Id";
+            const string sql = "SELECT MusicTrackId, TrackName, Author, AudioUrl, DurationSeconds FROM MusicTrack WHERE MusicTrackId = @Id";
             await using var conn = await _db.CreateConnectionAsync();
             await using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@Id", musicTrackId);
@@ -42,8 +43,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Services
                 {
                     MusicTrackId = reader.GetInt32(0),
                     TrackName = reader.GetString(1),
-                    AudioUrl = reader.GetString(2),
-                    DurationSeconds = reader.GetDouble(3),
+                    Author = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                    AudioUrl = reader.GetString(3),
+                    DurationSeconds = reader.GetDouble(4),
                 };
             }
             return null;
