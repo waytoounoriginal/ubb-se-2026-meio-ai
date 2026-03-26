@@ -58,32 +58,36 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
                 ON    target.UserId = source.UserId AND target.MovieId = source.MovieId
                 WHEN MATCHED THEN
                     UPDATE SET Score        = target.Score + @ScoreDelta,
-                               LastModified = SYSUTCDATETIME()
+                               LastModified = SYSUTCDATETIME(),
+                               ChangeFromPreviousValue = @ChangeFromPreviousValue
                 WHEN NOT MATCHED THEN
-                    INSERT (UserId, MovieId, Score, LastModified)
-                    VALUES (@UserId, @MovieId, @ScoreDelta, SYSUTCDATETIME());";
+                    INSERT (UserId, MovieId, Score, LastModified, ChangeFromPreviousValue)
+                    VALUES (@UserId, @MovieId, @ScoreDelta, SYSUTCDATETIME(), @ChangeFromPreviousValue);";
 
             await using SqlConnection connection = await _connectionFactory.CreateConnectionAsync();
             await using SqlCommand command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@UserId", preference.UserId);
             command.Parameters.AddWithValue("@MovieId", preference.MovieId);
             command.Parameters.AddWithValue("@ScoreDelta", preference.Score);
+            command.Parameters.AddWithValue("@ChangeFromPreviousValue", preference.ChangeFromPreviousValue ?? (object)DBNull.Value);
 
             await command.ExecuteNonQueryAsync();
         }
 
         /// <inheritdoc />
-        public async Task<List<MovieCardModel>> GetUnswipedMoviesAsync(int userId, int count)
+        public async Task<List<MovieCardModel>> GetMovieFeedAsync(int userId, int count)
         {
-            // Reads from the external Movie table, filtering out movies
-            // that already have a UserMoviePreference row for this user.
+            // Reads from the external Movie table, prioritizing unswiped movies (NULL preference).
+            // If all are swiped, returns previously swiped movies ordered by oldest LastModified.
             const string sql = @"
                 SELECT TOP (@Count) m.MovieId, m.Title, m.PosterUrl, m.PrimaryGenre
                 FROM   Movie m
                 LEFT JOIN UserMoviePreference ump
                     ON ump.MovieId = m.MovieId AND ump.UserId = @UserId
-                WHERE  ump.UserMoviePreferenceId IS NULL
-                ORDER BY NEWID();";
+                ORDER BY 
+                    CASE WHEN ump.UserMoviePreferenceId IS NULL THEN 0 ELSE 1 END ASC,
+                    ISNULL(ump.LastModified, '2000-01-01') ASC,
+                    NEWID();";
 
             var results = new List<MovieCardModel>();
 

@@ -20,10 +20,10 @@ namespace ubb_se_2026_meio_ai.Core.Database
 
         public async Task CreateTablesIfNotExistAsync()
         {
-            // 1. Ensure the MOVIE database exists on the server
+            // 1. Ensure the databases exists on the server
             await EnsureDatabaseExistsAsync();
 
-            // 2. Create the tables in the MeioAiDb database
+            // 2. Create the tables in the database
             const string sql = @"
                 -- Movie (shared table — created here so JOINs work)
                 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Movie')

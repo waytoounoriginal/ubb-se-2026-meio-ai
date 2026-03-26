@@ -58,7 +58,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
                 IsLoading = true;
                 IsAllCaughtUp = false;
 
-                var movies = await _swipeService.GetUnswipedMoviesAsync(DefaultUserId, BufferSize);
+                var movies = await _swipeService.GetMovieFeedAsync(DefaultUserId, BufferSize);
 
                 CardQueue.Clear();
                 foreach (var movie in movies)
@@ -71,7 +71,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
                 if (CardQueue.Count == 0 && CurrentCard == null)
                 {
                     IsAllCaughtUp = true;
-                    StatusMessage = "All caught up! No more movies to swipe.";
+                    StatusMessage = "No movies found in database.";
                 }
             }
             catch (Exception)
@@ -150,7 +150,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
             {
                 CurrentCard = null;
                 IsAllCaughtUp = true;
-                StatusMessage = "All caught up! No more movies to swipe.";
+                StatusMessage = "No movies found in database.";
             }
         }
 
@@ -170,7 +170,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
 
             try
             {
-                var newMovies = await _swipeService.GetUnswipedMoviesAsync(DefaultUserId, BufferSize);
+                var newMovies = await _swipeService.GetMovieFeedAsync(DefaultUserId, BufferSize);
 
                 var existingIds = new HashSet<int>(CardQueue.Select(m => m.MovieId));
                 if (CurrentCard != null)

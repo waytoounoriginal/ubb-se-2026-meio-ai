@@ -15,8 +15,8 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
         Task UpdatePreferenceScoreAsync(int userId, int movieId, bool isLiked);
 
         /// <summary>
-        /// Returns a batch of unswiped movies for the card queue.
+        /// Returns a batch of movies for the card queue (infinite feed).
         /// </summary>
-        Task<List<MovieCardModel>> GetUnswipedMoviesAsync(int userId, int count);
+        Task<List<MovieCardModel>> GetMovieFeedAsync(int userId, int count);
     }
 }
