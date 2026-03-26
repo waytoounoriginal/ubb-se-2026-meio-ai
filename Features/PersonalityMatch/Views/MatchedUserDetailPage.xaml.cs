@@ -26,7 +26,9 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Views
                 await ViewModel.LoadUserDetailAsync(
                     match.MatchedUserId,
                     match.MatchScore,
-                    match.FacebookAccount);
+                    match.FacebookAccount,
+                    match.MatchedUsername,
+                    match.IsSelfView);
             }
         }
 

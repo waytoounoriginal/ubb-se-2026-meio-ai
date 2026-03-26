@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:ubb_se_2026_meio_ai.Features.PersonalityMatch.Models"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
@@ -33,14 +34,15 @@
         <!-- Detail content -->
         <ScrollViewer Grid.Row="1"
                       VerticalScrollBarVisibility="Auto">
-            <StackPanel Spacing="16" MaxWidth="600">
+            <StackPanel Spacing="16" HorizontalAlignment="Stretch">
 
                 <!-- Error message -->
                 <TextBlock Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
                            Foreground="Red" />
 
-                <!-- Compatibility score -->
-                <StackPanel Spacing="4">
+                <!-- Compatibility score — hidden when viewing own account -->
+                <StackPanel Spacing="4"
+                            Visibility="{x:Bind ViewModel.ShowCompatibility, Mode=OneWay}">
                     <TextBlock Text="Compatibility"
                                Style="{StaticResource BodyStrongTextBlockStyle}" />
                     <ProgressBar Value="{x:Bind ViewModel.MatchScore, Mode=OneWay}"
@@ -107,23 +109,36 @@
                     <ListView ItemsSource="{x:Bind ViewModel.TopPreferences, Mode=OneWay}"
                               SelectionMode="None">
                         <ListView.ItemTemplate>
-                            <DataTemplate>
-                                <Grid Padding="4,8" ColumnSpacing="12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
+                            <DataTemplate x:DataType="models:MoviePreferenceDisplayModel">
+                                <!--
+                                    Outer Grid layers the content and the red highlight border.
+                                    The Border overlay is only visible for the best-match movie (IsBestMovie=true).
+                                    IsHitTestVisible=False so it does not block interactions.
+                                -->
+                                <Grid Margin="0,2">
+                                    <Grid Padding="8,10" ColumnSpacing="16">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
 
-                                    <TextBlock Grid.Column="0"
-                                               FontWeight="SemiBold">
-                                        <Run Text="Movie #" />
-                                        <Run Text="{Binding MovieId}" />
-                                    </TextBlock>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{x:Bind Title}"
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" />
 
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                                        <TextBlock Text="Score:" />
-                                        <TextBlock Text="{Binding Score}" FontWeight="Bold" />
-                                    </StackPanel>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                            <TextBlock Text="Score:" />
+                                            <TextBlock Text="{x:Bind Score}" FontWeight="Bold" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- Red border overlay — only visible for the top-scored movie -->
+                                    <Border BorderBrush="Red"
+                                            BorderThickness="2"
+                                            CornerRadius="4"
+                                            IsHitTestVisible="False"
+                                            Visibility="{x:Bind IsBestMovie}" />
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>

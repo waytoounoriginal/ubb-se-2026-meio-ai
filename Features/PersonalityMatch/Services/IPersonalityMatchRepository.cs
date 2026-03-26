@@ -1,4 +1,5 @@
 using ubb_se_2026_meio_ai.Core.Models;
+using ubb_se_2026_meio_ai.Features.PersonalityMatch.Models;
 
 namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
 {
@@ -35,5 +36,11 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
         /// or a fallback string if not found.
         /// </summary>
         Task<string> GetUsernameAsync(int userId);
+
+        /// <summary>
+        /// Returns the top <paramref name="count"/> movie preferences for the given user,
+        /// sorted by score descending, with the movie title resolved via a JOIN on the Movie table.
+        /// </summary>
+        Task<List<MoviePreferenceDisplayModel>> GetTopPreferencesWithTitlesAsync(int userId, int count);
     }
 }
