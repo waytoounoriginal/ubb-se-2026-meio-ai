@@ -176,7 +176,9 @@ namespace ubb_se_2026_meio_ai
             services.AddTransient<Features.ReelsEditing.ViewModels.ReelGalleryViewModel>();
             services.AddTransient<Features.ReelsEditing.ViewModels.MusicSelectionDialogViewModel>();
             services.AddTransient<MovieSwipeViewModel>();
-            services.AddTransient<MovieTournamentViewModel>();
+            services.AddTransient<TournamentSetupViewModel>();
+            services.AddTransient<TournamentMatchViewModel>();
+            services.AddTransient<TournamentWinnerViewModel>();
             services.AddSingleton<PersonalityMatchViewModel>();
             services.AddTransient<ReelsFeedViewModel>();
             services.AddTransient<UserProfileViewModel>();
@@ -193,7 +195,7 @@ namespace ubb_se_2026_meio_ai
             // TODO (Bogdan):    services.AddTransient<ISwipeService, SwipeService>();
             //                   services.AddTransient<IPreferenceRepository, PreferenceRepository>();
             // TODO (Gabi):
-            services.AddTransient<ITournamentLogicService, TournamentLogicService>();
+            services.AddSingleton<ITournamentLogicService, TournamentLogicService>();
             services.AddTransient<IMovieTournamentRepository, MovieTournamentRepository>();
             // ── Bogdan (Movie Swipe) ──
             services.AddTransient<ISwipeService, SwipeService>();

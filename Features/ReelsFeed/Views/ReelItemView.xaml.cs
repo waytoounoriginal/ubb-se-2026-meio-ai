@@ -380,13 +380,15 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
                 // 1. Unhook events first — prevents callbacks during teardown
                 player.MediaEnded -= MediaPlayer_MediaEnded;
 
-                // 2. Sever XAML element connection (stops internal MF callbacks)
+                // 2. Pause and detach sources safely while COM player is still active
+                player.Pause();
                 var oldSource = ReelPlayer.Source as IDisposable;
+
+                // 3. Sever XAML element connection (stops internal MF callbacks)
                 ReelPlayer.Source = null;
                 ReelPlayer.SetMediaPlayer(null);
 
-                // 3. Now safely tear down the COM player
-                player.Pause();
+                // 4. Dispose safely
                 player.Source = null;
                 oldSource?.Dispose();
                 player.Dispose();

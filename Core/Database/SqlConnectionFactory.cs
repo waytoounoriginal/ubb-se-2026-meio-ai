@@ -2,19 +2,18 @@ using Microsoft.Data.SqlClient;
 
 namespace ubb_se_2026_meio_ai.Core.Database
 {
-    /// <summary>
-    /// Default implementation of <see cref="ISqlConnectionFactory"/> 
-    /// that creates connections to a local SQL Server instance.
-    /// </summary>
+
     public class SqlConnectionFactory : ISqlConnectionFactory
     {
-        // Use LocalDB instead of a full SQL server instance, as it is installed by default with Visual Studio
+    
+        private const string DatabaseName = "MeioAiDb";
         private const string DefaultConnectionString =
-            @"Server=DESKTOP-2TK0CUF\SQLEXPRESS;Database=MeioAiDb;Trusted_Connection=True;TrustServerCertificate=True;";
-
+            @"Server=.\MEIOAI;" +
+            "Database=" + DatabaseName + ";" +
+            "Trusted_Connection=True;TrustServerCertificate=True;";
 
         private const string MasterConnectionString =
-            @"Server=DESKTOP-2TK0CUF\SQLEXPRESS;Database=MeioAiDb;Trusted_Connection=True;TrustServerCertificate=True;";
+            @"Server=.\MEIOAI;Database=master;Trusted_Connection=True;TrustServerCertificate=True;";
 
         private readonly string _connectionString;
 

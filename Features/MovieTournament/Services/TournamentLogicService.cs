@@ -1,4 +1,5 @@
 using ubb_se_2026_meio_ai.Features.MovieTournament.Models;
+using ubb_se_2026_meio_ai.Core.Models;
 
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
 {
@@ -6,9 +7,9 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
     {
         private readonly IMovieTournamentRepository _repository;
         private readonly Random _random;
-        private TournamentState _state;
+        private TournamentState? _state;
 
-        public TournamentState CurrentState => _state;
+        public TournamentState CurrentState => _state ?? throw new InvalidOperationException("No active tournament.");
         public bool IsTournamentActive => _state != null && _state.PendingMatches.Count > 0;
 
         public TournamentLogicService(IMovieTournamentRepository repository)
@@ -19,8 +20,8 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
 
         public async Task StartTournamentAsync(int userId, int poolSize)
         {
-            if (poolSize < 5)
-                throw new ArgumentException("Pool size must be at least 5.");
+            if (poolSize < 4)
+                throw new ArgumentException("Pool size must be at least 4.");
 
             var movies = await _repository.GetTournamentPoolAsync(userId, poolSize);
             
@@ -29,7 +30,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
 
             _state = new TournamentState();
 
-            // Shuffle movies for random initial pairs (Fisher-Yates)
+            
             for (int i = movies.Count - 1; i > 0; i--)
             {
                 int j = _random.Next(i + 1);
@@ -49,7 +50,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
             if (hasBye)
             {
                 var byeMovie = movies.Last();
-                var byePair = new MatchPair(byeMovie, null) { WinnerId = byeMovie.MovieId };
+                var byePair = new MatchPair(byeMovie, null!) { WinnerId = byeMovie.MovieId };
                 _state.CompletedMatches.Add(byePair);
                 _state.CurrentRoundWinners.Add(byeMovie);
             }
@@ -75,27 +76,26 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
             var winnerMovie = currentMatch.MovieA.MovieId == winnerId ? currentMatch.MovieA : currentMatch.MovieB;
             _state.CurrentRoundWinners.Add(winnerMovie);
 
-            // Generate next round if current round is complete
+       
             if (_state.PendingMatches.Count == 0 && _state.CurrentRoundWinners.Count > 1)
             {
                 GenerateNextRound();
             }
 
-            // If tournament is complete, boost the winner's score in the database
             if (IsTournamentComplete())
             {
                 var finalWinner = GetFinalWinner();
-                await _repository.BoostMovieScoreAsync(userId, finalWinner.MovieId, 2.0f);
+                await _repository.BoostMovieScoreAsync(userId, finalWinner.MovieId, 2.0);
             }
         }
 
         private void GenerateNextRound()
         {
-            var winners = new List<MovieCard>(_state.CurrentRoundWinners);
+            var winners = new List<MovieCardModel>(_state!.CurrentRoundWinners);
             _state.CurrentRoundWinners.Clear();
             _state.CurrentRound++;
 
-            // Shuffle winners for random matchups in the next round
+      
             for (int i = winners.Count - 1; i > 0; i--)
             {
                 int j = _random.Next(i + 1);
@@ -115,13 +115,13 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
             if (hasBye)
             {
                 var byeMovie = winners.Last();
-                var byePair = new MatchPair(byeMovie, null) { WinnerId = byeMovie.MovieId };
+                var byePair = new MatchPair(byeMovie, null!) { WinnerId = byeMovie.MovieId };
                 _state.CompletedMatches.Add(byePair);
                 _state.CurrentRoundWinners.Add(byeMovie);
             }
         }
 
-        public MatchPair GetCurrentMatch()
+        public MatchPair? GetCurrentMatch()
         {
             return _state?.PendingMatches.FirstOrDefault();
         }
@@ -131,12 +131,12 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
             return _state != null && _state.PendingMatches.Count == 0 && _state.CurrentRoundWinners.Count == 1;
         }
 
-        public MovieCard GetFinalWinner()
+        public MovieCardModel GetFinalWinner()
         {
             if (!IsTournamentComplete())
                 throw new InvalidOperationException("Tournament is not yet complete.");
                 
-            return _state.CurrentRoundWinners[0];
+            return _state!.CurrentRoundWinners[0];
         }
 
         public void ResetTournament()
