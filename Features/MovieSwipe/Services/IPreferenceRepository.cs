@@ -31,8 +31,9 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
         Task<List<int>> GetUnswipedMovieIdsAsync(int userId);
 
         /// <summary>
-        /// Returns movies from the external Movie table that the user has NOT yet swiped on.
+        /// Returns a feed of movies from the external Movie table, prioritising unswiped movies,
+        /// then previously swiped movies starting with those swiped longest ago.
         /// </summary>
-        Task<List<MovieCardModel>> GetUnswipedMoviesAsync(int userId, int count);
+        Task<List<MovieCardModel>> GetMovieFeedAsync(int userId, int count);
     }
 }

@@ -33,15 +33,16 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
                 MovieId = movieId,
                 Score = delta,
                 LastModified = DateTime.UtcNow,
+                ChangeFromPreviousValue = isLiked ? 1 : -1
             };
 
             await _preferenceRepository.UpsertPreferenceAsync(preference);
         }
 
         /// <inheritdoc />
-        public async Task<List<MovieCardModel>> GetUnswipedMoviesAsync(int userId, int count)
+        public async Task<List<MovieCardModel>> GetMovieFeedAsync(int userId, int count)
         {
-            return await _preferenceRepository.GetUnswipedMoviesAsync(userId, count);
+            return await _preferenceRepository.GetMovieFeedAsync(userId, count);
         }
     }
 }

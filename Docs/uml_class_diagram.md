@@ -198,12 +198,21 @@ classDiagram
     class ISwipeService {
         <<interface>>
         +UpdatePreferenceScoreAsync(int userId, int movieId, bool isLiked) void
-        +GetUnswipedMoviesAsync(int userId, int count) List~MovieCardModel~
+        +GetMovieFeedAsync(int userId, int count) List~MovieCardModel~
+    }
+
+    class IMovieCardFeedService {
+        <<interface>>
+        +FetchMovieFeedAsync(int userId, int count) List~MovieCardModel~
+    }
+
+    class MovieCardFeedService {
+        +FetchMovieFeedAsync(int userId, int count) List~MovieCardModel~
     }
 
     class SwipeService {
         +UpdatePreferenceScoreAsync(int userId, int movieId, bool isLiked) void
-        +GetUnswipedMoviesAsync(int userId, int count) List~MovieCardModel~
+        +GetMovieFeedAsync(int userId, int count) List~MovieCardModel~
     }
 
     class TournamentLogicService {

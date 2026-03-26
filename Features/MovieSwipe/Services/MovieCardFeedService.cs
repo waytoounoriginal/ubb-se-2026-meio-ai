@@ -9,7 +9,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
     /// </summary>
     public interface IMovieCardFeedService
     {
-        Task<List<MovieCardModel>> FetchUnswipedMovieAsync(int userId, int count);
+        Task<List<MovieCardModel>> FetchMovieFeedAsync(int userId, int count);
     }
 
     public class MovieCardFeedService : IMovieCardFeedService
@@ -21,9 +21,9 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
             _repository = repository;
         }
 
-        public Task<List<MovieCardModel>> FetchUnswipedMovieAsync(int userId, int count)
+        public Task<List<MovieCardModel>> FetchMovieFeedAsync(int userId, int count)
         {
-            return _repository.GetUnswipedMoviesAsync(userId, count);
+            return _repository.GetMovieFeedAsync(userId, count);
         }
     }
 }
