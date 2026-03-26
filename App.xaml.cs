@@ -39,6 +39,9 @@ namespace ubb_se_2026_meio_ai
 
         private Window? m_window;
 
+        public static Window MainWindow => (Current as App)?.m_window
+            ?? throw new InvalidOperationException("Main window has not been initialized yet.");
+
         public App()
         {
             // Log first-chance exceptions to help diagnose native crashes (0xc000027b).
@@ -179,7 +182,8 @@ namespace ubb_se_2026_meio_ai
             services.AddTransient<UserProfileViewModel>();
 
             // ── Feature Services ─────────────────────────────────────────
-            // TODO (Alex):      services.AddTransient<IVideoStorageService, VideoStorageService>();
+            services.AddTransient<Features.ReelsUpload.Services.IVideoStorageService,
+                                  Features.ReelsUpload.Services.VideoStorageService>();
             // ── Beatrice (Reels Editing) ──
             services.AddTransient<Features.ReelsEditing.Services.ReelRepository>();
             services.AddTransient<Features.ReelsEditing.Services.IVideoProcessingService,
