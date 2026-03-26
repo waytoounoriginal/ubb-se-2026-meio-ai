@@ -19,8 +19,8 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
 
         public async Task StartTournamentAsync(int userId, int poolSize)
         {
-            if (poolSize < 5)
-                throw new ArgumentException("Pool size must be at least 5.");
+            if (poolSize < 4)
+                throw new ArgumentException("Pool size must be at least 4.");
 
             var movies = await _repository.GetTournamentPoolAsync(userId, poolSize);
             
@@ -29,7 +29,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
 
             _state = new TournamentState();
 
-            // Shuffle movies for random initial pairs (Fisher-Yates)
+            
             for (int i = movies.Count - 1; i > 0; i--)
             {
                 int j = _random.Next(i + 1);
@@ -75,13 +75,12 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
             var winnerMovie = currentMatch.MovieA.MovieId == winnerId ? currentMatch.MovieA : currentMatch.MovieB;
             _state.CurrentRoundWinners.Add(winnerMovie);
 
-            // Generate next round if current round is complete
+       
             if (_state.PendingMatches.Count == 0 && _state.CurrentRoundWinners.Count > 1)
             {
                 GenerateNextRound();
             }
 
-            // If tournament is complete, boost the winner's score in the database
             if (IsTournamentComplete())
             {
                 var finalWinner = GetFinalWinner();
@@ -95,7 +94,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
             _state.CurrentRoundWinners.Clear();
             _state.CurrentRound++;
 
-            // Shuffle winners for random matchups in the next round
+      
             for (int i = winners.Count - 1; i > 0; i--)
             {
                 int j = _random.Next(i + 1);

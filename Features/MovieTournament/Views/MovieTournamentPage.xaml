@@ -11,7 +11,6 @@
     <Grid>
         <!-- STATE 0: SETUP VIEW -->
         <Grid Visibility="{x:Bind IsState(ViewModel.CurrentViewState, 0), Mode=OneWay}">
-            <!-- Faded Background Images -->
             <Grid Opacity="0.15">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
@@ -40,7 +39,7 @@
 
                 <TextBlock Text="Select how many movies will compete:" HorizontalAlignment="Center" />
 
-                <Slider Minimum="4" Maximum="{x:Bind ViewModel.MaxPoolSize, Mode=OneWay}" 
+                <Slider Minimum="1" Maximum="{x:Bind ViewModel.MaxPoolSize, Mode=OneWay}" 
                         Value="{x:Bind ViewModel.PoolSize, Mode=TwoWay}" />
 
                 <TextBlock Text="{x:Bind ViewModel.PoolSize, Mode=OneWay}" 

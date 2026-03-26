@@ -3,18 +3,16 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
+using static System.Net.WebRequestMethods;
 
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
 {
-    /// <summary>
-    /// ViewModel for the Movie Tournament page.
-    /// Owner: Gabi
-    /// </summary>
+
     public partial class MovieTournamentViewModel : ObservableObject
     {
         private readonly ITournamentLogicService _tournamentService;
         private readonly IMovieTournamentRepository _repository;
-        private readonly int _currentUserId = 1; // Hardcoded for now until authentication is added
+        private readonly int _currentUserId = 1; 
 
         [ObservableProperty]
         private string _pageTitle = "Movie Tournament";
@@ -23,12 +21,12 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         [ObservableProperty]
         private int _currentViewState = 0;
 
-        // --- Setup State ---
+        
         [ObservableProperty]
-        private int _poolSize = 8;
+        private int _poolSize = 0;
 
         [ObservableProperty]
-        private int _maxPoolSize = 0;
+        private int _maxPoolSize = 4;
 
         [ObservableProperty]
         private string _setupErrorMessage = string.Empty;
@@ -38,7 +36,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         [ObservableProperty] private string? _bg3;
         [ObservableProperty] private string? _bg4;
 
-        // --- Match State ---
+        // Second View state ( movieA vs movieB )
         [ObservableProperty]
         private Models.MovieCard? _movieOptionA;
 
@@ -51,7 +49,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         [ObservableProperty]
         private string _roundDisplay = string.Empty;
 
-        // --- Winner State ---
+        // Winner view state
         [ObservableProperty]
         private Models.MovieCard? _winnerMovie;
 
@@ -65,16 +63,16 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
             if (_tournamentService.IsTournamentActive)
             {
                 UpdateCurrentMatchDisplay();
-                CurrentViewState = 1; // Go right to active match summary
+                CurrentViewState = 1; 
             }
             else if (_tournamentService.IsTournamentComplete())
             {
                 WinnerMovie = _tournamentService.GetFinalWinner();
-                CurrentViewState = 2; // Show the winner
+                CurrentViewState = 2; 
             }
             else
             {
-                // Load initial data
+                
                 LoadMaxPoolSizeAsync();
             }
         }
@@ -85,7 +83,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
             {
                 MaxPoolSize = await _repository.GetTournamentPoolSizeAsync(_currentUserId);
                 
-                // Load 4 posters for background
+                
                 var bgMovies = await _repository.GetTournamentPoolAsync(_currentUserId, 4);
                 if (bgMovies.Count >= 4)
                 {
@@ -94,6 +92,15 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
                     Bg3 = bgMovies[2].PosterUrl;
                     Bg4 = bgMovies[3].PosterUrl;
                 }
+                else
+                {
+                    Bg1 = new String("https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg");
+                    Bg2 = new String("https://media.themoviedb.org/t/p/w600_and_h900_face/qJ2tW6WMUDux911r6m7haRef0WH.jpg");
+                    Bg3 = new String("https://media.themoviedb.org/t/p/w600_and_h900_face/q2qXg4OmJgm0qGaBYLdXzP8nHPy.jpg");
+                    Bg4 = new String("https://media.themoviedb.org/t/p/w600_and_h900_face/nrmXQ0zcZUL8jFLrakWc90IR8z9.jpg");
+
+
+                }    
             }
             catch (Exception ex)
             {
@@ -104,9 +111,9 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         [RelayCommand]
         private async Task StartTournamentAsync()
         {
-            if (PoolSize < 5)
+            if (PoolSize < 4)
             {
-                SetupErrorMessage = "Pool size must be at least 5.";
+                SetupErrorMessage = "Pool size must be at least 4. If you don't have enough, go like some movies!";
                 return;
             }
             
@@ -122,7 +129,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
             {
                 await _tournamentService.StartTournamentAsync(_currentUserId, PoolSize);
                 UpdateCurrentMatchDisplay();
-                CurrentViewState = 1; // Go to Match UI
+                CurrentViewState = 1; 
             }
             catch (Exception ex)
             {
@@ -138,7 +145,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
             if (_tournamentService.IsTournamentComplete())
             {
                 WinnerMovie = _tournamentService.GetFinalWinner();
-                CurrentViewState = 2; // Go to Winner UI
+                CurrentViewState = 2; 
             }
             else
             {
@@ -150,8 +157,8 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         private void ResetTournament()
         {
             _tournamentService.ResetTournament();
-            CurrentViewState = 0; // Go back to Setup UI
-            LoadMaxPoolSizeAsync(); // Refresh just in case
+            CurrentViewState = 0; 
+            LoadMaxPoolSizeAsync(); 
         }
 
         private void UpdateCurrentMatchDisplay()
