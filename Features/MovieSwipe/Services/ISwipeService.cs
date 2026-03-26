@@ -8,7 +8,15 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
     /// </summary>
     public interface ISwipeService
     {
-        Task UpdatePreferenceScoreAsync(int userId, int movieId, double scoreDelta);
-        Task<IList<MovieCardModel>> GetUnswipedMoviesAsync(int userId, int count);
+        /// <summary>
+        /// Updates the preference score for a user-movie pair.
+        /// Like (right swipe) → +1.0, Skip (left swipe) → −0.5.
+        /// </summary>
+        Task UpdatePreferenceScoreAsync(int userId, int movieId, bool isLiked);
+
+        /// <summary>
+        /// Returns a batch of unswiped movies for the card queue.
+        /// </summary>
+        Task<List<MovieCardModel>> GetUnswipedMoviesAsync(int userId, int count);
     }
 }

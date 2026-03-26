@@ -3,7 +3,8 @@
     x:Class="ubb_se_2026_meio_ai.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:ubb_se_2026_meio_ai">
+    xmlns:local="using:ubb_se_2026_meio_ai"
+    xmlns:converters="using:ubb_se_2026_meio_ai.Core.Converters">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -11,6 +12,7 @@
                 <!-- Other merged dictionaries here -->
             </ResourceDictionary.MergedDictionaries>
             <!-- Other app resources here -->
+            <converters:EqualityToVisibilityConverter x:Key="EqualityToVisibilityConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
