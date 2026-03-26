@@ -68,7 +68,9 @@ namespace ubb_se_2026_meio_ai
             services.AddTransient<TrailerScrapingViewModel>();
             services.AddTransient<ReelsEditingViewModel>();
             services.AddTransient<MovieSwipeViewModel>();
-            services.AddTransient<MovieTournamentViewModel>();
+            services.AddTransient<TournamentSetupViewModel>();
+            services.AddTransient<TournamentMatchViewModel>();
+            services.AddTransient<TournamentWinnerViewModel>();
             services.AddTransient<PersonalityMatchViewModel>();
             services.AddTransient<ReelsFeedViewModel>();
 

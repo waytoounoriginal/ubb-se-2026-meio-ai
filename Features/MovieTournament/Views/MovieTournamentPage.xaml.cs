@@ -1,62 +1,28 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Animation;
-using ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels;
+using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.Views
 {
     public sealed partial class MovieTournamentPage : Page
     {
-        public MovieTournamentViewModel ViewModel { get; }
-
         public MovieTournamentPage()
         {
-           
-            ViewModel = App.Services.GetRequiredService<MovieTournamentViewModel>();
             this.InitializeComponent();
+            this.Loaded += OnLoaded;
         }
 
-       
-        public Visibility IsState(int currentState, int targetState)
+        private void OnLoaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
         {
-            return currentState == targetState ? Visibility.Visible : Visibility.Collapsed;
-        }
+            var tournamentService = App.Services.GetRequiredService<ITournamentLogicService>();
 
-        private void MoviePointerEntered(object sender, PointerRoutedEventArgs e)
-        {
-            if (sender is Button btn && btn.RenderTransform is ScaleTransform st)
-            {
-                AnimateScale(st, 1.05);
-            }
-        }
-
-        private void MoviePointerExited(object sender, PointerRoutedEventArgs e)
-        {
-            if (sender is Button btn && btn.RenderTransform is ScaleTransform st)
-            {
-                AnimateScale(st, 1.0);
-            }
-        }
-
-        private void AnimateScale(ScaleTransform st, double targetScale)
-        {
-            var storyboard = new Storyboard();
-            
-            var animX = new DoubleAnimation { To = targetScale, Duration = TimeSpan.FromMilliseconds(150) };
-            Storyboard.SetTarget(animX, st);
-            Storyboard.SetTargetProperty(animX, "ScaleX");
-            
-            var animY = new DoubleAnimation { To = targetScale, Duration = TimeSpan.FromMilliseconds(150) };
-            Storyboard.SetTarget(animY, st);
-            Storyboard.SetTargetProperty(animY, "ScaleY");
-            
-            storyboard.Children.Add(animX);
-            storyboard.Children.Add(animY);
-            
-            storyboard.Begin();
+            // Restore the correct sub-page based on the current tournament state
+            if (tournamentService.IsTournamentActive)
+                TournamentFrame.Navigate(typeof(TournamentMatchPage));
+            else if (tournamentService.IsTournamentComplete())
+                TournamentFrame.Navigate(typeof(TournamentWinnerPage));
+            else
+                TournamentFrame.Navigate(typeof(TournamentSetupPage));
         }
     }
 }
