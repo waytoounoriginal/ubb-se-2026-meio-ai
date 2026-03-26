@@ -8,12 +8,13 @@ namespace ubb_se_2026_meio_ai.Core.Database
     /// </summary>
     public class SqlConnectionFactory : ISqlConnectionFactory
     {
-           // Use LocalDB instead of a full SQL server instance, as it is installed by default with Visual Studio
+        // Use LocalDB instead of a full SQL server instance, as it is installed by default with Visual Studio
         private const string DefaultConnectionString =
-            @"Server=(localdb)\MSSQLLocalDB;Database=MeioAiDb;Trusted_Connection=True;TrustServerCertificate=True;";
+            @"Server=DESKTOP-2TK0CUF\SQLEXPRESS;Database=MeioAiDb;Trusted_Connection=True;TrustServerCertificate=True;";
+
 
         private const string MasterConnectionString =
-            @"Server=(localdb)\MSSQLLocalDB;Database=master;Trusted_Connection=True;TrustServerCertificate=True;";
+            @"Server=DESKTOP-2TK0CUF\SQLEXPRESS;Database=MeioAiDb;Trusted_Connection=True;TrustServerCertificate=True;";
 
         private readonly string _connectionString;
 
