@@ -16,6 +16,7 @@ namespace ubb_se_2026_meio_ai.Core.Models
         public string? CropDataJson { get; set; }
         public int? BackgroundMusicId { get; set; }
         public string Source { get; set; } = string.Empty;
+        public string? Genre { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? LastEditedAt { get; set; }
 
