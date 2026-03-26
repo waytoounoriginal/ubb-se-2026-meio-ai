@@ -187,6 +187,97 @@ namespace ubb_se_2026_meio_ai.Core.Database
                     ('Whiplash', 'https://m.media-amazon.com/images/M/MV5BMjE4NDYxNTAxNV5BMl5BanBnXkFtZTgwNzM0NDM1MjE@._V1_.jpg', 'Drama', 2014),
                     ('The Grand Budapest Hotel', 'https://m.media-amazon.com/images/M/MV5BMjM2NTQzMzc5OF5BMl5BanBnXkFtZTgwNzM2ODU3MDE@._V1_.jpg', 'Comedy', 2014);
                 END
+
+                -- ═══════════════════════════════════════════════════════════
+                -- Madi: Seed mock users 2–6 for personality matching demo
+                -- Each user has different taste overlap with user 1
+                -- ═══════════════════════════════════════════════════════════
+
+                -- User 2 (Alice) — very similar to User 1 (high Sci-Fi/Action scores)
+                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 2)
+                BEGIN
+                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
+                    VALUES
+                    (2, 1, 8.0, 1),   -- Inception          (User1: 8.5)
+                    (2, 2, 9.2, 1),   -- The Dark Knight     (User1: 9.0)
+                    (2, 3, 7.8, 1),   -- Interstellar        (User1: 7.5)
+                    (2, 4, 8.5, 1),   -- The Matrix          (User1: 8.0)
+                    (2, 5, 9.0, 1),   -- Parasite            (User1: 9.5)
+                    (2, 6, 3.0, 1),   -- La La Land          (User1: 8.5)
+                    (2, 7, 6.5, 1),   -- Whiplash            (User1: 7.0)
+                    (2, 8, 9.0, 1);   -- Grand Budapest      (User1: 9.2)
+                END
+
+                -- User 3 (Bob) — moderate overlap, prefers dramas/musicals
+                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 3)
+                BEGIN
+                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
+                    VALUES
+                    (3, 1, 5.0, 1),   -- Inception
+                    (3, 2, 4.5, 1),   -- The Dark Knight
+                    (3, 5, 8.5, 1),   -- Parasite
+                    (3, 6, 9.5, 1),   -- La La Land
+                    (3, 7, 9.0, 1),   -- Whiplash
+                    (3, 8, 8.0, 1);   -- Grand Budapest
+                END
+
+                -- User 4 (Carol) — somewhat similar, likes Sci-Fi but differs on drama
+                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 4)
+                BEGIN
+                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
+                    VALUES
+                    (4, 1, 9.0, 1),   -- Inception
+                    (4, 3, 8.5, 1),   -- Interstellar
+                    (4, 4, 9.0, 1),   -- The Matrix
+                    (4, 6, 2.0, 1),   -- La La Land
+                    (4, 7, 3.0, 1);   -- Whiplash
+                END
+
+                -- User 5 (Dave) — opposite taste, low scores on User 1's favourites
+                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 5)
+                BEGIN
+                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
+                    VALUES
+                    (5, 1, 2.0, 1),   -- Inception
+                    (5, 2, 3.0, 1),   -- The Dark Knight
+                    (5, 3, 2.5, 1),   -- Interstellar
+                    (5, 4, 1.5, 1),   -- The Matrix
+                    (5, 5, 3.0, 1),   -- Parasite
+                    (5, 6, 9.0, 1),   -- La La Land
+                    (5, 7, 8.5, 1),   -- Whiplash
+                    (5, 8, 2.0, 1);   -- Grand Budapest
+                END
+
+                -- User 6 (Eve) — partial overlap, only rated a few movies
+                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 6)
+                BEGIN
+                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
+                    VALUES
+                    (6, 2, 8.8, 1),   -- The Dark Knight
+                    (6, 5, 9.0, 1),   -- Parasite
+                    (6, 8, 8.5, 1);   -- Grand Budapest
+                END
+
+                -- Seed UserProfile rows for users 2–6
+                IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 2)
+                    INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
+                    VALUES (2, 42, 18000, 120.5, 150, 0.28);
+
+                IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 3)
+                    INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
+                    VALUES (3, 15, 7200, 90.0, 80, 0.19);
+
+                IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 4)
+                    INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
+                    VALUES (4, 68, 32000, 145.0, 220, 0.31);
+
+                IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 5)
+                    INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
+                    VALUES (5, 8, 3600, 60.0, 60, 0.13);
+
+                IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 6)
+                    INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
+                    VALUES (6, 25, 12000, 110.0, 109, 0.23);
             ";
 
             await using SqlConnection connection = await _connectionFactory.CreateConnectionAsync();

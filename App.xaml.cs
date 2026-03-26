@@ -11,6 +11,7 @@ using ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels;
 using ubb_se_2026_meio_ai.Features.MovieSwipe.Services;
 using ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels;
 using ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels;
+using ubb_se_2026_meio_ai.Features.PersonalityMatch.Services;
 using ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels;
 using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
 using System.Diagnostics;
@@ -188,7 +189,10 @@ namespace ubb_se_2026_meio_ai
             services.AddTransient<IMovieCardFeedService, MovieCardFeedService>();
             // TODO (Gabi):      services.AddTransient<ITournamentLogicService, TournamentLogicService>();
             //                   services.AddTransient<IMovieTournamentRepository, MovieTournamentRepository>();
-            // TODO (Madi):      services.AddTransient<IPersonalityMatchingService, PersonalityMatchingService>();
+            // ── Madi (Personality Match) ──
+            services.AddTransient<IPersonalityMatchRepository, PersonalityMatchRepository>();
+            services.AddTransient<IPersonalityMatchingService, PersonalityMatchingService>();
+            services.AddTransient<MatchedUserDetailViewModel>();
             // Tudor – Repositories
             services.AddTransient<IInteractionRepository, InteractionRepository>();
             services.AddTransient<IProfileRepository, ProfileRepository>();
