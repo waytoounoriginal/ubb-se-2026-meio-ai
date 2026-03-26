@@ -76,6 +76,7 @@ namespace ubb_se_2026_meio_ai.Core.Database
                     (
                         MusicTrackId    INT             IDENTITY(1,1) PRIMARY KEY,
                         TrackName       NVARCHAR(256)   NOT NULL,
+                        Author          NVARCHAR(256)   NOT NULL DEFAULT '',
                         AudioUrl        NVARCHAR(1024)  NOT NULL,
                         DurationSeconds FLOAT           NOT NULL
                     );
@@ -188,6 +189,84 @@ namespace ubb_se_2026_meio_ai.Core.Database
                     ('The Grand Budapest Hotel', 'https://m.media-amazon.com/images/M/MV5BMjM2NTQzMzc5OF5BMl5BanBnXkFtZTgwNzM2ODU3MDE@._V1_.jpg', 'Comedy', 2014);
                 END
 
+                -- Seed Music Tracks (for Reel Editing feature)
+                IF (SELECT COUNT(*) FROM MusicTrack) = 0
+                BEGIN
+                    INSERT INTO MusicTrack (TrackName, Author, AudioUrl, DurationSeconds)
+                    VALUES
+                    ('Epic Cinematic Theme', 'Hans Zimmer', 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', 180.5),
+                    ('Upbeat Pop Track', 'Mark Ronson', 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', 150.0),
+                    ('Dramatic Orchestral', 'John Williams', 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', 200.3),
+                    ('Chill Lo-Fi Beats', 'Nujabes', 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', 120.0),
+                    ('Action Packed Rock', 'AC/DC', 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', 165.7);
+                END
+
+                -- Seed Reels (for Reel Editing feature - UserId = 1)
+                -- ThumbnailUrl uses the movie poster as the default first-frame thumbnail
+                IF (SELECT COUNT(*) FROM Reel WHERE CreatorUserId = 1) = 0
+                BEGIN
+                    INSERT INTO Reel (MovieId, CreatorUserId, VideoUrl, ThumbnailUrl, Title, Caption, FeatureDurationSeconds, Source, CreatedAt)
+                    VALUES
+                    (1, 1, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', 
+                     'https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_.jpg',
+                     'Inception - Dream Within a Dream', 
+                     'Mind-bending scene from Inception where reality bends',
+                     45.5, 'youtube', DATEADD(day, -10, SYSUTCDATETIME())),
+                    
+                    (1, 1, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+                     'https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_.jpg',
+                     'Inception - Rotating Hallway Fight',
+                     'The iconic zero-gravity hallway fight sequence',
+                     60.2, 'youtube', DATEADD(day, -9, SYSUTCDATETIME())),
+                    
+                    (2, 1, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+                     'https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_.jpg',
+                     'The Dark Knight - Joker Interrogation',
+                     'Heath Ledger''s legendary Joker interrogation scene',
+                     55.0, 'youtube', DATEADD(day, -8, SYSUTCDATETIME())),
+                    
+                    (2, 1, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+                     'https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_.jpg',
+                     'The Dark Knight - Batmobile Chase',
+                     'Epic chase scene through Gotham streets',
+                     70.8, 'youtube', DATEADD(day, -7, SYSUTCDATETIME())),
+                    
+                    (3, 1, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+                     'https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS00OGEyLWFmMjktY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg',
+                     'Interstellar - Docking Scene',
+                     'The intense docking sequence with the spinning station',
+                     90.3, 'youtube', DATEADD(day, -6, SYSUTCDATETIME())),
+                    
+                    (3, 1, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+                     'https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS00OGEyLWFmMjktY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg',
+                     'Interstellar - Tesseract Scene',
+                     'Cooper in the 5th dimension tesseract',
+                     80.0, 'youtube', DATEADD(day, -5, SYSUTCDATETIME())),
+                    
+                    (4, 1, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+                     'https://m.media-amazon.com/images/M/MV5BNzQzOTk3NTAtNDQ2Ny00Njc2LTk3M2QtN2FjYTJjNzQzYzQwXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg',
+                     'The Matrix - Bullet Time',
+                     'The revolutionary bullet time effect scene',
+                     35.5, 'youtube', DATEADD(day, -4, SYSUTCDATETIME())),
+                    
+                    (5, 1, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+                     'https://m.media-amazon.com/images/M/MV5BYWZjMjk3ZTAtZGYzMC00ODQ0LWI2YTMtYjQ5NDU3N2NmZDIzXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg',
+                     'Parasite - Basement Reveal',
+                     'The shocking basement discovery scene',
+                     50.0, 'youtube', DATEADD(day, -3, SYSUTCDATETIME())),
+                    
+                    (6, 1, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
+                     'https://m.media-amazon.com/images/M/MV5BMjA2OTYxNTY2Nl5BMl5BanBnXkFtZTgwNzg4OTA5OTE@._V1_.jpg',
+                     'La La Land - Highway Opening',
+                     'The colorful highway opening dance number',
+                     65.2, 'youtube', DATEADD(day, -2, SYSUTCDATETIME())),
+                    
+                    (7, 1, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+                     'https://m.media-amazon.com/images/M/MV5BMjE4NDYxNTAxNV5BMl5BanBnXkFtZTgwNzM0NDM1MjE@._V1_.jpg',
+                     'Whiplash - Final Performance',
+                     'The intense final drum performance',
+                     75.0, 'youtube', DATEADD(day, -1, SYSUTCDATETIME()));
+                END
                 -- ═══════════════════════════════════════════════════════════
                 -- Madi: Seed mock users 2–6 for personality matching demo
                 -- Each user has different taste overlap with user 1

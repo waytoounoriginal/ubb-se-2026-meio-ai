@@ -48,7 +48,7 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
             var reel = new ReelModel
             {
                 MovieId = movieId,
-                CreatorUserId = 0, // system/scraped
+                CreatorUserId = 1, // UserId 1 (so it appears in Reels Editing)
                 VideoUrl = localPath,
                 Title = "Scraped Trailer",
                 Caption = string.Empty,
@@ -147,7 +147,7 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
                         var reel = new ReelModel
                         {
                             MovieId = movie.MovieId,          // FK to the selected movie
-                            CreatorUserId = 0,                 // system/scraped sentinel
+                            CreatorUserId = 1,                 // UserId 1 (so it appears in Reels Editing)
                             VideoUrl = videoUrl,
                             ThumbnailUrl = video.ThumbnailUrl,
                             Title = video.Title,
