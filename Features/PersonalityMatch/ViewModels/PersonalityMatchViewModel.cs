@@ -18,10 +18,7 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
 
         private const int MaxMatches = 10;
 
-        // TODO: Replace with DB query — SELECT UserId, Username, FacebookAccount FROM [User]
-        // When the team adds IsLogged/IsActive fields to the User table, remove this dictionary
-        // and load from the DB instead. See DatabaseInitializer.cs for the schema TODO.
-        // Only accounts the user can switch between are listed here (not every DB user).
+
         private static readonly Dictionary<int, (string Username, string FacebookAccount)> _demoAccounts = new()
         {
             [1] = ("Alex Carter",  "fb_alex_carter"),
@@ -31,13 +28,10 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
             [9] = ("Sam Taylor",   "fb_sam_taylor"),
         };
 
-        // TODO: Replace with DB query — SELECT UserId FROM [User] WHERE IsActive = 1
-        // Tracks the currently active user. Resets to User 1 on app restart until DB is wired.
+
         private int _activeUserId = 1;
 
-        // TODO: Replace with DB query — SELECT UserId FROM [User] WHERE IsLogged = 1
-        // Pre-logged: Alex (1), Alice (2), Sam (9). Bob (3) and Carol (4) are available to add.
-        // Resets on app restart until DB is wired.
+
         private readonly List<int> _loggedAccountIds = new() { 1, 2, 9 };
 
         [ObservableProperty]

@@ -68,7 +68,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
         public async Task BoostMovieScoreAsync(int userId, int movieId, double scoreBoost)
         {
             
-            const string sql = @"USE MeioAiDb;
+            const string sql = @"
                 UPDATE UserMoviePreference
                 SET Score = Score + @ScoreBoost,
                     LastModified = SYSUTCDATETIME(),

@@ -4,7 +4,7 @@ namespace ubb_se_2026_meio_ai.Core.Models
 {
     public partial class ReelModel : ObservableObject
     {
-        // ── Persisted properties (set once at load, no notification needed) ──
+        
         public int ReelId { get; set; }
         public int MovieId { get; set; }
         public int CreatorUserId { get; set; }

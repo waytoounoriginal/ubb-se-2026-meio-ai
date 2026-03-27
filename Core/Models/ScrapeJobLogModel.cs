@@ -1,8 +1,6 @@
 namespace ubb_se_2026_meio_ai.Core.Models
 {
-    /// <summary>
-    /// A single log entry belonging to a scrape job.
-    /// </summary>
+    
     public class ScrapeJobLogModel
     {
         public long LogId { get; set; }

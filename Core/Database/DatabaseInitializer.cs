@@ -2,10 +2,7 @@ using Microsoft.Data.SqlClient;
 
 namespace ubb_se_2026_meio_ai.Core.Database
 {
-    /// <summary>
-    /// Creates the shared database tables if they do not already exist.
-    /// All SQL is raw — no ORM, no stored procedures.
-    /// </summary>
+
     public class DatabaseInitializer
     {
         private readonly ISqlConnectionFactory _connectionFactory;
@@ -20,10 +17,9 @@ namespace ubb_se_2026_meio_ai.Core.Database
 
         public async Task CreateTablesIfNotExistAsync()
         {
-            // 1. Ensure the databases exists on the server
+
             await EnsureDatabaseExistsAsync();
 
-            // 2. Create the tables in the database
             const string sql = @"
                 USE [MeioAiDb]; 
                 -- Movie (shared table — created here so JOINs work)
@@ -415,7 +411,7 @@ END
                 END
             ";
 
-            // We must use the 'master' database connection to create a new database
+
             await using SqlConnection masterConnection = await _connectionFactory.CreateMasterConnectionAsync();
             await using SqlCommand command = new SqlCommand(sql, masterConnection);
             await command.ExecuteNonQueryAsync();
