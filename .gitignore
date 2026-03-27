@@ -87,6 +87,13 @@ Desktop.ini
 *.bak
 *.tmp
 
+# Reels Editing generated media artifacts (ffmpeg temp/output naming)
+*_crop_tmp_*.*
+*_music_tmp_*.*
+*_cropped_*.*
+*_withmusic_*.*
+tools/ffmpeg/*.exe
+
 # ── AI assistant files ──────────────────────────────────────────────────
 CLAUDE.md
 .claude/

@@ -78,6 +78,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
         // Event that the view subscribes to for crop-mode video pause
         public event Action? CropModeEntered;
         public event Action? CropModeExited;
+        public event Action? CropSaveStarted;
+        public event Action<string>? CropVideoUpdated;
 
         public ReelsEditingViewModel(
             ReelRepository reelRepository,
@@ -125,6 +127,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
             var fresh = await _reelRepository.GetReelByIdAsync(reel.ReelId);
             if (fresh != null)
             {
+                reel.VideoUrl = fresh.VideoUrl;
                 reel.CropDataJson = fresh.CropDataJson;
                 reel.BackgroundMusicId = fresh.BackgroundMusicId;
                 reel.LastEditedAt = fresh.LastEditedAt;
@@ -147,6 +150,21 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
             IsStatusSuccess = true;
 
             LoadPersistedEditData(reel.CropDataJson, reel.BackgroundMusicId);
+
+            // Restore saved music track name so it shows in the UI immediately
+            if (reel.BackgroundMusicId.HasValue)
+            {
+                try
+                {
+                    var track = await _audioLibrary.GetTrackByIdAsync(reel.BackgroundMusicId.Value);
+                    if (track != null)
+                    {
+                        SelectedMusicTrack = track;
+                        NormalizeMusicTimingForSelectedTrack();
+                    }
+                }
+                catch { /* Non-fatal */ }
+            }
         }
 
         [RelayCommand]
@@ -167,7 +185,10 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
             SelectedMusicTrack = track;
             CurrentEdits.SelectedMusicTrackId = track.MusicTrackId;
             IsMusicChosen = true;
-            MusicDuration = Math.Min(30.0, track.DurationSeconds);
+            MusicStartTime = 0;
+            double reelDuration = SelectedReel?.FeatureDurationSeconds ?? 30.0;
+            MusicDuration = Math.Clamp(reelDuration, 5.0, 120.0);
+            NormalizeMusicTimingForSelectedTrack();
             IsStatusSuccess = true;
             StatusMessage = $"Music selected: {track.TrackName}";
         }
@@ -189,41 +210,6 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
         }
 
         [RelayCommand]
-        private async Task SaveThumbnailAsync()
-        {
-            if (SelectedReel == null) return;
-
-            IsSaving = true;
-            StatusMessage = "Saving thumbnail...";
-            IsStatusSuccess = true;
-            try
-            {
-                var payload = CurrentEdits.ToCropDataJson();
-                int rows = await _reelRepository.UpdateReelEditsAsync(
-                    SelectedReel.ReelId,
-                    payload,
-                    CurrentEdits.SelectedMusicTrackId);
-
-                if (rows == 0)
-                    throw new InvalidOperationException($"No reel found with ReelId={SelectedReel.ReelId}.");
-
-                var persisted = await _reelRepository.GetReelByIdAsync(SelectedReel.ReelId);
-                if (persisted?.CropDataJson != payload)
-                    throw new InvalidOperationException("Thumbnail edits were not persisted correctly.");
-
-                SelectedReel.CropDataJson = persisted.CropDataJson;
-                SelectedReel.LastEditedAt = persisted.LastEditedAt;
-                StatusMessage = $"Thumbnail saved successfully at {TimeSpan.FromSeconds(CurrentEdits.ThumbnailFrameSeconds):mm\\:ss\\.f}.";
-            }
-            catch (Exception ex)
-            {
-                IsStatusSuccess = false;
-                StatusMessage = $"Save failed: {ex.Message}";
-            }
-            finally { IsSaving = false; }
-        }
-
-        [RelayCommand]
         private async Task SaveCropAsync()
         {
             if (SelectedReel == null) return;
@@ -233,6 +219,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
             IsStatusSuccess = true;
             try
             {
+                CropSaveStarted?.Invoke();
+
                 // Convert margin percentages to pixel crop data
                 CurrentEdits.CropX = (int)(CropMarginLeft / 100.0 * 1920);
                 CurrentEdits.CropY = (int)(CropMarginTop / 100.0 * 1080);
@@ -240,24 +228,31 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
                 CurrentEdits.CropHeight = (int)((1.0 - (CropMarginTop + CropMarginBottom) / 100.0) * 1080);
 
                 string cropJson = CurrentEdits.ToCropDataJson();
-                await _videoProcessing.ApplyCropAsync(SelectedReel.VideoUrl, cropJson);
-                int rows = await _reelRepository.UpdateReelEditsAsync(SelectedReel.ReelId, cropJson, CurrentEdits.SelectedMusicTrackId);
+                string processedVideoPath = await _videoProcessing.ApplyCropAsync(SelectedReel.VideoUrl, cropJson);
+                int rows = await _reelRepository.UpdateReelEditsAsync(
+                    SelectedReel.ReelId,
+                    cropJson,
+                    CurrentEdits.SelectedMusicTrackId,
+                    processedVideoPath);
 
                 if (rows == 0)
                     throw new InvalidOperationException($"No reel found with ReelId={SelectedReel.ReelId}.");
 
                 var persisted = await _reelRepository.GetReelByIdAsync(SelectedReel.ReelId);
-                if (persisted?.CropDataJson != cropJson)
+                if (persisted == null || persisted.CropDataJson != cropJson)
                     throw new InvalidOperationException("Crop edits were not persisted correctly.");
 
+                SelectedReel.VideoUrl = persisted.VideoUrl;
                 SelectedReel.CropDataJson = persisted.CropDataJson;
                 SelectedReel.LastEditedAt = persisted.LastEditedAt;
+                CropVideoUpdated?.Invoke(SelectedReel.VideoUrl);
                 StatusMessage = $"Crop dimensions updated successfully: X={CurrentEdits.CropX}, Y={CurrentEdits.CropY}, W={CurrentEdits.CropWidth}, H={CurrentEdits.CropHeight}.";
             }
             catch (Exception ex)
             {
                 IsStatusSuccess = false;
                 StatusMessage = $"Save failed: {ex.Message}";
+                CropVideoUpdated?.Invoke(SelectedReel.VideoUrl);
             }
             finally { IsSaving = false; }
         }
@@ -272,32 +267,45 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
             IsStatusSuccess = true;
             try
             {
+                CropSaveStarted?.Invoke();
+
+                CurrentEdits.SelectedMusicTrackId = SelectedMusicTrack.MusicTrackId;
+                NormalizeMusicTimingForSelectedTrack();
                 CurrentEdits.MusicStartTime = MusicStartTime;
                 CurrentEdits.MusicDuration = MusicDuration;
                 CurrentEdits.MusicVolume = MusicVolume;
 
-                await _videoProcessing.MergeAudioAsync(
+                string processedVideoPath = await _videoProcessing.MergeAudioAsync(
                     SelectedReel.VideoUrl,
                     SelectedMusicTrack.MusicTrackId,
-                    MusicStartTime);
+                    MusicStartTime,
+                    MusicDuration,
+                    MusicVolume);
                 int rows = await _reelRepository.UpdateReelEditsAsync(
                     SelectedReel.ReelId,
                     CurrentEdits.ToCropDataJson(),
-                    SelectedMusicTrack.MusicTrackId);
+                    SelectedMusicTrack.MusicTrackId,
+                    processedVideoPath);
 
                 if (rows == 0)
                     throw new InvalidOperationException($"No reel found with ReelId={SelectedReel.ReelId}.");
 
                 var persisted = await _reelRepository.GetReelByIdAsync(SelectedReel.ReelId);
-                SelectedReel.CropDataJson = persisted?.CropDataJson;
-                SelectedReel.BackgroundMusicId = SelectedMusicTrack.MusicTrackId;
-                SelectedReel.LastEditedAt = persisted?.LastEditedAt;
-                StatusMessage = "Music saved!";
+                if (persisted == null || persisted.BackgroundMusicId != SelectedMusicTrack.MusicTrackId)
+                    throw new InvalidOperationException("Music edits were not persisted correctly.");
+
+                SelectedReel.VideoUrl = persisted.VideoUrl;
+                SelectedReel.CropDataJson = persisted.CropDataJson;
+                SelectedReel.BackgroundMusicId = persisted.BackgroundMusicId;
+                SelectedReel.LastEditedAt = persisted.LastEditedAt;
+                CropVideoUpdated?.Invoke(SelectedReel.VideoUrl);
+                StatusMessage = $"Music saved: {SelectedMusicTrack.TrackName}.";
             }
             catch (Exception ex)
             {
                 IsStatusSuccess = false;
                 StatusMessage = $"Save failed: {ex.Message}";
+                CropVideoUpdated?.Invoke(SelectedReel.VideoUrl);
             }
             finally { IsSaving = false; }
         }
@@ -344,10 +352,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
                 CurrentEdits.CropY = ReadInt(root, "y", 0);
                 CurrentEdits.CropWidth = ReadInt(root, "width", 1920);
                 CurrentEdits.CropHeight = ReadInt(root, "height", 1080);
-                CurrentEdits.ThumbnailFrameSeconds = ReadDouble(root, "thumbnailTimeSec", 0);
-                CurrentEdits.MusicStartTime = ReadDouble(root, "musicStartTime", 0);
-                CurrentEdits.MusicDuration = ReadDouble(root, "musicDuration", 30);
-                CurrentEdits.MusicVolume = ReadDouble(root, "musicVolume", 80);
+                CurrentEdits.MusicStartTime = Math.Max(0, ReadDouble(root, "musicStartTime", 0));
+                CurrentEdits.MusicDuration = Math.Clamp(ReadDouble(root, "musicDuration", 30), 5, 120);
+                CurrentEdits.MusicVolume = Math.Clamp(ReadDouble(root, "musicVolume", 80), 0, 100);
 
                 CropMarginLeft = Math.Clamp(CurrentEdits.CropX / 1920.0 * 100.0, 0, 45);
                 CropMarginTop = Math.Clamp(CurrentEdits.CropY / 1080.0 * 100.0, 0, 45);
@@ -362,6 +369,13 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
             {
                 // Keep defaults if previously stored JSON is malformed.
             }
+        }
+
+        private void NormalizeMusicTimingForSelectedTrack()
+        {
+            MusicStartTime = Math.Clamp(MusicStartTime, 0, 300);
+            MusicDuration = Math.Clamp(MusicDuration, 5, 120);
+            MusicVolume = Math.Clamp(MusicVolume, 0, 100);
         }
 
         private static int ReadInt(JsonElement root, string name, int fallback)

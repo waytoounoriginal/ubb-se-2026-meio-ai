@@ -155,29 +155,97 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Left: Video Player -->
-                <Border Grid.Column="0" Background="Black" CornerRadius="8"
-                        VerticalAlignment="Top">
-                    <Grid Height="500">
-                        <MediaPlayerElement x:Name="ReelPlayer"
-                                            AutoPlay="False"
-                                            AreTransportControlsEnabled="True"
-                                            Stretch="Uniform"/>
+                <StackPanel Grid.Column="0" VerticalAlignment="Top" Spacing="12">
+                    <Border Background="Black" CornerRadius="8">
+                        <Grid Height="500">
+                            <MediaPlayerElement x:Name="ReelPlayer"
+                                                AutoPlay="False"
+                                                AreTransportControlsEnabled="False"
+                                                Stretch="Uniform"/>
 
-                        <Grid x:Name="CropOverlayRoot"
-                              Background="#22000000"
-                              Visibility="Collapsed"
-                              SizeChanged="CropOverlayRoot_SizeChanged"
-                              IsHitTestVisible="False">
-                            <Border x:Name="CropRectangleBorder"
-                                    BorderThickness="3"
-                                    BorderBrush="White"
-                                    Margin="0"
-                                    CornerRadius="4"
-                                    HorizontalAlignment="Stretch"
-                                    VerticalAlignment="Stretch"/>
+                            <Grid x:Name="CropOverlayRoot"
+                                  Background="#22000000"
+                                  Visibility="Collapsed"
+                                  SizeChanged="CropOverlayRoot_SizeChanged"
+                                  IsHitTestVisible="False">
+                                <Border x:Name="CropRectangleBorder"
+                                        BorderThickness="3"
+                                        BorderBrush="White"
+                                        Margin="0"
+                                        CornerRadius="4"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"/>
+                            </Grid>
                         </Grid>
-                    </Grid>
-                </Border>
+                    </Border>
+
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            CornerRadius="8"
+                            Padding="12,10">
+                        <Grid RowSpacing="8">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Slider x:Name="VideoSeekSlider"
+                                    Grid.Row="0"
+                                    Minimum="0"
+                                    Maximum="0"
+                                    Value="0"
+                                    ValueChanged="VideoSeekSlider_ValueChanged"/>
+
+                            <Grid Grid.Row="1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock x:Name="VideoCurrentTimeText"
+                                           Grid.Column="0"
+                                           VerticalAlignment="Center"
+                                           Text="0:00"/>
+
+                                <StackPanel Grid.Column="1"
+                                            Orientation="Horizontal"
+                                            HorizontalAlignment="Center"
+                                            Spacing="8">
+                                    <Button x:Name="VideoPlayPauseButton"
+                                            Width="40"
+                                            Height="32"
+                                            Padding="0"
+                                            Click="VideoPlayPauseButton_Click">
+                                        <SymbolIcon x:Name="VideoPlayPauseIcon" Symbol="Play"/>
+                                    </Button>
+
+                                    <ToggleButton x:Name="VideoMuteButton"
+                                                  Width="40"
+                                                  Height="32"
+                                                  Padding="0"
+                                                  Checked="VideoMuteButton_Checked"
+                                                  Unchecked="VideoMuteButton_Unchecked">
+                                        <SymbolIcon x:Name="VideoMuteIcon" Symbol="Volume"/>
+                                    </ToggleButton>
+
+                                    <ToggleButton x:Name="VideoFullscreenButton"
+                                                  Width="40"
+                                                  Height="32"
+                                                  Padding="0"
+                                                  Checked="VideoFullscreenButton_Checked"
+                                                  Unchecked="VideoFullscreenButton_Unchecked">
+                                        <SymbolIcon Symbol="FullScreen"/>
+                                    </ToggleButton>
+                                </StackPanel>
+
+                                <TextBlock x:Name="VideoDurationText"
+                                           Grid.Column="2"
+                                           VerticalAlignment="Center"
+                                           Text="0:00"/>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </StackPanel>
 
                 <!-- Right: Editing Options -->
                 <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
@@ -185,60 +253,14 @@
 
                         <!-- Option Buttons -->
                         <StackPanel Spacing="8">
-                            <Button Content="Thumbnail" 
-                                    Command="{x:Bind ViewModel.SelectEditOptionCommand}"
-                                    CommandParameter="Thumbnail"
-                                    HorizontalAlignment="Stretch"/>
-                            <Button Content="Crop Dimensions" 
+                            <Button Content="Crop Dimensions"
                                     Command="{x:Bind ViewModel.SelectEditOptionCommand}"
                                     CommandParameter="Crop"
                                     HorizontalAlignment="Stretch"/>
-                            <Button Content="Background Music" 
+                            <Button Content="Background Music"
                                     Command="{x:Bind ViewModel.SelectEditOptionCommand}"
                                     CommandParameter="Music"
                                     HorizontalAlignment="Stretch"/>
-                        </StackPanel>
-
-                        <!-- Editing Panel: Thumbnail -->
-                        <StackPanel Spacing="12" Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                    CornerRadius="8"
-                                    Visibility="{x:Bind ViewModel.SelectedEditOption, Mode=OneWay, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=Thumbnail}">
-                            <TextBlock Text="Thumbnail" FontWeight="SemiBold" FontSize="16"/>
-                            <TextBlock Text="Current thumbnail"
-                                   Style="{StaticResource CaptionTextBlockStyle}"
-                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
-                            <Image Source="{x:Bind ViewModel.SelectedReel.ThumbnailUrl, Mode=OneWay}"
-                                   MaxHeight="150" Stretch="Uniform"
-                                   HorizontalAlignment="Left"/>
-
-                                <TextBlock Text="Use the current frame from the left reel preview."
-                                       Style="{StaticResource CaptionTextBlockStyle}"
-                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                                       TextWrapping="Wrap"/>
-
-                            <Button Content="Select Current Frame"
-                                Click="SelectThumbnailFrameButton_Click"
-                                HorizontalAlignment="Stretch"/>
-
-                            <TextBlock x:Name="SelectedThumbnailTimestampText"
-                                   Text="No frame selected"
-                                   Style="{StaticResource CaptionTextBlockStyle}"
-                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
-
-                            <TextBlock Text="Selected frame preview"
-                                   Style="{StaticResource CaptionTextBlockStyle}"
-                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
-
-                            <MediaPlayerElement x:Name="ThumbnailPreviewPlayer"
-                                    AutoPlay="False"
-                                    AreTransportControlsEnabled="False"
-                                    Height="180"
-                                    Stretch="Uniform"/>
-
-                            <Button Content="Save Edits"
-                                Command="{x:Bind ViewModel.SaveThumbnailCommand}"
-                                HorizontalAlignment="Stretch"
-                                Style="{StaticResource AccentButtonStyle}"/>
                         </StackPanel>
 
                         <!-- Editing Panel: Crop Dimensions -->
@@ -321,6 +343,11 @@
                             <TextBlock Text="Music Volume (%)"/>
                             <Slider Minimum="0" Maximum="100" StepFrequency="1"
                                 Value="{x:Bind ViewModel.MusicVolume, Mode=TwoWay}"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="▶ Play Preview" Click="PlayMusicPreview_Click"/>
+                                <Button Content="■ Stop Preview" Click="StopMusicPreview_Click"/>
                             </StackPanel>
 
                             <Button Content="Save Edits"

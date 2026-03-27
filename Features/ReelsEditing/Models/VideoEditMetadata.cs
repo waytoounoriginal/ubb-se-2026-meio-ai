@@ -11,7 +11,6 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Models
         public int CropWidth { get; set; } = 1920;
         public int CropHeight { get; set; } = 1080;
         public int? SelectedMusicTrackId { get; set; }
-        public double ThumbnailFrameSeconds { get; set; }
 
         // Music parameters
         public double MusicStartTime { get; set; }
@@ -26,7 +25,6 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Models
                 y = CropY,
                 width = CropWidth,
                 height = CropHeight,
-                thumbnailTimeSec = ThumbnailFrameSeconds,
                 musicStartTime = MusicStartTime,
                 musicDuration = MusicDuration,
                 musicVolume = MusicVolume

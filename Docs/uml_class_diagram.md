@@ -61,8 +61,10 @@ classDiagram
     class MusicTrackModel {
         +int MusicTrackId
         +string TrackName
+        +string Author
         +string AudioUrl
-        +int DurationSeconds
+        +double DurationSeconds
+        +string FormattedDuration
     }
 
     class MovieCardModel {
@@ -115,6 +117,10 @@ classDiagram
         +int CropWidth
         +int CropHeight
         +int? SelectedMusicTrackId
+        +double MusicStartTime
+        +double MusicDuration
+        +double MusicVolume
+        +ToCropDataJson() string
     }
 
     TournamentState --> "contains multiple" Matchup
@@ -201,13 +207,37 @@ classDiagram
 
     class IVideoProcessingService {
         <<interface>>
-        +ApplyCrop(VideoEditMetadata) void
-        +MergeAudioTrack(int reelId, int musicTrackId) void
+        +ApplyCropAsync(string videoPath, string cropDataJson) Task~string~
+        +MergeAudioAsync(string videoPath, int musicTrackId, double startOffsetSec, double musicDurationSec, double musicVolumePercent) Task~string~
     }
 
     class IAudioLibraryService {
         <<interface>>
-        +GetAvailableTracksAsync() List~MusicTrackModel~
+        +GetAllTracksAsync() Task~IList~MusicTrackModel~~
+        +GetTrackByIdAsync(int musicTrackId) Task~MusicTrackModel?~
+    }
+
+    class ISqlConnectionFactory {
+        <<interface>>
+        +CreateConnectionAsync() Task
+        +CreateMasterConnectionAsync() Task
+    }
+
+    class ReelRepository {
+        +GetUserReelsAsync(int userId) Task~IList~ReelModel~~
+        +GetReelByIdAsync(int reelId) Task~ReelModel?~
+        +UpdateReelEditsAsync(int reelId, string cropDataJson, int? musicId, string? videoUrl) Task~int~
+        +DeleteReelAsync(int reelId) Task
+    }
+
+    class AudioLibraryService {
+        +GetAllTracksAsync() Task~IList~MusicTrackModel~~
+        +GetTrackByIdAsync(int musicTrackId) Task~MusicTrackModel?~
+    }
+
+    class VideoProcessingService {
+        +ApplyCropAsync(string videoPath, string cropDataJson) Task~string~
+        +MergeAudioAsync(string videoPath, int musicTrackId, double startOffsetSec, double musicDurationSec, double musicVolumePercent) Task~string~
     }
 
     class ISwipeService {
@@ -308,19 +338,46 @@ classDiagram
 
     class ReelGalleryViewModel {
         +ObservableCollection~ReelModel~ UserReels
-        +ICommand LoadReelsCommand
+        +ReelModel? SelectedReel
+        +string StatusMessage
+        +bool IsLoaded
+        +EnsureLoadedAsync() Task
+        +LoadReelsAsync() Task
     }
 
-    class ReelEditorViewModel {
-        +ReelModel SelectedReel
+    class ReelsEditingViewModel {
+        +ReelModel? SelectedReel
         +VideoEditMetadata CurrentEdits
         +MusicTrackModel? SelectedMusicTrack
-        +ICommand SaveEditsCommand
+        +string StatusMessage
+        +bool IsStatusSuccess
+        +bool IsSaving
+        +bool IsEditing
+        +string SelectedEditOption
+        +ObservableCollection~MusicTrackModel~ MusicTracks
+        +bool IsMusicChosen
+        +double CropMarginLeft
+        +double CropMarginTop
+        +double CropMarginRight
+        +double CropMarginBottom
+        +double MusicStartTime
+        +double MusicDuration
+        +double MusicVolume
+        +bool HasStatusMessage
+        +SelectEditOption(string option) void
+        +LoadReelAsync(ReelModel reel) Task
+        +GoBack() void
+        +ApplyMusicSelection(MusicTrackModel track) void
+        +SaveCropAsync() Task
+        +SaveMusicAsync() Task
+        +DeleteReelAsync() Task
     }
 
     class MusicSelectionDialogViewModel {
         +ObservableCollection~MusicTrackModel~ AvailableTracks
-        +ICommand SelectTrackCommand
+        +MusicTrackModel? SelectedTrack
+        +LoadTracksAsync() Task
+        +SelectTrack(MusicTrackModel track) void
     }
 
     class MovieSwipeViewModel {
@@ -386,9 +443,9 @@ classDiagram
 
     ReelUploadViewModel --|> ViewModelBase
     MovieTrailerPlayerViewModel --|> ViewModelBase
-    ReelGalleryViewModel --|> ViewModelBase
-    ReelEditorViewModel --|> ViewModelBase
-    MusicSelectionDialogViewModel --|> ViewModelBase
+    ReelGalleryViewModel --|> ObservableObject
+    ReelsEditingViewModel --|> ObservableObject
+    MusicSelectionDialogViewModel --|> ObservableObject
     MovieSwipeViewModel --|> ViewModelBase
     TournamentSetupViewModel --|> ViewModelBase
     TournamentMatchViewModel --|> ViewModelBase
@@ -402,10 +459,10 @@ classDiagram
     ReelUploadViewModel --> IVideoStorageService
     ReelUploadViewModel --> IUserSession
     MovieTrailerPlayerViewModel --> IReelRepository
-    ReelGalleryViewModel --> IReelRepository
-    ReelGalleryViewModel --> IUserSession
-    ReelEditorViewModel --> IVideoProcessingService
-    ReelEditorViewModel --> IReelRepository
+    ReelGalleryViewModel --> ReelRepository
+    ReelsEditingViewModel --> IVideoProcessingService
+    ReelsEditingViewModel --> IAudioLibraryService
+    ReelsEditingViewModel --> ReelRepository
     MusicSelectionDialogViewModel --> IAudioLibraryService
     MovieSwipeViewModel --> ISwipeService
     MovieSwipeViewModel --> IUserSession
@@ -429,7 +486,11 @@ classDiagram
     ReelInteractionService --> IInteractionRepository
     ReelInteractionService --> IReelFeedPreferenceRepository
     EngagementProfileService --> IProfileRepository
-    IAudioLibraryService --> IMusicTrackRepository
+    ReelRepository --> ISqlConnectionFactory
+    AudioLibraryService --> ISqlConnectionFactory
+    AudioLibraryService ..|> IAudioLibraryService
+    VideoProcessingService ..|> IVideoProcessingService
+    VideoProcessingService --> IAudioLibraryService
 
     %% ══════════════════════════════════════
     %%  VIEWS
@@ -443,15 +504,7 @@ classDiagram
         <<View>>
     }
 
-    class ReelGalleryView {
-        <<View>>
-    }
-
-    class ReelEditorView {
-        <<View>>
-    }
-
-    class MusicSelectionDialogView {
+    class ReelsEditingPage {
         <<View>>
     }
 
@@ -494,9 +547,9 @@ classDiagram
     %% ── View → ViewModel bindings ──
     ReelUploadView --> ReelUploadViewModel
     MovieTrailerPlayerView --> MovieTrailerPlayerViewModel
-    ReelGalleryView --> ReelGalleryViewModel
-    ReelEditorView --> ReelEditorViewModel
-    MusicSelectionDialogView --> MusicSelectionDialogViewModel
+    ReelsEditingPage --> ReelGalleryViewModel
+    ReelsEditingPage --> ReelsEditingViewModel
+    ReelsEditingPage --> MusicSelectionDialogViewModel
     MovieSwipeView --> MovieSwipeViewModel
     SwipeResultSummaryView --> MovieSwipeViewModel
     TournamentSetupView --> TournamentSetupViewModel
@@ -513,6 +566,6 @@ classDiagram
 | Layer | Count | Components |
 |---|---|---|
 | **Models** | 12 | `ReelModel`, `UserMoviePreferenceModel`, `UserProfileModel`, `UserReelInteractionModel`, `MusicTrackModel`, `MovieCardModel`, `MovieModel`, `TournamentState`, `Matchup`, `MatchResult`, `ReelUploadRequest`, `VideoEditMetadata` |
-| **Views** | 14 | `ReelUploadView`, `MovieTrailerPlayerView`, `ReelGalleryView`, `ReelEditorView`, `MusicSelectionDialogView`, `MovieSwipeView`, `SwipeResultSummaryView`, `TournamentSetupView`, `TournamentMatchView`, `TournamentResultView`, `MatchListView`, `MatchedUserDetailView`, `ReelsFeedPage`, `ReelItemView` |
-| **ViewModels** | 13 | `ReelUploadViewModel`, `MovieTrailerPlayerViewModel`, `ReelGalleryViewModel`, `ReelEditorViewModel`, `MusicSelectionDialogViewModel`, `MovieSwipeViewModel`, `TournamentSetupViewModel`, `TournamentMatchViewModel`, `TournamentResultViewModel`, `MatchListViewModel`, `MatchedUserDetailViewModel` (inherit from `ViewModelBase`), `ReelsFeedViewModel`, `UserProfileViewModel` (inherit from `ObservableObject`) |
-| **Services & Repos** | 22 | `IUserSession`, `IVideoStorageService`, `IWebScraperService`, `VideoIngestionService`, `WebScraperBackgroundService`, `IVideoProcessingService`, `IAudioLibraryService`, `ISwipeService`, `SwipeService`, `TournamentLogicService`, `IPersonalityMatchingService`, `IReelInteractionService`, `IEngagementProfileService`, `IRecommendationService`, `IClipPlaybackService`, `IReelRepository`, `IMusicTrackRepository`, `IPreferenceRepository`, `IProfileRepository`, `IInteractionRepository`, `IReelFeedPreferenceRepository`, `IMovieRepository` |
+| **Views** | 12 | `ReelUploadView`, `MovieTrailerPlayerView`, `ReelsEditingPage`, `MovieSwipeView`, `SwipeResultSummaryView`, `TournamentSetupView`, `TournamentMatchView`, `TournamentResultView`, `MatchListView`, `MatchedUserDetailView`, `ReelsFeedPage`, `ReelItemView` |
+| **ViewModels** | 13 | `ReelUploadViewModel`, `MovieTrailerPlayerViewModel`, `ReelGalleryViewModel`, `ReelsEditingViewModel`, `MusicSelectionDialogViewModel`, `MovieSwipeViewModel`, `TournamentSetupViewModel`, `TournamentMatchViewModel`, `TournamentResultViewModel`, `MatchListViewModel`, `MatchedUserDetailViewModel`, `ReelsFeedViewModel`, `UserProfileViewModel` |
+| **Services & Repos** | 26 | `IUserSession`, `IVideoStorageService`, `IWebScraperService`, `VideoIngestionService`, `WebScraperBackgroundService`, `IVideoProcessingService`, `VideoProcessingService`, `IAudioLibraryService`, `AudioLibraryService`, `ReelRepository`, `ISqlConnectionFactory`, `ISwipeService`, `SwipeService`, `TournamentLogicService`, `IPersonalityMatchingService`, `IReelInteractionService`, `IEngagementProfileService`, `IRecommendationService`, `IClipPlaybackService`, `IReelRepository`, `IMusicTrackRepository`, `IPreferenceRepository`, `IProfileRepository`, `IInteractionRepository`, `IReelFeedPreferenceRepository`, `IMovieRepository` |

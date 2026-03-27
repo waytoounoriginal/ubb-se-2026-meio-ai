@@ -46,20 +46,22 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             return result;
         }
 
-        // Updates CropDataJson, BackgroundMusicId, LastEditedAt for a reel.
+        // Updates CropDataJson, BackgroundMusicId, LastEditedAt and optionally VideoUrl for a reel.
         // Returns the number of rows affected (should be 1).
-        public async Task<int> UpdateReelEditsAsync(int reelId, string cropDataJson, int? musicId)
+        public async Task<int> UpdateReelEditsAsync(int reelId, string cropDataJson, int? musicId, string? videoUrl = null)
         {
             const string sql = @"
                 UPDATE Reel
                 SET CropDataJson = @Crop,
                     BackgroundMusicId = @MusicId,
+                    VideoUrl = COALESCE(@VideoUrl, VideoUrl),
                     LastEditedAt = SYSUTCDATETIME()
                 WHERE ReelId = @ReelId";
             await using var conn = await _db.CreateConnectionAsync();
             await using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@Crop", cropDataJson);
             cmd.Parameters.AddWithValue("@MusicId", (object?)musicId ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@VideoUrl", (object?)videoUrl ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@ReelId", reelId);
             return await cmd.ExecuteNonQueryAsync();
         }

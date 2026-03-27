@@ -23,6 +23,16 @@
     <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
     <Content Include="Assets\StoreLogo.png" />
     <Content Include="Assets\Wide310x150Logo.scale-200.png" />
+    <Content Include="tools\ffmpeg\ffmpeg.exe" Condition="Exists('tools\ffmpeg\ffmpeg.exe')">
+      <TargetPath>ffmpeg.exe</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="tools\ffmpeg\ffprobe.exe" Condition="Exists('tools\ffmpeg\ffprobe.exe')">
+      <TargetPath>ffprobe.exe</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
