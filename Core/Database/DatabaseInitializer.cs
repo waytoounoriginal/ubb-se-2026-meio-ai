@@ -10,6 +10,9 @@ namespace ubb_se_2026_meio_ai.Core.Database
     {
         private readonly ISqlConnectionFactory _connectionFactory;
 
+        private const string DatabaseName = "MeioAiDb";
+
+
         public DatabaseInitializer(ISqlConnectionFactory connectionFactory)
         {
             _connectionFactory = connectionFactory;
@@ -22,7 +25,7 @@ namespace ubb_se_2026_meio_ai.Core.Database
 
             // 2. Create the tables in the database
             const string sql = @"
-                USE [MeioAiDb];
+                USE [MeioAiDb]; 
                 -- Movie (shared table — created here so JOINs work)
                 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Movie')
                 BEGIN
@@ -34,6 +37,7 @@ namespace ubb_se_2026_meio_ai.Core.Database
                         PrimaryGenre    NVARCHAR(128)   NULL,
                         Description     NVARCHAR(MAX)   NULL,
                         ReleaseYear     INT             NULL,
+                        Synopsis        NVARCHAR(MAX)   NULL,
                         AverageRating   FLOAT           NULL
                     );
                 END
@@ -176,20 +180,57 @@ namespace ubb_se_2026_meio_ai.Core.Database
                 END
 
                 -- Seed Movies for Demo
-                IF (SELECT COUNT(*) FROM Movie) = 0
-                BEGIN
-                    INSERT INTO Movie (Title, PosterUrl, PrimaryGenre, ReleaseYear)
-                    VALUES
-                    ('Inception', 'https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_.jpg', 'Sci-Fi', 2010),
-                    ('The Dark Knight', 'https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_.jpg', 'Action', 2008),
-                    ('Interstellar', 'https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS00OGEyLWFmMjktY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg', 'Adventure', 2014),
-                    ('The Matrix', 'https://m.media-amazon.com/images/M/MV5BNzQzOTk3NTAtNDQ2Ny00Njc2LTk3M2QtN2FjYTJjNzQzYzQwXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg', 'Sci-Fi', 1999),
-                    ('Parasite', 'https://m.media-amazon.com/images/M/MV5BYWZjMjk3ZTAtZGYzMC00ODQ0LWI2YTMtYjQ5NDU3N2NmZDIzXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg', 'Thriller', 2019),
-                    ('La La Land', 'https://m.media-amazon.com/images/M/MV5BMjA2OTYxNTY2Nl5BMl5BanBnXkFtZTgwNzg4OTA5OTE@._V1_.jpg', 'Musical', 2016),
-                    ('Whiplash', 'https://m.media-amazon.com/images/M/MV5BMjE4NDYxNTAxNV5BMl5BanBnXkFtZTgwNzM0NDM1MjE@._V1_.jpg', 'Drama', 2014),
-                    ('The Grand Budapest Hotel', 'https://m.media-amazon.com/images/M/MV5BMjM2NTQzMzc5OF5BMl5BanBnXkFtZTgwNzM2ODU3MDE@._V1_.jpg', 'Comedy', 2014);
-                END
+                -- Seed Movies for Demo
+-- Seed Movies for Demo
+IF (SELECT COUNT(*) FROM Movie) = 0
+BEGIN
+    INSERT INTO Movie (Title, PosterUrl, PrimaryGenre, ReleaseYear)
+    VALUES
+    ('Inception', 'https://media.themoviedb.org/t/p/w600_and_h900_face/vr6ouTojPp0zlSpJvCbODPp19nd.jpg', 'Sci-Fi', 2010),
+    ('The Dark Knight', 'https://media.themoviedb.org/t/p/w600_and_h900_face/a1UL3FTJDgQikYIebnMDhTPFVfm.jpg', 'Action', 2008),
+    ('Interstellar', 'https://media.themoviedb.org/t/p/w600_and_h900_face/wbnrYkn59cdFuu0LNAZ2BWh2i37.jpg', 'Adventure', 2014),
+    ('The Matrix1', 'https://media.themoviedb.org/t/p/w600_and_h900_face/p96dm7sCMn4VYAStA6siNz30G1r.jpg', 'Sci-Fi', 1999),
+    ('Parasite', 'https://media.themoviedb.org/t/p/w600_and_h900_face/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg', 'Thriller', 2019),
+    ('La La Land', 'https://media.themoviedb.org/t/p/w600_and_h900_face/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg', 'Musical', 2016),
+    ('Whiplash', 'https://media.themoviedb.org/t/p/w600_and_h900_face/7fn624j5lj3xTme2SgiLCeuedmO.jpg', 'Drama', 2014),
+    ('The Grand Budapest Hotel', 'https://media.themoviedb.org/t/p/w600_and_h900_face/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg', 'Comedy', 2014);
+END
 
+IF (SELECT COUNT(*) FROM Movie) < 38
+BEGIN
+    INSERT INTO Movie (Title, PosterUrl, PrimaryGenre, ReleaseYear)
+    VALUES
+    ('Avatar', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/gKY6q7SjCkAU6FqvqWybDYgUKIF.jpg', 'Sci-Fi', 2009),
+    ('Titanic', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/9xjZS2rlVxm8SFx8kPC3aIGCOYQ.jpg', 'Romance', 1997),
+    ('Gladiator', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/yafsp1whNDGqmn6vqHdgg0PbZA5.jpg', 'Action', 2000),
+    ('The Shawshank Redemption', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/tsY4m4IH8MZly4kvxZszbommLKj.jpg', 'Drama', 1994),
+    ('Forrest Gump', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/n7NEvy20kMLD0X6lrzoaSGXnr3I.jpg', 'Drama', 1994),
+    ('The Godfather', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/z4lzwl3Gff5IOWKGiYY7gUFYXUb.jpg', 'Crime', 1972),
+    ('Pulp Fiction', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/vQWk5YBFWF4bZaofAbv0tShwBvQ.jpg', 'Crime', 1994),
+    ('Fight Club', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg', 'Drama', 1999),
+    ('The Social Network', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/jD2LsdNu9zWwXjjlbxO0Iibpefz.jpg', 'Drama', 2010),
+    ('Joker', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/6zIyfSojJxoCj6mL3TZPFZBByfP.jpg', 'Thriller', 2019),
+    ('Avengers: Endgame', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/5hRf3rT7T5QNTmfbv00yXzpGvXw.jpg', 'Action', 2019),
+    ('Iron Man', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/frW3QzyDondJdnd6ydzT8ekKHAw.jpg', 'Action', 2008),
+    ('Toy Story', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/RyAWIbSmt4xC859hyQ43wUumM9.jpg', 'Animation', 1995),
+    ('Finding Nemo', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/7YrKAe5GBg2f2WnwMrX9IdLFqCq.jpg', 'Animation', 2003),
+    ('Up', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/f6ytrGR8IJ0qizc2gI0HSJN6OaU.jpg', 'Animation', 2009),
+    ('The Lion King', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/Pa9euUkkwUqHJoMh6eIj2XVeV4.jpg', 'Animation', 1994),
+    ('Frozen', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/itAKcobTYGpYT8Phwjd8c9hleTo.jpg', 'Animation', 2013),
+    ('The Conjuring', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/A09nKeXAa0FlOr6Y6EVnvAINKQ2.jpg', 'Horror', 2013),
+    ('Get Out', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/yY33WCqDYUHdT6LJWsJUekSM4E.jpg', 'Horror', 2017),
+    ('A Quiet Place', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/yelqLnp4My4WWqD647wwwpw552P.jpg', 'Horror', 2018),
+    ('Mad Max: Fury Road', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/89BIhHMvGAoxQkniNFB8ENrfzxk.jpg', 'Action', 2015),
+    ('John Wick', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/rP7X52bxOEBc09h5qzHJnHXxE3C.jpg', 'Action', 2014),
+    ('The Wolf of Wall Street', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/bm6TEyJMpvzTeBOP1V43UfRrrfg.jpg', 'Biography', 2013),
+    ('Django Unchained', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/w1P4HHXJT6CRbcZ2x6Yq2sjWsdF.jpg', 'Western', 2012),
+    ('The Revenant', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/6Z6bzPW2K6i5nD2NO8wRZRKQJ5y.jpg', 'Adventure', 2015),
+    ('Blade Runner 2049', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/9pz5bPDufSrJd8yTNjp0apTAVf8.jpg', 'Sci-Fi', 2017),
+    ('Her', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/kBK4UlVOIx6NZyD0QkHlFi9XnAw.jpg', 'Romance', 2013),
+    ('The Prestige', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/cNpg2TjWtsut8QUBqezkbHXQFgb.jpg', 'Drama', 2006),
+    ('Memento', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/fKTPH2WvH8nHTXeBYBVhawtRqtR.jpg', 'Thriller', 2000),
+    ('Shutter Island', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/qfpFopx4AHd3oTOkj0VGG50AS39.jpg', 'Thriller', 2010);
+END
                 -- Seed Music Tracks (for Reel Editing feature)
                 IF (SELECT COUNT(*) FROM MusicTrack) = 0
                 BEGIN
@@ -268,19 +309,6 @@ namespace ubb_se_2026_meio_ai.Core.Database
                      'The intense final drum performance',
                      75.0, 'youtube', DATEADD(day, -1, SYSUTCDATETIME()));
                 END
-                -- ═══════════════════════════════════════════════════════════
-                -- TODO (Madi — account switcher):
-                -- When the team is aligned, create the User table and add these fields:
-                --   UserId          INT PRIMARY KEY
-                --   Username        NVARCHAR(100) NOT NULL
-                --   FacebookAccount NVARCHAR(100) NULL
-                --   IsLogged        BIT NOT NULL DEFAULT 0  (account added to the switcher)
-                --   IsActive        BIT NOT NULL DEFAULT 0  (currently active session; only one row = 1)
-                -- Seed User 1 with IsLogged=1, IsActive=1. Users 2–6 with IsLogged=0, IsActive=0.
-                -- Then replace the hardcoded _demoAccounts, _activeUserId, and _loggedAccountIds
-                -- in PersonalityMatchViewModel with DB calls to IPersonalityMatchRepository.
-                -- ═══════════════════════════════════════════════════════════
-
                 -- ═══════════════════════════════════════════════════════════
                 -- Madi: Seed mock users 2–6 for personality matching demo
                 -- Each user has different taste overlap with user 1
@@ -371,131 +399,6 @@ namespace ubb_se_2026_meio_ai.Core.Database
                 IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 6)
                     INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
                     VALUES (6, 25, 12000, 110.0, 109, 0.23);
-
-               
-                -- Madi: Extended demo users 7–13 for account-switcher testing
-                --
-                -- Users 7, 8, 10, 11, 12, 13 all share movies with Alice (User 2),
-                -- giving her 11 total matches — enough to test the top-10 cap.
-                --
-                -- User 9 (Sam Taylor) has NO preferences intentionally — when logged
-                -- in as Sam the app shows the No match screen and the Maybe you like fallback.
-                
-
-                -- User 7 (James Park) — sci-fi/action fan, overlaps with Alice on movies 1,2,4,5
-                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 7)
-                BEGIN
-                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
-                    VALUES
-                    (7, 1, 8.2, 1),   -- Inception
-                    (7, 2, 9.0, 1),   -- The Dark Knight
-                    (7, 4, 8.8, 1),   -- The Matrix
-                    (7, 5, 8.5, 1);   -- Parasite
-                END
-
-                -- User 8 (Luna Kim) — thriller/drama fan, overlaps with Alice on movies 2,3,8
-                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 8)
-                BEGIN
-                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
-                    VALUES
-                    (8, 2, 9.5, 1),   -- The Dark Knight
-                    (8, 3, 8.0, 1),   -- Interstellar
-                    (8, 8, 9.2, 1);   -- The Grand Budapest Hotel
-                END
-
-                -- User 9 (Sam Taylor) — NO preferences intentionally.
-                -- Triggers the No match screen and Maybe you like fallback. Do NOT add rows here.
-
-                -- Add movies 9 and 10 for the Alice vs Alex match-count differentiation.
-                -- Alex (User 1) only rates movies 1-8. Alice (User 2) will also rate 9 and 10.
-                -- Users 10-13 are migrated to ONLY rate movies 9 and 10.
-                -- Result: Alex gets ~7 matches, Alice gets 11 (tests the top-10 cap).
-                IF NOT EXISTS (SELECT 1 FROM Movie WHERE Title = 'The Godfather')
-                    INSERT INTO Movie (Title, PosterUrl, PrimaryGenre, ReleaseYear)
-                    VALUES ('The Godfather', 'https://m.media-amazon.com/images/M/MV5BM2MyNjYxNmUtYTAwNi00MTYxLWJmNWYtYzZlODY3ZTk3OTFlXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg', 'Crime', 1972);
-
-                IF NOT EXISTS (SELECT 1 FROM Movie WHERE Title = 'Forrest Gump')
-                    INSERT INTO Movie (Title, PosterUrl, PrimaryGenre, ReleaseYear)
-                    VALUES ('Forrest Gump', 'https://m.media-amazon.com/images/M/MV5BNWIwODRlZTUtY2U3ZS00Yzg1LWJhNzYtMmZiYmEyNmU1NjMzXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_.jpg', 'Drama', 1994);
-
-                -- Alice (User 2) also rates movies 9 and 10 so she overlaps with Users 10-13.
-                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 2 AND MovieId = (SELECT MovieId FROM Movie WHERE Title = 'The Godfather'))
-                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
-                    VALUES (2, (SELECT MovieId FROM Movie WHERE Title = 'The Godfather'), 8.8, 1);
-
-                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 2 AND MovieId = (SELECT MovieId FROM Movie WHERE Title = 'Forrest Gump'))
-                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
-                    VALUES (2, (SELECT MovieId FROM Movie WHERE Title = 'Forrest Gump'), 9.1, 1);
-
-                -- Migrate Users 10-13 to only rate movies 9-10.
-                -- This DELETE is idempotent: if already migrated, nothing to remove.
-                DELETE FROM UserMoviePreference WHERE UserId IN (10,11,12,13) AND MovieId BETWEEN 1 AND 8;
-
-                -- User 10 (Nina Reeves) — The Godfather / Forrest Gump fan
-                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 10)
-                BEGIN
-                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
-                    VALUES
-                    (10, (SELECT MovieId FROM Movie WHERE Title = 'The Godfather'), 8.5, 1),
-                    (10, (SELECT MovieId FROM Movie WHERE Title = 'Forrest Gump'),  7.9, 1);
-                END
-
-                -- User 11 (Tom Walsh) — The Godfather / Forrest Gump fan
-                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 11)
-                BEGIN
-                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
-                    VALUES
-                    (11, (SELECT MovieId FROM Movie WHERE Title = 'The Godfather'), 9.0, 1),
-                    (11, (SELECT MovieId FROM Movie WHERE Title = 'Forrest Gump'),  8.3, 1);
-                END
-
-                -- User 12 (Zara Foster) — The Godfather / Forrest Gump fan
-                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 12)
-                BEGIN
-                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
-                    VALUES
-                    (12, (SELECT MovieId FROM Movie WHERE Title = 'The Godfather'), 7.8, 1),
-                    (12, (SELECT MovieId FROM Movie WHERE Title = 'Forrest Gump'),  9.2, 1);
-                END
-
-                -- User 13 (Kai Rivera) — The Godfather / Forrest Gump fan
-                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 13)
-                BEGIN
-                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
-                    VALUES
-                    (13, (SELECT MovieId FROM Movie WHERE Title = 'The Godfather'), 8.6, 1),
-                    (13, (SELECT MovieId FROM Movie WHERE Title = 'Forrest Gump'),  8.0, 1);
-                END
-
-                -- UserProfile rows for users 7–13
-                IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 7)
-                    INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
-                    VALUES (7, 35, 15000, 100.0, 130, 0.27);
-
-                IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 8)
-                    INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
-                    VALUES (8, 55, 24000, 130.5, 180, 0.31);
-
-                -- User 9 (Sam Taylor) — new account, no activity yet
-                IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 9)
-                    INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
-                    VALUES (9, 0, 0, 0.0, 0, 0.0);
-
-                IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 10)
-                    INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
-                    VALUES (10, 20, 9000, 80.0, 90, 0.22);
-
-                IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 11)
-                    INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
-                    VALUES (11, 70, 35000, 160.0, 240, 0.29);
-
-                IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 12)
-                    INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
-                    VALUES (12, 45, 20000, 115.0, 165, 0.27);
-
-                IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 13)
-                    INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
-                    VALUES (13, 30, 13000, 95.0, 120, 0.25);
             ";
 
             await using SqlConnection connection = await _connectionFactory.CreateConnectionAsync();
@@ -506,7 +409,7 @@ namespace ubb_se_2026_meio_ai.Core.Database
         private async Task EnsureDatabaseExistsAsync()
         {
             const string sql = @"
-                IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'andrei')
+                IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'MeioAiDb')
                 BEGIN
                     CREATE DATABASE [MeioAiDb];
                 END

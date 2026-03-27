@@ -1,28 +1,28 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels;
+using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.Views
 {
     public sealed partial class MovieTournamentPage : Page
     {
-        public MovieTournamentViewModel ViewModel { get; }
-
         public MovieTournamentPage()
         {
-            // This gets the ViewModel from the App's dependency injection container
-            ViewModel = App.Services.GetRequiredService<MovieTournamentViewModel>();
             this.InitializeComponent();
+            this.Loaded += OnLoaded;
         }
 
-        /// <summary>
-        /// This helper function is used by the XAML {x:Bind} to decide which 
-        /// part of the UI to show based on the CurrentViewState.
-        /// </summary>
-        public Visibility IsState(int currentState, int targetState)
+        private void OnLoaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
         {
-            return currentState == targetState ? Visibility.Visible : Visibility.Collapsed;
+            var tournamentService = App.Services.GetRequiredService<ITournamentLogicService>();
+
+            // Restore the correct sub-page based on the current tournament state
+            if (tournamentService.IsTournamentActive)
+                TournamentFrame.Navigate(typeof(TournamentMatchPage));
+            else if (tournamentService.IsTournamentComplete())
+                TournamentFrame.Navigate(typeof(TournamentWinnerPage));
+            else
+                TournamentFrame.Navigate(typeof(TournamentSetupPage));
         }
     }
 }
