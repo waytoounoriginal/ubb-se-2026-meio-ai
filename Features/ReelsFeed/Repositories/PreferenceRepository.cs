@@ -25,13 +25,14 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                 BEGIN
                     UPDATE UserMoviePreference
                     SET Score        = Score + @Boost,
-                        LastModified = SYSUTCDATETIME()
+                        LastModified = SYSUTCDATETIME(),
+                        ChangeFromPreviousValue = @Boost
                     WHERE UserId = @UserId AND MovieId = @MovieId;
                 END
                 ELSE
                 BEGIN
-                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, LastModified)
-                    VALUES (@UserId, @MovieId, @Boost, SYSUTCDATETIME());
+                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, LastModified, ChangeFromPreviousValue)
+                    VALUES (@UserId, @MovieId, @Boost, SYSUTCDATETIME(), 0);
                 END
             ";
 

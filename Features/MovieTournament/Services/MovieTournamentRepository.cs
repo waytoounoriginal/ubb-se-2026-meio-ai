@@ -1,6 +1,8 @@
 using System.Data;
 using Microsoft.Data.SqlClient;
 using ubb_se_2026_meio_ai.Core.Database;
+using ubb_se_2026_meio_ai.Core.Models;
+
 
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
 {
@@ -25,13 +27,13 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
             await using var command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@UserId", userId);
 
-            return (int)await command.ExecuteScalarAsync();
+            return (int)(await command.ExecuteScalarAsync() ?? 0);
         }
 
-        public async Task<List<Models.MovieCard>> GetTournamentPoolAsync(int userId, int poolSize)
+        public async Task<List<MovieCardModel>> GetTournamentPoolAsync(int userId, int poolSize)
         {
             const string sql = @"
-                SELECT TOP (@PoolSize) m.MovieId, m.Title, m.PosterUrl, m.ReleaseYear
+                SELECT TOP (@PoolSize) m.MovieId, m.Title, m.PosterUrl, m.ReleaseYear, m.PrimaryGenre
                 FROM Movie m
                 INNER JOIN UserMoviePreference ump ON m.MovieId = ump.MovieId
                 WHERE ump.UserId = @UserId AND ump.ChangeFromPreviousValue > 0
@@ -44,29 +46,33 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
             command.Parameters.AddWithValue("@UserId", userId);
             command.Parameters.AddWithValue("@PoolSize", poolSize);
 
-            var movies = new List<Models.MovieCard>();
+            var movies = new List<MovieCardModel>();
             await using var reader = await command.ExecuteReaderAsync();
             
             while (await reader.ReadAsync())
             {
-                movies.Add(new Models.MovieCard(
-                    reader.GetInt32(0),   // MovieId
-                    reader.GetString(1),  // Title
-                    reader.IsDBNull(2) ? string.Empty : reader.GetString(2), // PosterUrl
-                    reader.IsDBNull(3) ? 0 : reader.GetInt32(3)              // ReleaseYear
-                ));
+                movies.Add(new MovieCardModel
+                {
+                    MovieId = reader.GetInt32(0),
+                    Title = reader.GetString(1),
+                    PosterUrl = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                    ReleaseYear = reader.IsDBNull(3) ? 0 : reader.GetInt32(3),
+                    Genre = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
+                    
+                });
             }
 
             return movies;
         }
 
-        public async Task BoostMovieScoreAsync(int userId, int movieId, float scoreBoost)
+        public async Task BoostMovieScoreAsync(int userId, int movieId, double scoreBoost)
         {
-            // Boosts the score in the UserMoviePreference table
-            const string sql = @"
+            
+            const string sql = @"USE MeioAiDb;
                 UPDATE UserMoviePreference
                 SET Score = Score + @ScoreBoost,
-                    LastModified = SYSUTCDATETIME()
+                    LastModified = SYSUTCDATETIME(),
+                    ChangeFromPreviousValue = @ScoreBoost
                 WHERE UserId = @UserId AND MovieId = @MovieId;
             ";
 
