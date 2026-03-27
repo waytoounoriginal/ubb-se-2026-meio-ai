@@ -19,7 +19,7 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
             _connectionFactory = connectionFactory;
         }
 
-        /// <inheritdoc />
+
         public async Task<Dictionary<int, List<UserMoviePreferenceModel>>> GetAllPreferencesExceptUserAsync(int excludeUserId)
         {
             const string sql = @"
@@ -56,7 +56,7 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
             return result;
         }
 
-        /// <inheritdoc />
+   
         public async Task<List<UserMoviePreferenceModel>> GetCurrentUserPreferencesAsync(int userId)
         {
             const string sql = @"
@@ -86,7 +86,6 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
             return results;
         }
 
-        /// <inheritdoc />
         public async Task<UserProfileModel?> GetUserProfileAsync(int userId)
         {
             const string sql = @"
@@ -118,7 +117,6 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
             return null;
         }
 
-        /// <inheritdoc />
         public async Task<List<int>> GetRandomUserIdsAsync(int excludeUserId, int count)
         {
             const string sql = @"

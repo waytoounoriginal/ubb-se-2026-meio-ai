@@ -11,8 +11,6 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
     {
         private readonly IPersonalityMatchRepository _repository;
 
-        // TODO: Replace with DB query — SELECT Username FROM [User] WHERE UserId = @UserId
-        // When User table exists, remove this dictionary and call _repository.GetUsernameAsync instead.
         private static readonly Dictionary<int, string> HardcodedUsernames = new()
         {
             [1]  = "Alex Carter",
@@ -30,7 +28,7 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
             [13] = "Kai Rivera",
         };
 
-        // TODO: Replace with DB column — FacebookAccount NVARCHAR(100) in [User] table
+
         private static readonly Dictionary<int, string> HardcodedFacebookAccounts = new()
         {
             [1]  = "fb_alex_carter",
@@ -53,7 +51,7 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
             _repository = repository;
         }
 
-        /// <inheritdoc />
+    
         public async Task<List<MatchResult>> GetTopMatchesAsync(int userId, int count)
         {
             List<UserMoviePreferenceModel> currentUserPrefs =
@@ -88,8 +86,7 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
             var results = new List<MatchResult>();
             foreach (var (otherUserId, similarity) in scored.Take(count))
             {
-                // TODO: Replace GetHardcodedUsername / GetFacebookAccount with
-                //       await _repository.GetUsernameAsync(otherUserId) once User table exists
+
                 results.Add(new MatchResult
                 {
                     MatchedUserId = otherUserId,
@@ -102,7 +99,7 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
             return results;
         }
 
-        /// <inheritdoc />
+
         public async Task<List<MatchResult>> GetRandomUsersAsync(int userId, int count)
         {
             List<int> randomIds = await _repository.GetRandomUserIdsAsync(userId, count);
@@ -110,7 +107,7 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
             var results = new List<MatchResult>();
             foreach (int id in randomIds)
             {
-                // TODO: Replace with await _repository.GetUsernameAsync(id) once User table exists
+
                 results.Add(new MatchResult
                 {
                     MatchedUserId = id,
