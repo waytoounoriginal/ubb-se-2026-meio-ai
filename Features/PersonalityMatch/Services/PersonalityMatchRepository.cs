@@ -5,11 +5,7 @@ using ubb_se_2026_meio_ai.Features.PersonalityMatch.Models;
 
 namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
 {
-    /// <summary>
-    /// Raw SQL data access for the Personality Match feature.
-    /// Reads from shared UserMoviePreference, UserProfile, and User tables.
-    /// Owner: Madi
-    /// </summary>
+  
     public class PersonalityMatchRepository : IPersonalityMatchRepository
     {
         private readonly ISqlConnectionFactory _connectionFactory;
