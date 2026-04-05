@@ -170,16 +170,20 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
                 await using var sqlCommandOutputReader = await sqlCommand.ExecuteReaderAsync();
                 
                 var newMovieResults = new System.Collections.Generic.List<MovieCardModel>();
+                string movieIdField = "MovieId", titleField = "Title", posterField = "PosterUrl";
+                string primaryGenreField = "PrimaryGenre", releaseYearField = "ReleaseYear", descriptionField = "Description";
+                int nullId = 0;
+
                 while (await sqlCommandOutputReader.ReadAsync())
                 {
                     newMovieResults.Add(new MovieCardModel
                     {
-                        MovieId = sqlCommandOutputReader.GetInt32(sqlCommandOutputReader.GetOrdinal("MovieId")),
-                        Title = sqlCommandOutputReader.GetString(sqlCommandOutputReader.GetOrdinal("Title")),
-                        PosterUrl = sqlCommandOutputReader.IsDBNull(sqlCommandOutputReader.GetOrdinal("PosterUrl")) ? "" : sqlCommandOutputReader.GetString(sqlCommandOutputReader.GetOrdinal("PosterUrl")),
-                        PrimaryGenre = sqlCommandOutputReader.IsDBNull(sqlCommandOutputReader.GetOrdinal("PrimaryGenre")) ? "" : sqlCommandOutputReader.GetString(sqlCommandOutputReader.GetOrdinal("PrimaryGenre")),
-                        ReleaseYear = sqlCommandOutputReader.IsDBNull(sqlCommandOutputReader.GetOrdinal("ReleaseYear")) ? 0 : sqlCommandOutputReader.GetInt32(sqlCommandOutputReader.GetOrdinal("ReleaseYear")),
-                        Synopsis = sqlCommandOutputReader.IsDBNull(sqlCommandOutputReader.GetOrdinal("Description")) ? "" : sqlCommandOutputReader.GetString(sqlCommandOutputReader.GetOrdinal("Description"))
+                        MovieId = sqlCommandOutputReader.GetInt32(sqlCommandOutputReader.GetOrdinal(movieIdField)),
+                        Title = sqlCommandOutputReader.GetString(sqlCommandOutputReader.GetOrdinal(titleField)),
+                        PosterUrl = sqlCommandOutputReader.IsDBNull(sqlCommandOutputReader.GetOrdinal(posterField)) ? String.Empty : sqlCommandOutputReader.GetString(sqlCommandOutputReader.GetOrdinal(posterField)),
+                        PrimaryGenre = sqlCommandOutputReader.IsDBNull(sqlCommandOutputReader.GetOrdinal(primaryGenreField)) ? String.Empty : sqlCommandOutputReader.GetString(sqlCommandOutputReader.GetOrdinal(primaryGenreField)),
+                        ReleaseYear = sqlCommandOutputReader.IsDBNull(sqlCommandOutputReader.GetOrdinal(releaseYearField)) ? nullId : sqlCommandOutputReader.GetInt32(sqlCommandOutputReader.GetOrdinal(releaseYearField)),
+                        Synopsis = sqlCommandOutputReader.IsDBNull(sqlCommandOutputReader.GetOrdinal(descriptionField)) ? String.Empty : sqlCommandOutputReader.GetString(sqlCommandOutputReader.GetOrdinal(descriptionField))
                     });
                 }
 

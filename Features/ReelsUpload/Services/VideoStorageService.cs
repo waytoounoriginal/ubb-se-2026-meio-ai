@@ -101,14 +101,16 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
             ";
 
             await using var sqlCommand = new SqlCommand(sqlInsertInstruction, databaseConnection);
-            
+
             // Map nullable MovieId to 0 to satisfy your NOT NULL db constraint (since we can't use DBNull anymore)
-            sqlCommand.Parameters.AddWithValue("@MovieId", request.MovieId ?? 0);
+            int nullId = 0;
+
+            sqlCommand.Parameters.AddWithValue("@MovieId", request.MovieId ?? nullId);
             sqlCommand.Parameters.AddWithValue("@CreatorUserId", request.UploaderUserId);
             sqlCommand.Parameters.AddWithValue("@VideoUrl", destinationBlobPath);
-            sqlCommand.Parameters.AddWithValue("@ThumbnailUrl", ""); // Optional for now
-            sqlCommand.Parameters.AddWithValue("@Title", request.Title ?? string.Empty);
-            sqlCommand.Parameters.AddWithValue("@Caption", request.Caption ?? string.Empty);
+            sqlCommand.Parameters.AddWithValue("@ThumbnailUrl", String.Empty); // Optional for now
+            sqlCommand.Parameters.AddWithValue("@Title", request.Title ?? String.Empty);
+            sqlCommand.Parameters.AddWithValue("@Caption", request.Caption ?? String.Empty);
             sqlCommand.Parameters.AddWithValue("@FeatureDurationSeconds", computedDurationSeconds);
             sqlCommand.Parameters.AddWithValue("@CropDataJson", DBNull.Value);
             sqlCommand.Parameters.AddWithValue("@BackgroundMusicId", DBNull.Value);
@@ -125,17 +127,19 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
             }
 
             // 4. Return the constructed ReelModel
+            string emptyURL = "", uploadSource = "upload";
+
             return new ReelModel
             {
                 ReelId = generatedReelId,
-                MovieId = request.MovieId ?? 0,
+                MovieId = request.MovieId ?? nullId,
                 CreatorUserId = request.UploaderUserId,
                 VideoUrl = destinationBlobPath,
-                ThumbnailUrl = "",
-                Title = request.Title ?? string.Empty,
-                Caption = request.Caption ?? string.Empty,
+                ThumbnailUrl = emptyURL,
+                Title = request.Title ?? String.Empty,
+                Caption = request.Caption ?? String.Empty,
                 FeatureDurationSeconds = computedDurationSeconds,
-                Source = "upload",
+                Source = uploadSource,
                 CreatedAt = generatedCreatedAt
             };
         }
