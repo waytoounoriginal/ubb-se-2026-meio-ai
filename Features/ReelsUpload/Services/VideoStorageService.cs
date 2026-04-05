@@ -51,8 +51,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
             {
                 var storageFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(localFilePath);
                 var videoProperties = await storageFile.Properties.GetVideoPropertiesAsync();
-                
-                if (videoProperties.Duration.TotalSeconds > 60)
+                double maximumReelDurationSeconds = 60.0;
+
+                if (videoProperties.Duration.TotalSeconds > maximumReelDurationSeconds)
                 {
                     return false; // Video is too long
                 }
@@ -91,36 +92,36 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
             }
 
             // 3. Insert metadata into the database
-            await using var connection = await _sqlConnectionFactory.CreateConnectionAsync();
+            await using var databaseConnection = await _sqlConnectionFactory.CreateConnectionAsync();
             
-            string sqlInsert = @"
+            string sqlInsertInstruction = @"
                 INSERT INTO Reel (MovieId, CreatorUserId, VideoUrl, ThumbnailUrl, Title, Caption, FeatureDurationSeconds, CropDataJson, BackgroundMusicId, Source, CreatedAt)
                 OUTPUT INSERTED.ReelId, INSERTED.CreatedAt
                 VALUES (@MovieId, @CreatorUserId, @VideoUrl, @ThumbnailUrl, @Title, @Caption, @FeatureDurationSeconds, @CropDataJson, @BackgroundMusicId, @Source, SYSUTCDATETIME());
             ";
 
-            await using var command = new SqlCommand(sqlInsert, connection);
+            await using var sqlCommand = new SqlCommand(sqlInsertInstruction, databaseConnection);
             
             // Map nullable MovieId to 0 to satisfy your NOT NULL db constraint (since we can't use DBNull anymore)
-            command.Parameters.AddWithValue("@MovieId", request.MovieId ?? 0);
-            command.Parameters.AddWithValue("@CreatorUserId", request.UploaderUserId);
-            command.Parameters.AddWithValue("@VideoUrl", destinationBlobPath);
-            command.Parameters.AddWithValue("@ThumbnailUrl", ""); // Optional for now
-            command.Parameters.AddWithValue("@Title", request.Title ?? string.Empty);
-            command.Parameters.AddWithValue("@Caption", request.Caption ?? string.Empty);
-            command.Parameters.AddWithValue("@FeatureDurationSeconds", computedDurationSeconds);
-            command.Parameters.AddWithValue("@CropDataJson", DBNull.Value);
-            command.Parameters.AddWithValue("@BackgroundMusicId", DBNull.Value);
-            command.Parameters.AddWithValue("@Source", "upload");
+            sqlCommand.Parameters.AddWithValue("@MovieId", request.MovieId ?? 0);
+            sqlCommand.Parameters.AddWithValue("@CreatorUserId", request.UploaderUserId);
+            sqlCommand.Parameters.AddWithValue("@VideoUrl", destinationBlobPath);
+            sqlCommand.Parameters.AddWithValue("@ThumbnailUrl", ""); // Optional for now
+            sqlCommand.Parameters.AddWithValue("@Title", request.Title ?? string.Empty);
+            sqlCommand.Parameters.AddWithValue("@Caption", request.Caption ?? string.Empty);
+            sqlCommand.Parameters.AddWithValue("@FeatureDurationSeconds", computedDurationSeconds);
+            sqlCommand.Parameters.AddWithValue("@CropDataJson", DBNull.Value);
+            sqlCommand.Parameters.AddWithValue("@BackgroundMusicId", DBNull.Value);
+            sqlCommand.Parameters.AddWithValue("@Source", "upload");
 
             int generatedReelId = 0;
             DateTime generatedCreatedAt = DateTime.UtcNow;
 
-            await using var reader = await command.ExecuteReaderAsync();
-            if (await reader.ReadAsync())
+            await using var sqlCommandOutputReader = await sqlCommand.ExecuteReaderAsync();
+            if (await sqlCommandOutputReader.ReadAsync())
             {
-                generatedReelId = reader.GetInt32(0);
-                generatedCreatedAt = reader.GetDateTime(1);
+                generatedReelId = sqlCommandOutputReader.GetInt32(0);
+                generatedCreatedAt = sqlCommandOutputReader.GetDateTime(1);
             }
 
             // 4. Return the constructed ReelModel

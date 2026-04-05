@@ -58,13 +58,13 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
             filePicker.FileTypeFilter.Add(videoFileExtension);
 
             // In WinUI 3 Desktop apps, the file picker needs to know WHICH window it belongs to!
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            WinRT.Interop.InitializeWithWindow.Initialize(filePicker, hwnd);
+            var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+            WinRT.Interop.InitializeWithWindow.Initialize(filePicker, windowHandle);
 
-            var file = await filePicker.PickSingleFileAsync();
-            if (file != null)
+            var selectedMovieFile = await filePicker.PickSingleFileAsync();
+            if (selectedMovieFile != null)
             {
-                LocalVideoFilePath = file.Path;
+                LocalVideoFilePath = selectedMovieFile.Path;
             }
         }
 
@@ -137,9 +137,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
 
         // AutoSuggestBox click: select the movie
         [RelayCommand]
-        private void SelectMovie(MovieCardModel movie)
+        private void SelectMovie(MovieCardModel movieToSelect)
         {
-            LinkedMovie = movie;
+            LinkedMovie = movieToSelect;
         }
 
         // AutoSuggestBox 1 type: search for a movie to link to the reel
@@ -161,22 +161,25 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
                 await using var connection = await _connectionFactory.CreateConnectionAsync();
                 
                 string sqlInstruction = "SELECT TOP 10 MovieId, Title, PosterUrl, PrimaryGenre, ReleaseYear, Description FROM Movie WHERE Title LIKE @SearchTerm";
-                await using var command = new SqlCommand(sqlInstruction, connection);
-                command.Parameters.AddWithValue("@SearchTerm", $"%{partialMovieName}%");
+                await using var sqlCommand = new SqlCommand(sqlInstruction, connection);
 
-                await using var reader = await command.ExecuteReaderAsync();
+                string searchParameter = "@SearchTerm";
+                string searchedText = $"%{partialMovieName}%";
+                sqlCommand.Parameters.AddWithValue(searchParameter, searchedText);
+
+                await using var sqlCommandOutputReader = await sqlCommand.ExecuteReaderAsync();
                 
-                var newResults = new System.Collections.Generic.List<MovieCardModel>();
-                while (await reader.ReadAsync())
+                var newMovieResults = new System.Collections.Generic.List<MovieCardModel>();
+                while (await sqlCommandOutputReader.ReadAsync())
                 {
-                    newResults.Add(new MovieCardModel
+                    newMovieResults.Add(new MovieCardModel
                     {
-                        MovieId = reader.GetInt32(reader.GetOrdinal("MovieId")),
-                        Title = reader.GetString(reader.GetOrdinal("Title")),
-                        PosterUrl = reader.IsDBNull(reader.GetOrdinal("PosterUrl")) ? "" : reader.GetString(reader.GetOrdinal("PosterUrl")),
-                        PrimaryGenre = reader.IsDBNull(reader.GetOrdinal("PrimaryGenre")) ? "" : reader.GetString(reader.GetOrdinal("PrimaryGenre")),
-                        ReleaseYear = reader.IsDBNull(reader.GetOrdinal("ReleaseYear")) ? 0 : reader.GetInt32(reader.GetOrdinal("ReleaseYear")),
-                        Synopsis = reader.IsDBNull(reader.GetOrdinal("Description")) ? "" : reader.GetString(reader.GetOrdinal("Description"))
+                        MovieId = sqlCommandOutputReader.GetInt32(sqlCommandOutputReader.GetOrdinal("MovieId")),
+                        Title = sqlCommandOutputReader.GetString(sqlCommandOutputReader.GetOrdinal("Title")),
+                        PosterUrl = sqlCommandOutputReader.IsDBNull(sqlCommandOutputReader.GetOrdinal("PosterUrl")) ? "" : sqlCommandOutputReader.GetString(sqlCommandOutputReader.GetOrdinal("PosterUrl")),
+                        PrimaryGenre = sqlCommandOutputReader.IsDBNull(sqlCommandOutputReader.GetOrdinal("PrimaryGenre")) ? "" : sqlCommandOutputReader.GetString(sqlCommandOutputReader.GetOrdinal("PrimaryGenre")),
+                        ReleaseYear = sqlCommandOutputReader.IsDBNull(sqlCommandOutputReader.GetOrdinal("ReleaseYear")) ? 0 : sqlCommandOutputReader.GetInt32(sqlCommandOutputReader.GetOrdinal("ReleaseYear")),
+                        Synopsis = sqlCommandOutputReader.IsDBNull(sqlCommandOutputReader.GetOrdinal("Description")) ? "" : sqlCommandOutputReader.GetString(sqlCommandOutputReader.GetOrdinal("Description"))
                     });
                 }
 
@@ -184,7 +187,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
                     SuggestedMovies.Clear();
-                    foreach (var movie in newResults)
+                    foreach (var movie in newMovieResults)
                     {
                         SuggestedMovies.Add(movie);
                     }
