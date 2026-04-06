@@ -15,6 +15,12 @@
 		<NoWarn>$(NoWarn);MVVMTK0045</NoWarn>
 	</PropertyGroup>
 
+	<PropertyGroup Condition="'$(DisableWindowsAppSdkAutoInit)'=='true'">
+		<WindowsAppSdkBootstrapInitialize>false</WindowsAppSdkBootstrapInitialize>
+		<WindowsAppSdkDeploymentManagerInitialize>false</WindowsAppSdkDeploymentManagerInitialize>
+		<WindowsAppSdkUndockedRegFreeWinRTInitialize>false</WindowsAppSdkUndockedRegFreeWinRTInitialize>
+	</PropertyGroup>
+
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<CodeAnalysisRuleSet>SE.ruleset</CodeAnalysisRuleSet>
@@ -54,6 +60,11 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+		<PackageReference Include="coverlet.msbuild" Version="8.0.1">
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		  <PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		<PackageReference Include="coverlet.MTP" Version="8.0.1" />
 		<PackageReference Include="Google.Apis.YouTube.v3" Version="1.73.0.4093" />
 		<PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.3" />
@@ -67,6 +78,28 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Folder Include="Tools\" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Remove="UnitTests\**\*.cs" />
+		<Compile Remove="MeioAi.Logic\**\*.cs" />
+		<Compile Remove="Core\Database\**\*.cs" />
+		<Compile Remove="Core\Models\**\*.cs" />
+		<Compile Remove="Features\**\Models\**\*.cs" />
+		<Compile Remove="Features\**\Repositories\**\*.cs" />
+		<Compile Remove="Features\**\Services\**\*.cs" />
+		<EmbeddedResource Remove="UnitTests\**\*" />
+		<EmbeddedResource Remove="MeioAi.Logic\**\*" />
+		<None Remove="UnitTests\**\*" />
+		<None Remove="MeioAi.Logic\**\*" />
+		<Page Remove="UnitTests\**\*" />
+		<Page Remove="MeioAi.Logic\**\*" />
+		<ApplicationDefinition Remove="UnitTests\**\*" />
+		<ApplicationDefinition Remove="MeioAi.Logic\**\*" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="MeioAi.Logic\MeioAi.Logic.csproj" />
 	</ItemGroup>
 
 	<!--

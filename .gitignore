@@ -71,6 +71,8 @@ BundleArtifacts/
 TestResult.xml
 nunit-*.xml
 CodeCoverage/
+coverage/
+coveragereport/
 
 # ── Code Analysis ────────────────────────────────────────────────────────
 StyleCopReport.xml

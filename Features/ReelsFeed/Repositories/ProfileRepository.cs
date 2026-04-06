@@ -46,6 +46,45 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
             return null;
         }
 
+        public async Task<UserProfileModel> BuildProfileFromInteractionsAsync(int userId)
+        {
+            const string sql = @"
+                SELECT
+                    ISNULL(SUM(CASE WHEN IsLiked = 1 THEN 1 ELSE 0 END), 0),
+                    ISNULL(CAST(SUM(WatchDurationSec) AS BIGINT), 0),
+                    ISNULL(AVG(WatchDurationSec), 0),
+                    COUNT(*)
+                FROM UserReelInteraction
+                WHERE UserId = @UserId
+            ";
+
+            await using var connection = await _connectionFactory.CreateConnectionAsync();
+            await using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@UserId", userId);
+
+            await using var reader = await command.ExecuteReaderAsync();
+            await reader.ReadAsync();
+
+            int totalLikes = reader.GetInt32(0);
+            long totalWatchTimeSec = reader.GetInt64(1);
+            double avgWatchTimeSec = reader.GetDouble(2);
+            int totalClipsViewed = reader.GetInt32(3);
+            double likeToViewRatio = totalClipsViewed > 0
+                ? (double)totalLikes / totalClipsViewed
+                : 0;
+
+            return new UserProfileModel
+            {
+                UserId = userId,
+                TotalLikes = totalLikes,
+                TotalWatchTimeSec = totalWatchTimeSec,
+                AvgWatchTimeSec = avgWatchTimeSec,
+                TotalClipsViewed = totalClipsViewed,
+                LikeToViewRatio = likeToViewRatio,
+                LastUpdated = DateTime.UtcNow
+            };
+        }
+
         public async Task UpsertProfileAsync(UserProfileModel profile)
         {
             const string sql = @"
