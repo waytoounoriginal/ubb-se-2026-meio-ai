@@ -13,6 +13,15 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
     {
         private readonly ISqlConnectionFactory _connectionFactory;
 
+        // Column indices for UserReelInteractionModel mapping
+        private const int UserReelInteractionModel_InteractionId_Index = 0;
+        private const int UserReelInteractionModel_UserId_Index = 1;
+        private const int UserReelInteractionModel_ReelId_Index = 2;
+        private const int UserReelInteractionModel_IsLiked_Index = 3;
+        private const int UserReelInteractionModel_WatchDurationSec_Index = 4;
+        private const int UserReelInteractionModel_WatchPercentage_Index = 5;
+        private const int UserReelInteractionModel_ViewedAt_Index = 6;
+
         public InteractionRepository(ISqlConnectionFactory connectionFactory)
         {
             _connectionFactory = connectionFactory;
@@ -56,18 +65,27 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
 
         public async Task ToggleLikeAsync(int userId, int reelId)
         {
+            var interaction = await GetInteractionAsync(userId, reelId);
+            
+            if (interaction == null)
+            {
+                var newInteraction = new UserReelInteractionModel
+                {
+                    UserId = userId,
+                    ReelId = reelId,
+                    IsLiked = true,
+                    WatchDurationSec = 0,
+                    WatchPercentage = 0,
+                    ViewedAt = DateTime.UtcNow
+                };
+                await InsertInteractionAsync(newInteraction);
+                return;
+            }
+
             const string sql = @"
-                IF EXISTS (SELECT 1 FROM UserReelInteraction WHERE UserId = @UserId AND ReelId = @ReelId)
-                BEGIN
-                    UPDATE UserReelInteraction
-                    SET IsLiked = CASE WHEN IsLiked = 1 THEN 0 ELSE 1 END
-                    WHERE UserId = @UserId AND ReelId = @ReelId;
-                END
-                ELSE
-                BEGIN
-                    INSERT INTO UserReelInteraction (UserId, ReelId, IsLiked, WatchDurationSec, WatchPercentage, ViewedAt)
-                    VALUES (@UserId, @ReelId, 1, 0, 0, SYSUTCDATETIME());
-                END
+                UPDATE UserReelInteraction
+                SET IsLiked = CASE WHEN IsLiked = 1 THEN 0 ELSE 1 END
+                WHERE UserId = @UserId AND ReelId = @ReelId
             ";
 
             await using var connection = await _connectionFactory.CreateConnectionAsync();
@@ -79,20 +97,29 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
 
         public async Task UpdateViewDataAsync(int userId, int reelId, double watchDurationSec, double watchPercentage)
         {
+            var interaction = await GetInteractionAsync(userId, reelId);
+            
+            if (interaction == null)
+            {
+                var newInteraction = new UserReelInteractionModel
+                {
+                    UserId = userId,
+                    ReelId = reelId,
+                    IsLiked = false,
+                    WatchDurationSec = watchDurationSec,
+                    WatchPercentage = watchPercentage,
+                    ViewedAt = DateTime.UtcNow
+                };
+                await InsertInteractionAsync(newInteraction);
+                return;
+            }
+
             const string sql = @"
-                IF EXISTS (SELECT 1 FROM UserReelInteraction WHERE UserId = @UserId AND ReelId = @ReelId)
-                BEGIN
-                    UPDATE UserReelInteraction
-                    SET WatchDurationSec = @WatchDurationSec,
-                        WatchPercentage  = @WatchPercentage,
-                        ViewedAt         = SYSUTCDATETIME()
-                    WHERE UserId = @UserId AND ReelId = @ReelId;
-                END
-                ELSE
-                BEGIN
-                    INSERT INTO UserReelInteraction (UserId, ReelId, IsLiked, WatchDurationSec, WatchPercentage, ViewedAt)
-                    VALUES (@UserId, @ReelId, 0, @WatchDurationSec, @WatchPercentage, SYSUTCDATETIME());
-                END
+                UPDATE UserReelInteraction
+                SET WatchDurationSec = @WatchDurationSec,
+                    WatchPercentage  = @WatchPercentage,
+                    ViewedAt         = SYSUTCDATETIME()
+                WHERE UserId = @UserId AND ReelId = @ReelId
             ";
 
             await using var connection = await _connectionFactory.CreateConnectionAsync();
@@ -120,16 +147,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
             await using var reader = await command.ExecuteReaderAsync();
             if (await reader.ReadAsync())
             {
-                return new UserReelInteractionModel
-                {
-                    InteractionId = reader.GetInt64(0),
-                    UserId = reader.GetInt32(1),
-                    ReelId = reader.GetInt32(2),
-                    IsLiked = reader.GetBoolean(3),
-                    WatchDurationSec = reader.GetDouble(4),
-                    WatchPercentage = reader.GetDouble(5),
-                    ViewedAt = reader.GetDateTime(6)
-                };
+                return MapUserReelInteraction(reader);
             }
 
             return null;
@@ -159,6 +177,20 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
             command.Parameters.AddWithValue("@ReelId", reelId);
             var result = await command.ExecuteScalarAsync();
             return result == null ? null : Convert.ToInt32(result);
+        }
+
+        private UserReelInteractionModel MapUserReelInteraction(SqlDataReader reader)
+        {
+            return new UserReelInteractionModel
+            {
+                InteractionId = reader.GetInt64(UserReelInteractionModel_InteractionId_Index),
+                UserId = reader.GetInt32(UserReelInteractionModel_UserId_Index),
+                ReelId = reader.GetInt32(UserReelInteractionModel_ReelId_Index),
+                IsLiked = reader.GetBoolean(UserReelInteractionModel_IsLiked_Index),
+                WatchDurationSec = reader.GetDouble(UserReelInteractionModel_WatchDurationSec_Index),
+                WatchPercentage = reader.GetDouble(UserReelInteractionModel_WatchPercentage_Index),
+                ViewedAt = reader.GetDateTime(UserReelInteractionModel_ViewedAt_Index)
+            };
         }
     }
 }

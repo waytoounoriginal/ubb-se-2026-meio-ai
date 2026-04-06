@@ -108,6 +108,16 @@ namespace ubb_se_2026_meio_ai
 
         protected override async void OnLaunched(LaunchActivatedEventArgs args)
         {
+            // Ensure that the appdata folder is created
+            string appFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "MeioAI"
+                );
+
+            if (!Directory.Exists(appFolder)) {
+                Directory.CreateDirectory(appFolder);
+            }
+
             try
             {
                 // Ensure shared tables exist before any feature code runs.
@@ -143,10 +153,10 @@ namespace ubb_se_2026_meio_ai
         /// </summary>
         private static string ResolveYouTubeApiKey()
         {
-            if (!string.IsNullOrWhiteSpace(YouTubeApiKey))
-            {
-                return YouTubeApiKey;
-            }
+            //if (!string.IsNullOrWhiteSpace(YouTubeApiKey))
+            //{
+            //    return YouTubeApiKey;
+            //}
 
             return Environment.GetEnvironmentVariable("YOUTUBE_API_KEY") ?? string.Empty;
         }
