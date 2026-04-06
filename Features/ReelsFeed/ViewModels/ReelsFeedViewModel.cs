@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using ubb_se_2026_meio_ai;
 using ubb_se_2026_meio_ai.Core.Models;
 using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
 
@@ -26,10 +27,10 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
 
 
         [ObservableProperty]
-        private string _pageTitle = "Reels Feed";
+        private string _pageTitle = AppMessages.ReelsFeedPageTitle;
 
         [ObservableProperty]
-        private string _statusMessage = "Scroll to discover reels.";
+        private string _statusMessage = AppMessages.ReelsFeedInitialStatus;
 
         [ObservableProperty]
         private bool _isLoading;
@@ -96,7 +97,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Error loading feed: {ex.Message}";
+                ErrorMessage = string.Format(AppMessages.ReelsFeedLoadErrorFormat, ex.Message);
                 StatusMessage = string.Empty;
             }
             finally
