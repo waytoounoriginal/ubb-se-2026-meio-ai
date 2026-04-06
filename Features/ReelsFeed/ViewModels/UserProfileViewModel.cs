@@ -8,7 +8,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
     /// <summary>
     /// Exposes the user's engagement metrics from <see cref="IEngagementProfileService"/>.
     /// Read by Madi's PersonalityMatch feature for matched user details.
-    /// Owner: Tudor
+    /// Owner: Tudor.
     /// </summary>
     public partial class UserProfileViewModel : ObservableObject
     {
@@ -23,32 +23,38 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
         [ObservableProperty]
         private string? _errorMessage;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserProfileViewModel"/> class.
+        /// </summary>
+        /// <param name="profileService">Service used to load and refresh user engagement profiles.</param>
         public UserProfileViewModel(IEngagementProfileService profileService)
         {
-            _profileService = profileService;
+            this._profileService = profileService;
         }
 
         /// <summary>
         /// Loads the engagement profile for the given user.
         /// </summary>
+        /// <param name="userId">The ID of the user whose profile should be loaded.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [CommunityToolkit.Mvvm.Input.RelayCommand]
         public async Task LoadProfileAsync(int userId)
         {
-            IsLoading = true;
-            ErrorMessage = null;
+            this.IsLoading = true;
+            this.ErrorMessage = null;
 
             try
             {
-                await _profileService.RefreshProfileAsync(userId);
-                Profile = await _profileService.GetProfileAsync(userId);
+                await this._profileService.RefreshProfileAsync(userId);
+                this.Profile = await this._profileService.GetProfileAsync(userId);
             }
             catch (System.Exception ex)
             {
-                ErrorMessage = string.Format(AppMessages.UserProfileLoadErrorFormat, ex.Message);
+                this.ErrorMessage = string.Format(AppMessages.UserProfileLoadErrorFormat, ex.Message);
             }
             finally
             {
-                IsLoading = false;
+                this.IsLoading = false;
             }
         }
     }

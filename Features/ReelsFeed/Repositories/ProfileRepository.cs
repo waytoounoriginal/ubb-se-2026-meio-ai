@@ -4,7 +4,9 @@ using ubb_se_2026_meio_ai.Core.Models;
 
 namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
 {
-
+    /// <summary>
+    /// Raw SQL data access for the UserProfile table.
+    /// </summary>
     public class ProfileRepository : IProfileRepository
     {
         private const int UserProfileModel_UserProfileId_Index = 0;
@@ -18,60 +20,75 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
 
         private readonly ISqlConnectionFactory _connectionFactory;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ProfileRepository"/> class.
+        /// </summary>
+        /// <param name="connectionFactory">Factory used to create SQL connections.</param>
         public ProfileRepository(ISqlConnectionFactory connectionFactory)
         {
-            _connectionFactory = connectionFactory;
+            this._connectionFactory = connectionFactory;
         }
 
+        /// <inheritdoc />
         public async Task<UserProfileModel?> GetProfileAsync(int userId)
         {
-            const string sql = @"
+            const string getProfileSql = @"
                 SELECT UserProfileId, UserId, TotalLikes, TotalWatchTimeSec,
                        AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio, LastUpdated
                 FROM UserProfile
                 WHERE UserId = @UserId
             ";
 
-            await using var connection = await _connectionFactory.CreateConnectionAsync();
-            await using var command = new SqlCommand(sql, connection);
-            command.Parameters.AddWithValue("@UserId", userId);
+            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var getProfileCommand = new SqlCommand(getProfileSql, connection);
+            getProfileCommand.Parameters.AddWithValue("@UserId", userId);
 
-            await using var reader = await command.ExecuteReaderAsync();
-            if (await reader.ReadAsync())
+            await using var profileReader = await getProfileCommand.ExecuteReaderAsync();
+            if (await profileReader.ReadAsync())
             {
-                return MapUserProfile(reader);
+                return this.MapUserProfile(profileReader);
             }
 
             return null;
         }
 
+        /// <inheritdoc />
         public async Task UpsertProfileAsync(UserProfileModel profile)
         {
-            var exists = await ProfileExistsAsync(profile.UserId);
+            var profileExists = await this.ProfileExistsAsync(profile.UserId);
 
-            if (!exists)
+            if (!profileExists)
             {
-                await InsertProfileAsync(profile);
+                await this.InsertProfileAsync(profile);
                 return;
             }
 
-            await UpdateProfileAsync(profile);
+            await this.UpdateProfileAsync(profile);
         }
 
+        /// <summary>
+        /// Checks whether a profile row exists for the specified user.
+        /// </summary>
+        /// <param name="userId">The ID of the user.</param>
+        /// <returns>True if the profile exists; otherwise false.</returns>
         private async Task<bool> ProfileExistsAsync(int userId)
         {
-            const string sql = "SELECT 1 FROM UserProfile WHERE UserId = @UserId";
+            const string checkProfileExistsSql = "SELECT 1 FROM UserProfile WHERE UserId = @UserId";
 
-            await using var connection = await _connectionFactory.CreateConnectionAsync();
-            await using var command = new SqlCommand(sql, connection);
-            command.Parameters.AddWithValue("@UserId", userId);
-            var result = await command.ExecuteScalarAsync();
-            return result != null;
+            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var checkProfileExistsCommand = new SqlCommand(checkProfileExistsSql, connection);
+            checkProfileExistsCommand.Parameters.AddWithValue("@UserId", userId);
+            var profileExistsResult = await checkProfileExistsCommand.ExecuteScalarAsync();
+            return profileExistsResult != null;
         }
 
+        /// <summary>
+        /// Inserts a new engagement profile row.
+        /// </summary>
+        /// <param name="profile">The profile model to insert.</param>
         private async Task InsertProfileAsync(UserProfileModel profile)
         {
-            const string sql = @"
+            const string insertProfileSql = @"
                 INSERT INTO UserProfile
                     (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec,
                      TotalClipsViewed, LikeToViewRatio, LastUpdated)
@@ -80,20 +97,24 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                      @TotalClipsViewed, @LikeToViewRatio, SYSUTCDATETIME())
             ";
 
-            await using var connection = await _connectionFactory.CreateConnectionAsync();
-            await using var command = new SqlCommand(sql, connection);
-            command.Parameters.AddWithValue("@UserId", profile.UserId);
-            command.Parameters.AddWithValue("@TotalLikes", profile.TotalLikes);
-            command.Parameters.AddWithValue("@TotalWatchTimeSec", profile.TotalWatchTimeSec);
-            command.Parameters.AddWithValue("@AvgWatchTimeSec", profile.AvgWatchTimeSec);
-            command.Parameters.AddWithValue("@TotalClipsViewed", profile.TotalClipsViewed);
-            command.Parameters.AddWithValue("@LikeToViewRatio", profile.LikeToViewRatio);
-            await command.ExecuteNonQueryAsync();
+            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var insertProfileCommand = new SqlCommand(insertProfileSql, connection);
+            insertProfileCommand.Parameters.AddWithValue("@UserId", profile.UserId);
+            insertProfileCommand.Parameters.AddWithValue("@TotalLikes", profile.TotalLikes);
+            insertProfileCommand.Parameters.AddWithValue("@TotalWatchTimeSec", profile.TotalWatchTimeSec);
+            insertProfileCommand.Parameters.AddWithValue("@AvgWatchTimeSec", profile.AvgWatchTimeSec);
+            insertProfileCommand.Parameters.AddWithValue("@TotalClipsViewed", profile.TotalClipsViewed);
+            insertProfileCommand.Parameters.AddWithValue("@LikeToViewRatio", profile.LikeToViewRatio);
+            await insertProfileCommand.ExecuteNonQueryAsync();
         }
 
+        /// <summary>
+        /// Updates an existing engagement profile row.
+        /// </summary>
+        /// <param name="profile">The profile model with updated values.</param>
         private async Task UpdateProfileAsync(UserProfileModel profile)
         {
-            const string sql = @"
+            const string updateProfileSql = @"
                 UPDATE UserProfile
                 SET TotalLikes        = @TotalLikes,
                     TotalWatchTimeSec = @TotalWatchTimeSec,
@@ -104,17 +125,22 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                 WHERE UserId = @UserId
             ";
 
-            await using var connection = await _connectionFactory.CreateConnectionAsync();
-            await using var command = new SqlCommand(sql, connection);
-            command.Parameters.AddWithValue("@UserId", profile.UserId);
-            command.Parameters.AddWithValue("@TotalLikes", profile.TotalLikes);
-            command.Parameters.AddWithValue("@TotalWatchTimeSec", profile.TotalWatchTimeSec);
-            command.Parameters.AddWithValue("@AvgWatchTimeSec", profile.AvgWatchTimeSec);
-            command.Parameters.AddWithValue("@TotalClipsViewed", profile.TotalClipsViewed);
-            command.Parameters.AddWithValue("@LikeToViewRatio", profile.LikeToViewRatio);
-            await command.ExecuteNonQueryAsync();
+            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var updateProfileCommand = new SqlCommand(updateProfileSql, connection);
+            updateProfileCommand.Parameters.AddWithValue("@UserId", profile.UserId);
+            updateProfileCommand.Parameters.AddWithValue("@TotalLikes", profile.TotalLikes);
+            updateProfileCommand.Parameters.AddWithValue("@TotalWatchTimeSec", profile.TotalWatchTimeSec);
+            updateProfileCommand.Parameters.AddWithValue("@AvgWatchTimeSec", profile.AvgWatchTimeSec);
+            updateProfileCommand.Parameters.AddWithValue("@TotalClipsViewed", profile.TotalClipsViewed);
+            updateProfileCommand.Parameters.AddWithValue("@LikeToViewRatio", profile.LikeToViewRatio);
+            await updateProfileCommand.ExecuteNonQueryAsync();
         }
 
+        /// <summary>
+        /// Maps a profile data-reader row to a <see cref="UserProfileModel"/>.
+        /// </summary>
+        /// <param name="reader">The data reader positioned on a profile row.</param>
+        /// <returns>The mapped profile model.</returns>
         private UserProfileModel MapUserProfile(SqlDataReader reader)
         {
             return new UserProfileModel
@@ -126,7 +152,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                 AvgWatchTimeSec = reader.GetDouble(UserProfileModel_AvgWatchTimeSec_Index),
                 TotalClipsViewed = reader.GetInt32(UserProfileModel_TotalClipsViewed_Index),
                 LikeToViewRatio = reader.GetDouble(UserProfileModel_LikeToViewRatio_Index),
-                LastUpdated = reader.GetDateTime(UserProfileModel_LastUpdated_Index)
+                LastUpdated = reader.GetDateTime(UserProfileModel_LastUpdated_Index),
             };
         }
     }

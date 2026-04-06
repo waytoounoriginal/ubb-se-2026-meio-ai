@@ -9,37 +9,45 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
     /// <summary>
     /// Computes the user's engagement profile by aggregating raw interaction data,
     /// then delegates persistence to <see cref="IProfileRepository"/>.
-    /// Owner: Tudor
+    /// Owner: Tudor.
     /// </summary>
     public class EngagementProfileService : IEngagementProfileService
     {
+        private const int EngagementStats_TotalLikes_Index = 0;
+        private const int EngagementStats_TotalWatchTimeSec_Index = 1;
+        private const int EngagementStats_AverageWatchTimeSec_Index = 2;
+        private const int EngagementStats_TotalClipsViewed_Index = 3;
+
         private readonly IProfileRepository _profileRepository;
         private readonly ISqlConnectionFactory _connectionFactory;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EngagementProfileService"/> class.
+        /// </summary>
+        /// <param name="profileRepository">Repository used for engagement profile persistence.</param>
+        /// <param name="connectionFactory">Factory used to create SQL connections.</param>
         public EngagementProfileService(
             IProfileRepository profileRepository,
             ISqlConnectionFactory connectionFactory)
         {
-            _profileRepository = profileRepository;
-            _connectionFactory = connectionFactory;
+            this._profileRepository = profileRepository;
+            this._connectionFactory = connectionFactory;
         }
 
+        /// <inheritdoc />
         public async Task<UserProfileModel?> GetProfileAsync(int userId)
         {
-            return await _profileRepository.GetProfileAsync(userId);
+            return await this._profileRepository.GetProfileAsync(userId);
         }
 
-        /// <summary>
-        /// Aggregates all UserReelInteraction rows for the given user, computes
-        /// engagement stats, and persists the result via the profile repository.
-        /// </summary>
+        /// <inheritdoc />
         public async Task RefreshProfileAsync(int userId)
         {
             // Step 1: aggregate raw interaction data (read-only query)
-            var profile = await AggregateInteractionStatsAsync(userId);
+            var refreshedProfile = await this.AggregateInteractionStatsAsync(userId);
 
             // Step 2: persist via repository
-            await _profileRepository.UpsertProfileAsync(profile);
+            await this._profileRepository.UpsertProfileAsync(refreshedProfile);
         }
 
         /// <summary>
@@ -47,9 +55,11 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
         /// This is business logic (aggregation formulas), not a simple CRUD operation,
         /// so it lives in the service rather than the repository.
         /// </summary>
+        /// <param name="userId">The ID of the user.</param>
+        /// <returns>The aggregated engagement profile.</returns>
         private async Task<UserProfileModel> AggregateInteractionStatsAsync(int userId)
         {
-            const string sql = @"
+            const string aggregateInteractionStatsSql = @"
                 SELECT
                     ISNULL(SUM(CASE WHEN IsLiked = 1 THEN 1 ELSE 0 END), 0),
                     ISNULL(CAST(SUM(WatchDurationSec) AS BIGINT), 0),
@@ -59,17 +69,28 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
                 WHERE UserId = @UserId
             ";
 
-            await using var connection = await _connectionFactory.CreateConnectionAsync();
-            await using var command = new SqlCommand(sql, connection);
-            command.Parameters.AddWithValue("@UserId", userId);
+            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var aggregateStatsCommand = new SqlCommand(aggregateInteractionStatsSql, connection);
+            aggregateStatsCommand.Parameters.AddWithValue("@UserId", userId);
 
-            await using var reader = await command.ExecuteReaderAsync();
-            await reader.ReadAsync();
+            await using var aggregateStatsReader = await aggregateStatsCommand.ExecuteReaderAsync();
+            await aggregateStatsReader.ReadAsync();
 
-            int totalLikes = reader.GetInt32(0);
-            long totalWatchTimeSec = reader.GetInt64(1);
-            double avgWatchTimeSec = reader.GetDouble(2);
-            int totalClipsViewed = reader.GetInt32(3);
+            return this.MapAggregatedProfileStats(aggregateStatsReader, userId);
+        }
+
+        /// <summary>
+        /// Maps aggregate query results to a <see cref="UserProfileModel"/>.
+        /// </summary>
+        /// <param name="aggregateStatsReader">Reader positioned on the aggregate result row.</param>
+        /// <param name="userId">The ID of the user associated with the aggregated data.</param>
+        /// <returns>The mapped engagement profile model.</returns>
+        private UserProfileModel MapAggregatedProfileStats(SqlDataReader aggregateStatsReader, int userId)
+        {
+            int totalLikes = aggregateStatsReader.GetInt32(EngagementStats_TotalLikes_Index);
+            long totalWatchTimeSec = aggregateStatsReader.GetInt64(EngagementStats_TotalWatchTimeSec_Index);
+            double averageWatchTimeSec = aggregateStatsReader.GetDouble(EngagementStats_AverageWatchTimeSec_Index);
+            int totalClipsViewed = aggregateStatsReader.GetInt32(EngagementStats_TotalClipsViewed_Index);
             double likeToViewRatio = totalClipsViewed > 0
                 ? (double)totalLikes / totalClipsViewed
                 : 0;
@@ -79,10 +100,10 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
                 UserId = userId,
                 TotalLikes = totalLikes,
                 TotalWatchTimeSec = totalWatchTimeSec,
-                AvgWatchTimeSec = avgWatchTimeSec,
+                AvgWatchTimeSec = averageWatchTimeSec,
                 TotalClipsViewed = totalClipsViewed,
                 LikeToViewRatio = likeToViewRatio,
-                LastUpdated = DateTime.UtcNow
+                LastUpdated = DateTime.UtcNow,
             };
         }
     }

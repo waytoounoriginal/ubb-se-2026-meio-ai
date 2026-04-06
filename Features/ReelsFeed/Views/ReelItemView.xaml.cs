@@ -4,25 +4,30 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
+using System;
+using System.ComponentModel;
 using ubb_se_2026_meio_ai.Core.Models;
 using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
 using Windows.Media.Core;
-using System;
-using System.ComponentModel;
 
 namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
 {
     /// <summary>
     /// Single reel card with video player, like button, genre badge, progress bar,
     /// double-tap gesture, and heart animations.
-    /// Owner: Tudor
+    /// Owner: Tudor.
     /// </summary>
     public sealed partial class ReelItemView : UserControl
     {
         private const int MockUserId = 1;
+        private const int NoItemsCount = 0;
+        private const int LastItemOffset = 1;
+        private const int ProgressTimerIntervalMs = 250;
+        private const double PercentageMultiplier = 100.0;
+        private const double MaxProgressPercentage = 100.0;
 
         /// <summary>
-        /// Static flag set by MainWindow.Closed before disposal begins.
+        /// Gets or sets a value indicating whether the app is closing.
         /// Prevents any queued DispatcherQueue callbacks from touching XAML elements
         /// after the window starts tearing down.
         /// </summary>
@@ -32,16 +37,29 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         private const string HeartOutline = "\uEB51";
         private const string HeartFilled = "\uEB52";
 
-        private static readonly SolidColorBrush WhiteBrush = new(Colors.White);
-        private static readonly SolidColorBrush RedBrush = new(Colors.Red);
+        private static readonly SolidColorBrush WhiteBrush = new (Colors.White);
+        private static readonly SolidColorBrush RedBrush = new (Colors.Red);
 
+        /// <summary>
+        /// Identifies the <see cref="Reel"/> dependency property.
+        /// </summary>
         public static readonly DependencyProperty ReelProperty =
             DependencyProperty.Register("Reel", typeof(ReelModel), typeof(ReelItemView), new PropertyMetadata(null, OnReelChanged));
 
+        /// <summary>
+        /// Gets or sets the reel displayed by this view.
+        /// </summary>
         public ReelModel Reel
         {
-            get => (ReelModel)GetValue(ReelProperty);
-            set => SetValue(ReelProperty, value);
+            get
+            {
+                return (ReelModel)this.GetValue(ReelProperty);
+            }
+
+            set
+            {
+                this.SetValue(ReelProperty, value);
+            }
         }
 
         private readonly IClipPlaybackService _playbackService;
@@ -60,23 +78,30 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         /// </summary>
         private ReelModel? _subscribedReel;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ReelItemView"/> class.
+        /// </summary>
         public ReelItemView()
         {
             this.InitializeComponent();
-            _playbackService = App.Services.GetRequiredService<IClipPlaybackService>();
-            _interactionService = App.Services.GetRequiredService<IReelInteractionService>();
+            this._playbackService = App.Services.GetRequiredService<IClipPlaybackService>();
+            this._interactionService = App.Services.GetRequiredService<IReelInteractionService>();
 
             // Do NOT hook MediaEnded here — it's done in OnReelChanged after setting Source,
             // so we always hook the correct auto-created MediaPlayer instance.
-
             this.Unloaded += (s, e) =>
             {
-                StopProgressTimer();
-                UnsubscribeFromReel();
-                DisposeMediaPlayer();
+                this.StopProgressTimer();
+                this.UnsubscribeFromReel();
+                this.DisposeMediaPlayer();
             };
         }
 
+        /// <summary>
+        /// Updates the view when the bound reel changes.
+        /// </summary>
+        /// <param name="d">The dependency object that owns the property.</param>
+        /// <param name="e">The property change data.</param>
         private static void OnReelChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is ReelItemView view && e.NewValue is ReelModel reel)
@@ -99,9 +124,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
                 if (!string.IsNullOrEmpty(reel.VideoUrl))
                 {
                     var playbackService = view._playbackService as ClipPlaybackService;
-                    var source = playbackService?.GetMediaSource(reel.VideoUrl)
+                    var mediaSource = playbackService?.GetMediaSource(reel.VideoUrl)
                         ?? MediaSource.CreateFromUri(new Uri(reel.VideoUrl));
-                    view.ReelPlayer.Source = new Windows.Media.Playback.MediaPlaybackItem(source);
+                    view.ReelPlayer.Source = new Windows.Media.Playback.MediaPlaybackItem(mediaSource);
                 }
 
                 // Hook MediaEnded on the newly created MediaPlayer
@@ -123,61 +148,104 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
             }
         }
 
+        /// <summary>
+        /// Reacts to reel model changes that affect the like visuals.
+        /// </summary>
+        /// <param name="sender">The reel model that raised the event.</param>
+        /// <param name="args">The property change arguments.</param>
         private void OnReelPropertyChanged(object? sender, PropertyChangedEventArgs args)
         {
-            if (IsAppClosing || _disposed) return;
+            if (ReelItemView.IsAppClosing || this._disposed)
+            {
+                return;
+            }
+
             if (args.PropertyName is nameof(ReelModel.IsLiked) or nameof(ReelModel.LikeCount))
             {
                 if (sender is ReelModel reel)
                 {
                     try
                     {
-                        var dq = DispatcherQueue;
-                        if (dq == null) return;
-                        dq.TryEnqueue(() =>
+                        var dispatcherQueue = this.DispatcherQueue;
+                        if (dispatcherQueue == null)
                         {
-                            if (IsAppClosing || _disposed) return;
-                            try { UpdateLikeVisuals(reel.IsLiked, reel.LikeCount); }
-                            catch { /* view may be torn down */ }
+                            return;
+                        }
+
+                        dispatcherQueue.TryEnqueue(() =>
+                        {
+                            if (ReelItemView.IsAppClosing || this._disposed)
+                            {
+                                return;
+                            }
+
+                            try
+                            {
+                                this.UpdateLikeVisuals(reel.IsLiked, reel.LikeCount);
+                            }
+                            catch
+                            {
+                                // view may be torn down
+                            }
                         });
                     }
-                    catch { /* DispatcherQueue torn down during close */ }
+                    catch
+                    {
+                        // DispatcherQueue torn down during close
+                    }
                 }
             }
         }
 
+        /// <summary>
+        /// Detaches the property-changed handler from the current reel model.
+        /// </summary>
         private void UnsubscribeFromReel()
         {
-            if (_subscribedReel != null)
+            if (this._subscribedReel != null)
             {
-                _subscribedReel.PropertyChanged -= OnReelPropertyChanged;
-                _subscribedReel = null;
+                this._subscribedReel.PropertyChanged -= this.OnReelPropertyChanged;
+                this._subscribedReel = null;
             }
         }
 
+        /// <summary>
+        /// Updates the genre badge text and visibility.
+        /// </summary>
+        /// <param name="genre">The genre text to show, or <c>null</c> to hide the badge.</param>
         private void UpdateGenreBadge(string? genre)
         {
             if (!string.IsNullOrEmpty(genre))
             {
-                GenreText.Text = genre;
-                GenreBadge.Visibility = Visibility.Visible;
+                this.GenreText.Text = genre;
+                this.GenreBadge.Visibility = Visibility.Visible;
             }
             else
             {
-                GenreBadge.Visibility = Visibility.Collapsed;
+                this.GenreBadge.Visibility = Visibility.Collapsed;
             }
         }
 
+        /// <summary>
+        /// Synchronizes the heart icon and like count with the reel state.
+        /// </summary>
+        /// <param name="isLiked">A value indicating whether the reel is liked.</param>
+        /// <param name="likeCount">The current like count.</param>
         private void UpdateLikeVisuals(bool isLiked, int likeCount)
         {
-            HeartIcon.Glyph = isLiked ? HeartFilled : HeartOutline;
-            HeartIcon.Foreground = isLiked ? RedBrush : WhiteBrush;
-            LikeCountText.Text = likeCount.ToString();
+            this.HeartIcon.Glyph = isLiked ? HeartFilled : HeartOutline;
+            this.HeartIcon.Foreground = isLiked ? RedBrush : WhiteBrush;
+            this.LikeCountText.Text = likeCount.ToString();
         }
 
+        /// <summary>
+        /// Handles the like button click by toggling the current reel state.
+        /// </summary>
+        /// <param name="sender">The event source.</param>
+        /// <param name="e">The routed event data.</param>
         private async void LikeButton_Click(object sender, RoutedEventArgs e)
         {
-            await ToggleLikeWithAnimationAsync();
+            await this.ToggleLikeWithAnimationAsync();
         }
 
         /// <summary>
@@ -186,43 +254,53 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         /// </summary>
         private async void ReelItemView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
-            if (Reel == null) return;
-
-            // Only like on double-tap (never unlike)
-            if (!Reel.IsLiked)
+            if (this.Reel == null)
             {
-                await ToggleLikeWithAnimationAsync();
+                return;
             }
 
-            PlayHeartBurstAnimation();
+            // Only like on double-tap (never unlike)
+            if (!this.Reel.IsLiked)
+            {
+                await this.ToggleLikeWithAnimationAsync();
+            }
+
+            this.PlayHeartBurstAnimation();
         }
 
+        /// <summary>
+        /// Toggles the reel like state and plays the associated animation.
+        /// </summary>
+        /// <returns>A task that completes when the persistence call finishes.</returns>
         private async Task ToggleLikeWithAnimationAsync()
         {
-            if (Reel == null) return;
+            if (this.Reel == null)
+            {
+                return;
+            }
 
             // Optimistic UI update
-            bool wasLiked = Reel.IsLiked;
-            Reel.IsLiked = !wasLiked;
-            Reel.LikeCount += wasLiked ? -1 : 1;
+            bool wasLiked = this.Reel.IsLiked;
+            this.Reel.IsLiked = !wasLiked;
+            this.Reel.LikeCount += wasLiked ? -1 : 1;
 
             // Scale-bounce animation on heart icon (Task 12)
-            PlayHeartBounceAnimation();
+            this.PlayHeartBounceAnimation();
 
             try
             {
-                await _interactionService.ToggleLikeAsync(MockUserId, Reel.ReelId);
+                await this._interactionService.ToggleLikeAsync(MockUserId, this.Reel.ReelId);
             }
             catch
             {
                 // Revert on failure
-                Reel.IsLiked = wasLiked;
-                Reel.LikeCount += wasLiked ? 1 : -1;
+                this.Reel.IsLiked = wasLiked;
+                this.Reel.LikeCount += wasLiked ? 1 : -1;
             }
         }
 
         /// <summary>
-        /// Scale-bounce animation: heart scales up to 1.4x then back to 1x.
+        /// Plays the compact heart bounce animation on the like icon.
         /// </summary>
         private void PlayHeartBounceAnimation()
         {
@@ -234,25 +312,28 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
                 scaleX.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = 1.0 });
                 scaleX.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(150), Value = 1.4 });
                 scaleX.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(300), Value = 1.0 });
-                Storyboard.SetTarget(scaleX, HeartScale);
+                Storyboard.SetTarget(scaleX, this.HeartScale);
                 Storyboard.SetTargetProperty(scaleX, "ScaleX");
 
                 var scaleY = new DoubleAnimationUsingKeyFrames();
                 scaleY.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = 1.0 });
                 scaleY.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(150), Value = 1.4 });
                 scaleY.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(300), Value = 1.0 });
-                Storyboard.SetTarget(scaleY, HeartScale);
+                Storyboard.SetTarget(scaleY, this.HeartScale);
                 Storyboard.SetTargetProperty(scaleY, "ScaleY");
 
                 storyboard.Children.Add(scaleX);
                 storyboard.Children.Add(scaleY);
                 storyboard.Begin();
             }
-            catch { /* animation on torn-down element */ }
+            catch
+            {
+                // animation on torn-down element
+            }
         }
 
         /// <summary>
-        /// Heart burst animation at center: large heart fades in, scales up, then fades out.
+        /// Plays the large heart burst animation used for double-tap likes.
         /// </summary>
         private void PlayHeartBurstAnimation()
         {
@@ -264,21 +345,21 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
                 opacity.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = 0 });
                 opacity.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(100), Value = 1.0 });
                 opacity.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(600), Value = 0 });
-                Storyboard.SetTarget(opacity, HeartBurst);
+                Storyboard.SetTarget(opacity, this.HeartBurst);
                 Storyboard.SetTargetProperty(opacity, "Opacity");
 
                 var burstScaleX = new DoubleAnimationUsingKeyFrames();
                 burstScaleX.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = 0.5 });
                 burstScaleX.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(200), Value = 1.3 });
                 burstScaleX.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(600), Value = 1.5 });
-                Storyboard.SetTarget(burstScaleX, BurstScale);
+                Storyboard.SetTarget(burstScaleX, this.BurstScale);
                 Storyboard.SetTargetProperty(burstScaleX, "ScaleX");
 
                 var burstScaleY = new DoubleAnimationUsingKeyFrames();
                 burstScaleY.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = 0.5 });
                 burstScaleY.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(200), Value = 1.3 });
                 burstScaleY.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(600), Value = 1.5 });
-                Storyboard.SetTarget(burstScaleY, BurstScale);
+                Storyboard.SetTarget(burstScaleY, this.BurstScale);
                 Storyboard.SetTargetProperty(burstScaleY, "ScaleY");
 
                 storyboard.Children.Add(opacity);
@@ -286,81 +367,123 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
                 storyboard.Children.Add(burstScaleY);
                 storyboard.Begin();
             }
-            catch { /* animation on torn-down element */ }
+            catch
+            {
+                // animation on torn-down element
+            }
         }
 
         // ── Playback ──────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Starts video playback for the current reel and begins progress updates.
+        /// </summary>
         public void PlayVideo()
         {
-            if (_disposed || IsAppClosing) return;
+            if (this._disposed || ReelItemView.IsAppClosing)
+            {
+                return;
+            }
+
             try
             {
-                if (ReelPlayer.MediaPlayer != null)
+                if (this.ReelPlayer.MediaPlayer != null)
                 {
-                    ReelPlayer.MediaPlayer.PlaybackSession.Position = TimeSpan.Zero;
-                    ReelPlayer.MediaPlayer.Play();
-                    StartProgressTimer();
+                    this.ReelPlayer.MediaPlayer.PlaybackSession.Position = TimeSpan.Zero;
+                    this.ReelPlayer.MediaPlayer.Play();
+                    this.StartProgressTimer();
                 }
             }
-            catch { }
+            catch
+            {
+            }
         }
 
+        /// <summary>
+        /// Pauses video playback for the current reel and stops progress updates.
+        /// </summary>
         public void PauseVideo()
         {
-            if (_disposed) return;
+            if (this._disposed)
+            {
+                return;
+            }
+
             try
             {
-                if (ReelPlayer.MediaPlayer != null)
+                if (this.ReelPlayer.MediaPlayer != null)
                 {
-                    ReelPlayer.MediaPlayer.Pause();
-                    StopProgressTimer();
+                    this.ReelPlayer.MediaPlayer.Pause();
+                    this.StopProgressTimer();
                 }
             }
-            catch { }
+            catch
+            {
+            }
         }
 
         // ── Progress bar timer ────────────────────────────────────────────
 
+        /// <summary>
+        /// Starts the timer that keeps the playback progress bar in sync.
+        /// </summary>
         private void StartProgressTimer()
         {
-            if (_progressTimer == null)
+            if (this._progressTimer == null)
             {
-                _progressTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
-                _progressTimer.Tick += ProgressTimer_Tick;
+                this._progressTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(ProgressTimerIntervalMs) };
+                this._progressTimer.Tick += this.ProgressTimer_Tick;
             }
-            _progressTimer.Start();
+
+            this._progressTimer.Start();
         }
 
+        /// <summary>
+        /// Stops the playback progress timer and releases its tick handler.
+        /// </summary>
         private void StopProgressTimer()
         {
-            if (_progressTimer != null)
+            if (this._progressTimer != null)
             {
-                _progressTimer.Stop();
-                _progressTimer.Tick -= ProgressTimer_Tick;
-                _progressTimer = null;
+                this._progressTimer.Stop();
+                this._progressTimer.Tick -= this.ProgressTimer_Tick;
+                this._progressTimer = null;
             }
         }
 
+        /// <summary>
+        /// Updates the playback progress bar from the current media session.
+        /// </summary>
+        /// <param name="sender">The timer that raised the tick.</param>
+        /// <param name="e">The event data.</param>
         private void ProgressTimer_Tick(object? sender, object e)
         {
-            if (IsAppClosing || _disposed) { StopProgressTimer(); return; }
+            if (ReelItemView.IsAppClosing || this._disposed)
+            {
+                this.StopProgressTimer();
+                return;
+            }
+
             try
             {
-                var player = ReelPlayer.MediaPlayer;
-                if (player == null) { StopProgressTimer(); return; }
+                var player = this.ReelPlayer.MediaPlayer;
+                if (player == null)
+                {
+                    this.StopProgressTimer();
+                    return;
+                }
 
                 var session = player.PlaybackSession;
                 if (session.NaturalDuration.TotalSeconds > 0)
                 {
-                    double percent = (session.Position.TotalSeconds / session.NaturalDuration.TotalSeconds) * 100.0;
-                    PlaybackProgress.Value = Math.Min(percent, 100);
+                    double progressPercentage = (session.Position.TotalSeconds / session.NaturalDuration.TotalSeconds) * PercentageMultiplier;
+                    this.PlaybackProgress.Value = Math.Min(progressPercentage, MaxProgressPercentage);
                 }
             }
             catch
             {
                 // COM object may be revoked during teardown — stop polling
-                StopProgressTimer();
+                this.StopProgressTimer();
             }
         }
 
@@ -374,23 +497,26 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         {
             try
             {
-                var player = ReelPlayer.MediaPlayer;
-                if (player == null) return;
+                var player = this.ReelPlayer.MediaPlayer;
+                if (player == null)
+                {
+                    return;
+                }
 
                 // 1. Unhook events first — prevents callbacks during teardown
-                player.MediaEnded -= MediaPlayer_MediaEnded;
+                player.MediaEnded -= this.MediaPlayer_MediaEnded;
 
                 // 2. Pause and detach sources safely while COM player is still active
                 player.Pause();
-                var oldSource = ReelPlayer.Source as IDisposable;
+                var previousSource = this.ReelPlayer.Source as IDisposable;
 
                 // 3. Sever XAML element connection (stops internal MF callbacks)
-                ReelPlayer.Source = null;
-                ReelPlayer.SetMediaPlayer(null);
+                this.ReelPlayer.Source = null;
+                this.ReelPlayer.SetMediaPlayer(null);
 
                 // 4. Dispose safely
                 player.Source = null;
-                oldSource?.Dispose();
+                previousSource?.Dispose();
                 player.Dispose();
             }
             catch
@@ -405,22 +531,35 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         /// </summary>
         public void DisposeMediaPlayer()
         {
-            if (_disposed) return;
-            _disposed = true;
+            if (this._disposed)
+            {
+                return;
+            }
 
-            StopProgressTimer();
-            DisposeCurrentPlayer();
+            this._disposed = true;
+
+            this.StopProgressTimer();
+            this.DisposeCurrentPlayer();
         }
 
+        /// <summary>
+        /// Walks up the visual tree to find the containing <see cref="FlipView"/>.
+        /// </summary>
+        /// <param name="element">The starting element.</param>
+        /// <returns>The nearest parent <see cref="FlipView"/>, or <c>null</c> if none exists.</returns>
         private FlipView? GetParentFlipView(DependencyObject element)
         {
-            var parent = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(element);
+            var parent = VisualTreeHelper.GetParent(element);
             while (parent != null)
             {
                 if (parent is FlipView flipView)
+                {
                     return flipView;
-                parent = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(parent);
+                }
+
+                parent = VisualTreeHelper.GetParent(parent);
             }
+
             return null;
         }
 
@@ -428,29 +567,46 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         {
             // This callback fires on a Media Foundation background thread.
             // Do NOT access any DependencyProperty here.
-            if (IsAppClosing || _disposed) return;
+            if (ReelItemView.IsAppClosing || this._disposed)
+            {
+                return;
+            }
 
             // Capture DispatcherQueue reference while we know it's valid.
             // TryEnqueue returns false if the queue is shut down — no exception.
             try
             {
-                var dq = DispatcherQueue;
-                if (dq == null) return;
-
-                bool enqueued = dq.TryEnqueue(() =>
+                var dispatcherQueue = this.DispatcherQueue;
+                if (dispatcherQueue == null)
                 {
-                    if (IsAppClosing || _disposed) return;
+                    return;
+                }
+
+                dispatcherQueue.TryEnqueue(() =>
+                {
+                    if (ReelItemView.IsAppClosing || this._disposed)
+                    {
+                        return;
+                    }
+
                     try
                     {
-                        var player = ReelPlayer?.MediaPlayer;
-                        if (player == null) return;
-                        var flipView = GetParentFlipView(this);
-                        if (flipView != null && flipView.SelectedIndex < flipView.Items.Count - 1)
+                        var mediaPlayer = this.ReelPlayer?.MediaPlayer;
+                        if (mediaPlayer == null)
                         {
-                            flipView.SelectedIndex++;
+                            return;
+                        }
+
+                        var parentFlipView = this.GetParentFlipView(this);
+                        if (parentFlipView != null && parentFlipView.SelectedIndex < parentFlipView.Items.Count - LastItemOffset)
+                        {
+                            parentFlipView.SelectedIndex++;
                         }
                     }
-                    catch { /* view may be torn down */ }
+                    catch
+                    {
+                        // view may be torn down
+                    }
                 });
             }
             catch

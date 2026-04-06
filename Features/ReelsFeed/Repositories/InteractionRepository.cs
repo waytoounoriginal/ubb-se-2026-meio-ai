@@ -22,33 +22,39 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
         private const int UserReelInteractionModel_WatchPercentage_Index = 5;
         private const int UserReelInteractionModel_ViewedAt_Index = 6;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="InteractionRepository"/> class.
+        /// </summary>
+        /// <param name="connectionFactory">Factory used to create SQL connections.</param>
         public InteractionRepository(ISqlConnectionFactory connectionFactory)
         {
-            _connectionFactory = connectionFactory;
+            this._connectionFactory = connectionFactory;
         }
 
+        /// <inheritdoc />
         public async Task InsertInteractionAsync(UserReelInteractionModel interaction)
         {
-            const string sql = @"
+            const string insertInteractionSql = @"
                 INSERT INTO UserReelInteraction
                     (UserId, ReelId, IsLiked, WatchDurationSec, WatchPercentage, ViewedAt)
                 VALUES
                     (@UserId, @ReelId, @IsLiked, @WatchDurationSec, @WatchPercentage, SYSUTCDATETIME())
             ";
 
-            await using var connection = await _connectionFactory.CreateConnectionAsync();
-            await using var command = new SqlCommand(sql, connection);
-            command.Parameters.AddWithValue("@UserId", interaction.UserId);
-            command.Parameters.AddWithValue("@ReelId", interaction.ReelId);
-            command.Parameters.AddWithValue("@IsLiked", interaction.IsLiked);
-            command.Parameters.AddWithValue("@WatchDurationSec", interaction.WatchDurationSec);
-            command.Parameters.AddWithValue("@WatchPercentage", interaction.WatchPercentage);
-            await command.ExecuteNonQueryAsync();
+            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var insertCommand = new SqlCommand(insertInteractionSql, connection);
+            insertCommand.Parameters.AddWithValue("@UserId", interaction.UserId);
+            insertCommand.Parameters.AddWithValue("@ReelId", interaction.ReelId);
+            insertCommand.Parameters.AddWithValue("@IsLiked", interaction.IsLiked);
+            insertCommand.Parameters.AddWithValue("@WatchDurationSec", interaction.WatchDurationSec);
+            insertCommand.Parameters.AddWithValue("@WatchPercentage", interaction.WatchPercentage);
+            await insertCommand.ExecuteNonQueryAsync();
         }
 
+        /// <inheritdoc />
         public async Task UpsertInteractionAsync(int userId, int reelId)
         {
-            const string sql = @"
+            const string upsertInteractionSql = @"
                 IF NOT EXISTS (SELECT 1 FROM UserReelInteraction WHERE UserId = @UserId AND ReelId = @ReelId)
                 BEGIN
                     INSERT INTO UserReelInteraction (UserId, ReelId, IsLiked, WatchDurationSec, WatchPercentage, ViewedAt)
@@ -56,20 +62,21 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                 END
             ";
 
-            await using var connection = await _connectionFactory.CreateConnectionAsync();
-            await using var command = new SqlCommand(sql, connection);
-            command.Parameters.AddWithValue("@UserId", userId);
-            command.Parameters.AddWithValue("@ReelId", reelId);
-            await command.ExecuteNonQueryAsync();
+            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var upsertCommand = new SqlCommand(upsertInteractionSql, connection);
+            upsertCommand.Parameters.AddWithValue("@UserId", userId);
+            upsertCommand.Parameters.AddWithValue("@ReelId", reelId);
+            await upsertCommand.ExecuteNonQueryAsync();
         }
 
+        /// <inheritdoc />
         public async Task ToggleLikeAsync(int userId, int reelId)
         {
-            var interaction = await GetInteractionAsync(userId, reelId);
+            var existingInteraction = await this.GetInteractionAsync(userId, reelId);
             
-            if (interaction == null)
+            if (existingInteraction == null)
             {
-                var newInteraction = new UserReelInteractionModel
+                var interactionToInsert = new UserReelInteractionModel
                 {
                     UserId = userId,
                     ReelId = reelId,
@@ -78,43 +85,44 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                     WatchPercentage = 0,
                     ViewedAt = DateTime.UtcNow
                 };
-                await InsertInteractionAsync(newInteraction);
+                await this.InsertInteractionAsync(interactionToInsert);
                 return;
             }
 
-            const string sql = @"
+            const string toggleLikeSql = @"
                 UPDATE UserReelInteraction
                 SET IsLiked = CASE WHEN IsLiked = 1 THEN 0 ELSE 1 END
                 WHERE UserId = @UserId AND ReelId = @ReelId
             ";
 
-            await using var connection = await _connectionFactory.CreateConnectionAsync();
-            await using var command = new SqlCommand(sql, connection);
-            command.Parameters.AddWithValue("@UserId", userId);
-            command.Parameters.AddWithValue("@ReelId", reelId);
-            await command.ExecuteNonQueryAsync();
+            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var toggleLikeCommand = new SqlCommand(toggleLikeSql, connection);
+            toggleLikeCommand.Parameters.AddWithValue("@UserId", userId);
+            toggleLikeCommand.Parameters.AddWithValue("@ReelId", reelId);
+            await toggleLikeCommand.ExecuteNonQueryAsync();
         }
 
+        /// <inheritdoc />
         public async Task UpdateViewDataAsync(int userId, int reelId, double watchDurationSec, double watchPercentage)
         {
-            var interaction = await GetInteractionAsync(userId, reelId);
+            var existingInteraction = await this.GetInteractionAsync(userId, reelId);
             
-            if (interaction == null)
+            if (existingInteraction == null)
             {
-                var newInteraction = new UserReelInteractionModel
+                var interactionToInsert = new UserReelInteractionModel
                 {
                     UserId = userId,
                     ReelId = reelId,
                     IsLiked = false,
                     WatchDurationSec = watchDurationSec,
                     WatchPercentage = watchPercentage,
-                    ViewedAt = DateTime.UtcNow
+                    ViewedAt = DateTime.UtcNow,
                 };
-                await InsertInteractionAsync(newInteraction);
+                await this.InsertInteractionAsync(interactionToInsert);
                 return;
             }
 
-            const string sql = @"
+            const string updateViewDataSql = @"
                 UPDATE UserReelInteraction
                 SET WatchDurationSec = @WatchDurationSec,
                     WatchPercentage  = @WatchPercentage,
@@ -122,61 +130,64 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                 WHERE UserId = @UserId AND ReelId = @ReelId
             ";
 
-            await using var connection = await _connectionFactory.CreateConnectionAsync();
-            await using var command = new SqlCommand(sql, connection);
-            command.Parameters.AddWithValue("@UserId", userId);
-            command.Parameters.AddWithValue("@ReelId", reelId);
-            command.Parameters.AddWithValue("@WatchDurationSec", watchDurationSec);
-            command.Parameters.AddWithValue("@WatchPercentage", watchPercentage);
-            await command.ExecuteNonQueryAsync();
+            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var updateViewDataCommand = new SqlCommand(updateViewDataSql, connection);
+            updateViewDataCommand.Parameters.AddWithValue("@UserId", userId);
+            updateViewDataCommand.Parameters.AddWithValue("@ReelId", reelId);
+            updateViewDataCommand.Parameters.AddWithValue("@WatchDurationSec", watchDurationSec);
+            updateViewDataCommand.Parameters.AddWithValue("@WatchPercentage", watchPercentage);
+            await updateViewDataCommand.ExecuteNonQueryAsync();
         }
 
+        /// <inheritdoc />
         public async Task<UserReelInteractionModel?> GetInteractionAsync(int userId, int reelId)
         {
-            const string sql = @"
+            const string getInteractionSql = @"
                 SELECT InteractionId, UserId, ReelId, IsLiked, WatchDurationSec, WatchPercentage, ViewedAt
                 FROM UserReelInteraction
                 WHERE UserId = @UserId AND ReelId = @ReelId
             ";
 
-            await using var connection = await _connectionFactory.CreateConnectionAsync();
-            await using var command = new SqlCommand(sql, connection);
-            command.Parameters.AddWithValue("@UserId", userId);
-            command.Parameters.AddWithValue("@ReelId", reelId);
+            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var getInteractionCommand = new SqlCommand(getInteractionSql, connection);
+            getInteractionCommand.Parameters.AddWithValue("@UserId", userId);
+            getInteractionCommand.Parameters.AddWithValue("@ReelId", reelId);
 
-            await using var reader = await command.ExecuteReaderAsync();
-            if (await reader.ReadAsync())
+            await using var dataReader = await getInteractionCommand.ExecuteReaderAsync();
+            if (await dataReader.ReadAsync())
             {
-                return MapUserReelInteraction(reader);
+                return this.MapUserReelInteraction(dataReader);
             }
 
             return null;
         }
 
+        /// <inheritdoc />
         public async Task<int> GetLikeCountAsync(int reelId)
         {
-            const string sql = @"
+            const string getLikeCountSql = @"
                 SELECT COUNT(*)
                 FROM UserReelInteraction
                 WHERE ReelId = @ReelId AND IsLiked = 1
             ";
 
-            await using var connection = await _connectionFactory.CreateConnectionAsync();
-            await using var command = new SqlCommand(sql, connection);
-            command.Parameters.AddWithValue("@ReelId", reelId);
-            var result = await command.ExecuteScalarAsync();
-            return Convert.ToInt32(result);
+            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var getLikeCountCommand = new SqlCommand(getLikeCountSql, connection);
+            getLikeCountCommand.Parameters.AddWithValue("@ReelId", reelId);
+            var likeCountResult = await getLikeCountCommand.ExecuteScalarAsync();
+            return Convert.ToInt32(likeCountResult);
         }
 
+        /// <inheritdoc />
         public async Task<int?> GetReelMovieIdAsync(int reelId)
         {
-            const string sql = "SELECT MovieId FROM Reel WHERE ReelId = @ReelId";
+            const string getReelMovieIdSql = "SELECT MovieId FROM Reel WHERE ReelId = @ReelId";
 
-            await using var connection = await _connectionFactory.CreateConnectionAsync();
-            await using var command = new SqlCommand(sql, connection);
-            command.Parameters.AddWithValue("@ReelId", reelId);
-            var result = await command.ExecuteScalarAsync();
-            return result == null ? null : Convert.ToInt32(result);
+            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var getReelMovieIdCommand = new SqlCommand(getReelMovieIdSql, connection);
+            getReelMovieIdCommand.Parameters.AddWithValue("@ReelId", reelId);
+            var movieIdResult = await getReelMovieIdCommand.ExecuteScalarAsync();
+            return movieIdResult == null ? null : Convert.ToInt32(movieIdResult);
         }
 
         private UserReelInteractionModel MapUserReelInteraction(SqlDataReader reader)
@@ -189,7 +200,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                 IsLiked = reader.GetBoolean(UserReelInteractionModel_IsLiked_Index),
                 WatchDurationSec = reader.GetDouble(UserReelInteractionModel_WatchDurationSec_Index),
                 WatchPercentage = reader.GetDouble(UserReelInteractionModel_WatchPercentage_Index),
-                ViewedAt = reader.GetDateTime(UserReelInteractionModel_ViewedAt_Index)
+                ViewedAt = reader.GetDateTime(UserReelInteractionModel_ViewedAt_Index),
             };
         }
     }
