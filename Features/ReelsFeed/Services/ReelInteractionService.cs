@@ -22,12 +22,10 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
             _preferenceRepository = preferenceRepository;
         }
 
-        /// <summary>
-        /// Toggles the IsLiked flag and, when a reel transitions to liked,
-        /// boosts the associated movie's preference score by +1.5.
-        /// </summary>
+        /// <inheritdoc />
         public async Task ToggleLikeAsync(int userId, int reelId)
         {
+            // Implementation detail: apply a preference boost only on unliked -> liked transitions.
             var existing = await _interactionRepository.GetInteractionAsync(userId, reelId);
             bool wasLiked = existing?.IsLiked ?? false;
 
@@ -44,16 +42,19 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
             }
         }
 
+        /// <inheritdoc />
         public async Task RecordViewAsync(int userId, int reelId, double watchDurationSec, double watchPercentage)
         {
             await _interactionRepository.UpdateViewDataAsync(userId, reelId, watchDurationSec, watchPercentage);
         }
 
+        /// <inheritdoc />
         public async Task<UserReelInteractionModel?> GetInteractionAsync(int userId, int reelId)
         {
             return await _interactionRepository.GetInteractionAsync(userId, reelId);
         }
 
+        /// <inheritdoc />
         public async Task<int> GetLikeCountAsync(int reelId)
         {
             return await _interactionRepository.GetLikeCountAsync(reelId);
