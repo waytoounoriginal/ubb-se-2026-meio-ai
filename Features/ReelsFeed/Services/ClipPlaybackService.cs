@@ -1,57 +1,15 @@
-using System.Diagnostics;
 using Windows.Media.Core;
-using Windows.Media.Playback;
 
 namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
 {
     /// <summary>
-    /// Tracks playback state and prefetches clip media sources.
+    /// Prefetches clip media sources for feed playback.
     /// Implements IDisposable to clean up cached MediaSource COM objects at shutdown.
     /// Owner: Tudor.
     /// </summary>
     public class ClipPlaybackService : IClipPlaybackService, IDisposable
     {
-        private readonly Dictionary<string, MediaSource> _prefetchedMediaSources = [];
-        private readonly Stopwatch _elapsedStopwatch = new ();
-
-        /// <inheritdoc />
-        public bool IsPlaying { get; private set; }
-
-        /// <inheritdoc />
-        public Task PlayAsync(string videoUrl)
-        {
-            this.IsPlaying = true;
-            this._elapsedStopwatch.Restart();
-            return Task.CompletedTask;
-        }
-
-        /// <inheritdoc />
-        public Task PauseAsync()
-        {
-            this.IsPlaying = false;
-            this._elapsedStopwatch.Stop();
-            return Task.CompletedTask;
-        }
-
-        /// <inheritdoc />
-        public Task ResumeAsync()
-        {
-            this.IsPlaying = true;
-            this._elapsedStopwatch.Start();
-            return Task.CompletedTask;
-        }
-
-        /// <inheritdoc />
-        public Task SeekAsync(double positionSeconds)
-        {
-            return Task.CompletedTask;
-        }
-
-        /// <inheritdoc />
-        public double GetElapsedSeconds()
-        {
-            return this._elapsedStopwatch.Elapsed.TotalSeconds;
-        }
+        private readonly Dictionary<string, MediaSource> _prefetchedMediaSources = new Dictionary<string, MediaSource>();
 
         /// <inheritdoc />
         public Task PrefetchClipAsync(string videoUrl)
