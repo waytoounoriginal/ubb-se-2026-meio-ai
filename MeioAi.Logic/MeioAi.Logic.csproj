@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net8.0-windows10.0.19041.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Google.Apis.YouTube.v3" Version="1.73.0.4093" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
+    <PackageReference Include="YoutubeDLSharp" Version="1.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Core\Database\**\*.cs" />
+    <Compile Include="..\Core\Models\**\*.cs" />
+    <Compile Include="..\Features\**\Models\**\*.cs" />
+    <Compile Include="..\Features\**\Repositories\**\*.cs" />
+    <Compile Include="..\Features\**\Services\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='net8.0'">
+    <!-- ReelsFeed services are already included by the broad Services glob above; only the Windows.Media-based playback files need to be excluded from the pure net8.0 target. -->
+    <Compile Remove="..\Features\ReelsFeed\Services\IClipPlaybackService.cs" />
+    <Compile Remove="..\Features\ReelsFeed\Services\ClipPlaybackService.cs" />
+    <Compile Remove="..\Features\ReelsUpload\Services\IVideoStorageService.cs" />
+    <Compile Remove="..\Features\ReelsUpload\Services\VideoStorageService.cs" />
+  </ItemGroup>
+
+</Project>

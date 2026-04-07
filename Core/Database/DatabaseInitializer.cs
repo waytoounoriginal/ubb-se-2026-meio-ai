@@ -245,66 +245,85 @@ END
                 BEGIN
                     INSERT INTO Reel (MovieId, CreatorUserId, VideoUrl, ThumbnailUrl, Title, Caption, FeatureDurationSeconds, Source, CreatedAt)
                     VALUES
-                    (1, 1, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', 
+                                        (1, 1, 'https://samplelib.com/lib/preview/mp4/sample-10s.mp4', 
                      'https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_.jpg',
                      'Inception - Dream Within a Dream', 
                      'Mind-bending scene from Inception where reality bends',
                      45.5, 'youtube', DATEADD(day, -10, SYSUTCDATETIME())),
                     
-                    (1, 1, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+                                        (1, 1, 'https://samplelib.com/lib/preview/mp4/sample-15s.mp4',
                      'https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_.jpg',
                      'Inception - Rotating Hallway Fight',
                      'The iconic zero-gravity hallway fight sequence',
                      60.2, 'youtube', DATEADD(day, -9, SYSUTCDATETIME())),
                     
-                    (2, 1, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+                                        (2, 1, 'https://samplelib.com/lib/preview/mp4/sample-20s.mp4',
                      'https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_.jpg',
                      'The Dark Knight - Joker Interrogation',
                      'Heath Ledger''s legendary Joker interrogation scene',
                      55.0, 'youtube', DATEADD(day, -8, SYSUTCDATETIME())),
                     
-                    (2, 1, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+                                        (2, 1, 'https://samplelib.com/lib/preview/mp4/sample-30s.mp4',
                      'https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_.jpg',
                      'The Dark Knight - Batmobile Chase',
                      'Epic chase scene through Gotham streets',
                      70.8, 'youtube', DATEADD(day, -7, SYSUTCDATETIME())),
                     
-                    (3, 1, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+                                        (3, 1, 'https://samplelib.com/lib/preview/mp4/sample-5s.mp4',
                      'https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS00OGEyLWFmMjktY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg',
                      'Interstellar - Docking Scene',
                      'The intense docking sequence with the spinning station',
                      90.3, 'youtube', DATEADD(day, -6, SYSUTCDATETIME())),
                     
-                    (3, 1, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+                                        (3, 1, 'https://filesamples.com/samples/video/mp4/sample_640x360.mp4',
                      'https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS00OGEyLWFmMjktY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg',
                      'Interstellar - Tesseract Scene',
                      'Cooper in the 5th dimension tesseract',
                      80.0, 'youtube', DATEADD(day, -5, SYSUTCDATETIME())),
                     
-                    (4, 1, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+                                        (4, 1, 'https://filesamples.com/samples/video/mp4/sample_960x400_ocean_with_audio.mp4',
                      'https://m.media-amazon.com/images/M/MV5BNzQzOTk3NTAtNDQ2Ny00Njc2LTk3M2QtN2FjYTJjNzQzYzQwXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg',
                      'The Matrix - Bullet Time',
                      'The revolutionary bullet time effect scene',
                      35.5, 'youtube', DATEADD(day, -4, SYSUTCDATETIME())),
                     
-                    (5, 1, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+                                        (5, 1, 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4',
                      'https://m.media-amazon.com/images/M/MV5BYWZjMjk3ZTAtZGYzMC00ODQ0LWI2YTMtYjQ5NDU3N2NmZDIzXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg',
                      'Parasite - Basement Reveal',
                      'The shocking basement discovery scene',
                      50.0, 'youtube', DATEADD(day, -3, SYSUTCDATETIME())),
                     
-                    (6, 1, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
+                                        (6, 1, 'https://archive.org/download/ElephantsDream/ed_1024_512kb.mp4',
                      'https://m.media-amazon.com/images/M/MV5BMjA2OTYxNTY2Nl5BMl5BanBnXkFtZTgwNzg4OTA5OTE@._V1_.jpg',
                      'La La Land - Highway Opening',
                      'The colorful highway opening dance number',
                      65.2, 'youtube', DATEADD(day, -2, SYSUTCDATETIME())),
                     
-                    (7, 1, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+                                        (7, 1, 'https://media.w3.org/2010/05/sintel/trailer.mp4',
                      'https://m.media-amazon.com/images/M/MV5BMjE4NDYxNTAxNV5BMl5BanBnXkFtZTgwNzM0NDM1MjE@._V1_.jpg',
                      'Whiplash - Final Performance',
                      'The intense final drum performance',
                      75.0, 'youtube', DATEADD(day, -1, SYSUTCDATETIME()));
                 END
+
+                                -- Repair existing seeded reels that still point to inaccessible
+                                -- commondatastorage sample URLs.
+                                UPDATE Reel
+                                SET VideoUrl = CASE Title
+                                        WHEN 'Inception - Dream Within a Dream' THEN 'https://samplelib.com/lib/preview/mp4/sample-10s.mp4'
+                                        WHEN 'Inception - Rotating Hallway Fight' THEN 'https://samplelib.com/lib/preview/mp4/sample-15s.mp4'
+                                        WHEN 'The Dark Knight - Joker Interrogation' THEN 'https://samplelib.com/lib/preview/mp4/sample-20s.mp4'
+                                        WHEN 'The Dark Knight - Batmobile Chase' THEN 'https://samplelib.com/lib/preview/mp4/sample-30s.mp4'
+                                        WHEN 'Interstellar - Docking Scene' THEN 'https://samplelib.com/lib/preview/mp4/sample-5s.mp4'
+                                        WHEN 'Interstellar - Tesseract Scene' THEN 'https://filesamples.com/samples/video/mp4/sample_640x360.mp4'
+                                        WHEN 'The Matrix - Bullet Time' THEN 'https://filesamples.com/samples/video/mp4/sample_960x400_ocean_with_audio.mp4'
+                                        WHEN 'Parasite - Basement Reveal' THEN 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4'
+                                        WHEN 'La La Land - Highway Opening' THEN 'https://archive.org/download/ElephantsDream/ed_1024_512kb.mp4'
+                                        WHEN 'Whiplash - Final Performance' THEN 'https://media.w3.org/2010/05/sintel/trailer.mp4'
+                                        ELSE VideoUrl
+                                END
+                                WHERE CreatorUserId = 1
+                                    AND VideoUrl LIKE 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/%';
                 -- ═══════════════════════════════════════════════════════════
                 -- Madi: Seed mock users 2–6 for personality matching demo
                 -- Each user has different taste overlap with user 1
