@@ -1,4 +1,5 @@
 using Microsoft.Data.SqlClient;
+using ubb_se_2026_meio_ai.Core;
 using ubb_se_2026_meio_ai.Core.Database;
 using ubb_se_2026_meio_ai.Core.Models;
 
@@ -9,31 +10,6 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
     /// </summary>
     public class RecommendationRepository : IRecommendationRepository
     {
-        private const int ReelModel_ReelId_Index = 0;
-        private const int ReelModel_MovieId_Index = 1;
-        private const int ReelModel_CreatorUserId_Index = 2;
-        private const int ReelModel_VideoUrl_Index = 3;
-        private const int ReelModel_ThumbnailUrl_Index = 4;
-        private const int ReelModel_Title_Index = 5;
-        private const int ReelModel_Caption_Index = 6;
-        private const int ReelModel_FeatureDurationSeconds_Index = 7;
-        private const int ReelModel_CropDataJson_Index = 8;
-        private const int ReelModel_BackgroundMusicId_Index = 9;
-        private const int ReelModel_Source_Index = 10;
-        private const int ReelModel_CreatedAt_Index = 11;
-        private const int ReelModel_LastEditedAt_Index = 12;
-        private const int ReelModel_PrimaryGenre_Index = 13;
-
-        private const int UserMoviePreference_MovieId_Index = 0;
-        private const int UserMoviePreference_Score_Index = 1;
-
-        private const int UserReelInteraction_ReelId_Index = 0;
-        private const int UserReelInteraction_LikeCount_Index = 1;
-
-        private const int UserReelInteraction_UserId_Index = 0;
-        private const int UserReelInteraction_DetailReelId_Index = 1;
-        private const int UserReelInteraction_IsLiked_Index = 2;
-        private const int UserReelInteraction_ViewedAt_Index = 3;
 
         private readonly ISqlConnectionFactory _connectionFactory;
 
@@ -103,8 +79,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
             await using var preferenceScoreReader = await getUserPreferenceScoresCommand.ExecuteReaderAsync();
             while (await preferenceScoreReader.ReadAsync())
             {
-                preferenceScoresByMovieId[preferenceScoreReader.GetInt32(UserMoviePreference_MovieId_Index)] =
-                    preferenceScoreReader.GetDouble(UserMoviePreference_Score_Index);
+                preferenceScoresByMovieId[preferenceScoreReader.GetInt32(DataReaderColumnIndexes.UserMoviePreference.MovieId)] =
+                    preferenceScoreReader.GetDouble(DataReaderColumnIndexes.UserMoviePreference.Score);
             }
 
             return preferenceScoresByMovieId;
@@ -128,8 +104,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
             await using var likeCountReader = await getAllLikeCountsCommand.ExecuteReaderAsync();
             while (await likeCountReader.ReadAsync())
             {
-                likeCountsByReelId[likeCountReader.GetInt32(UserReelInteraction_ReelId_Index)] =
-                    likeCountReader.GetInt32(UserReelInteraction_LikeCount_Index);
+                likeCountsByReelId[likeCountReader.GetInt32(DataReaderColumnIndexes.UserReelInteractionLike.ReelId)] =
+                    likeCountReader.GetInt32(DataReaderColumnIndexes.UserReelInteractionLike.LikeCount);
             }
 
             return likeCountsByReelId;
@@ -155,10 +131,10 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
             {
                 interactions.Add(new UserReelInteractionModel
                 {
-                    UserId = reader.GetInt32(UserReelInteraction_UserId_Index),
-                    ReelId = reader.GetInt32(UserReelInteraction_DetailReelId_Index),
-                    IsLiked = reader.GetBoolean(UserReelInteraction_IsLiked_Index),
-                    ViewedAt = reader.GetDateTime(UserReelInteraction_ViewedAt_Index),
+                    UserId = reader.GetInt32(DataReaderColumnIndexes.UserReelInteractionDetail.UserId),
+                    ReelId = reader.GetInt32(DataReaderColumnIndexes.UserReelInteractionDetail.ReelId),
+                    IsLiked = reader.GetBoolean(DataReaderColumnIndexes.UserReelInteractionDetail.IsLiked),
+                    ViewedAt = reader.GetDateTime(DataReaderColumnIndexes.UserReelInteractionDetail.ViewedAt),
                 });
             }
 
@@ -172,20 +148,20 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
         {
             return new ReelModel
             {
-                ReelId = reelReader.GetInt32(ReelModel_ReelId_Index),
-                MovieId = reelReader.GetInt32(ReelModel_MovieId_Index),
-                CreatorUserId = reelReader.GetInt32(ReelModel_CreatorUserId_Index),
-                VideoUrl = reelReader.GetString(ReelModel_VideoUrl_Index),
-                ThumbnailUrl = reelReader.GetString(ReelModel_ThumbnailUrl_Index),
-                Title = reelReader.GetString(ReelModel_Title_Index),
-                Caption = reelReader.GetString(ReelModel_Caption_Index),
-                FeatureDurationSeconds = reelReader.GetDouble(ReelModel_FeatureDurationSeconds_Index),
-                CropDataJson = reelReader.IsDBNull(ReelModel_CropDataJson_Index) ? null : reelReader.GetString(ReelModel_CropDataJson_Index),
-                BackgroundMusicId = reelReader.IsDBNull(ReelModel_BackgroundMusicId_Index) ? null : reelReader.GetInt32(ReelModel_BackgroundMusicId_Index),
-                Source = reelReader.GetString(ReelModel_Source_Index),
-                CreatedAt = reelReader.GetDateTime(ReelModel_CreatedAt_Index),
-                LastEditedAt = reelReader.IsDBNull(ReelModel_LastEditedAt_Index) ? null : reelReader.GetDateTime(ReelModel_LastEditedAt_Index),
-                Genre = reelReader.IsDBNull(ReelModel_PrimaryGenre_Index) ? null : reelReader.GetString(ReelModel_PrimaryGenre_Index),
+                ReelId = reelReader.GetInt32(DataReaderColumnIndexes.ReelModel.ReelId),
+                MovieId = reelReader.GetInt32(DataReaderColumnIndexes.ReelModel.MovieId),
+                CreatorUserId = reelReader.GetInt32(DataReaderColumnIndexes.ReelModel.CreatorUserId),
+                VideoUrl = reelReader.GetString(DataReaderColumnIndexes.ReelModel.VideoUrl),
+                ThumbnailUrl = reelReader.GetString(DataReaderColumnIndexes.ReelModel.ThumbnailUrl),
+                Title = reelReader.GetString(DataReaderColumnIndexes.ReelModel.Title),
+                Caption = reelReader.GetString(DataReaderColumnIndexes.ReelModel.Caption),
+                FeatureDurationSeconds = reelReader.GetDouble(DataReaderColumnIndexes.ReelModel.FeatureDurationSeconds),
+                CropDataJson = reelReader.IsDBNull(DataReaderColumnIndexes.ReelModel.CropDataJson) ? null : reelReader.GetString(DataReaderColumnIndexes.ReelModel.CropDataJson),
+                BackgroundMusicId = reelReader.IsDBNull(DataReaderColumnIndexes.ReelModel.BackgroundMusicId) ? null : reelReader.GetInt32(DataReaderColumnIndexes.ReelModel.BackgroundMusicId),
+                Source = reelReader.GetString(DataReaderColumnIndexes.ReelModel.Source),
+                CreatedAt = reelReader.GetDateTime(DataReaderColumnIndexes.ReelModel.CreatedAt),
+                LastEditedAt = reelReader.IsDBNull(DataReaderColumnIndexes.ReelModel.LastEditedAt) ? null : reelReader.GetDateTime(DataReaderColumnIndexes.ReelModel.LastEditedAt),
+                Genre = reelReader.IsDBNull(DataReaderColumnIndexes.ReelModel.PrimaryGenre) ? null : reelReader.GetString(DataReaderColumnIndexes.ReelModel.PrimaryGenre),
             };
         }
     }

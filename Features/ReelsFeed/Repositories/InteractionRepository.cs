@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Data.SqlClient;
+using ubb_se_2026_meio_ai.Core;
 using ubb_se_2026_meio_ai.Core.Database;
 using ubb_se_2026_meio_ai.Core.Models;
 
@@ -12,15 +13,6 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
     public class InteractionRepository : IInteractionRepository
     {
         private readonly ISqlConnectionFactory _connectionFactory;
-
-        // Column indices for UserReelInteractionModel mapping
-        private const int UserReelInteractionModel_InteractionId_Index = 0;
-        private const int UserReelInteractionModel_UserId_Index = 1;
-        private const int UserReelInteractionModel_ReelId_Index = 2;
-        private const int UserReelInteractionModel_IsLiked_Index = 3;
-        private const int UserReelInteractionModel_WatchDurationSec_Index = 4;
-        private const int UserReelInteractionModel_WatchPercentage_Index = 5;
-        private const int UserReelInteractionModel_ViewedAt_Index = 6;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InteractionRepository"/> class.
@@ -194,13 +186,13 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
         {
             return new UserReelInteractionModel
             {
-                InteractionId = reader.GetInt64(UserReelInteractionModel_InteractionId_Index),
-                UserId = reader.GetInt32(UserReelInteractionModel_UserId_Index),
-                ReelId = reader.GetInt32(UserReelInteractionModel_ReelId_Index),
-                IsLiked = reader.GetBoolean(UserReelInteractionModel_IsLiked_Index),
-                WatchDurationSec = reader.GetDouble(UserReelInteractionModel_WatchDurationSec_Index),
-                WatchPercentage = reader.GetDouble(UserReelInteractionModel_WatchPercentage_Index),
-                ViewedAt = reader.GetDateTime(UserReelInteractionModel_ViewedAt_Index),
+                InteractionId = reader.GetInt64(DataReaderColumnIndexes.UserReelInteractionModel.InteractionId),
+                UserId = reader.GetInt32(DataReaderColumnIndexes.UserReelInteractionModel.UserId),
+                ReelId = reader.GetInt32(DataReaderColumnIndexes.UserReelInteractionModel.ReelId),
+                IsLiked = reader.GetBoolean(DataReaderColumnIndexes.UserReelInteractionModel.IsLiked),
+                WatchDurationSec = reader.GetDouble(DataReaderColumnIndexes.UserReelInteractionModel.WatchDurationSec),
+                WatchPercentage = reader.GetDouble(DataReaderColumnIndexes.UserReelInteractionModel.WatchPercentage),
+                ViewedAt = reader.GetDateTime(DataReaderColumnIndexes.UserReelInteractionModel.ViewedAt),
             };
         }
     }

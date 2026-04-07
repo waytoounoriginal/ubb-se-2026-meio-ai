@@ -1,4 +1,5 @@
 using Microsoft.Data.SqlClient;
+using ubb_se_2026_meio_ai.Core;
 using ubb_se_2026_meio_ai.Core.Database;
 using ubb_se_2026_meio_ai.Core.Models;
 
@@ -9,19 +10,6 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
     /// </summary>
     public class ProfileRepository : IProfileRepository
     {
-        private const int UserProfileModel_UserProfileId_Index = 0;
-        private const int UserProfileModel_UserId_Index = 1;
-        private const int UserProfileModel_TotalLikes_Index = 2;
-        private const int UserProfileModel_TotalWatchTimeSec_Index = 3;
-        private const int UserProfileModel_AvgWatchTimeSec_Index = 4;
-        private const int UserProfileModel_TotalClipsViewed_Index = 5;
-        private const int UserProfileModel_LikeToViewRatio_Index = 6;
-        private const int UserProfileModel_LastUpdated_Index = 7;
-
-        private const int UserReelInteractionAggregate_TotalLikes_Index = 0;
-        private const int UserReelInteractionAggregate_TotalWatchTimeSec_Index = 1;
-        private const int UserReelInteractionAggregate_AvgWatchTimeSec_Index = 2;
-        private const int UserReelInteractionAggregate_TotalClipsViewed_Index = 3;
 
         private readonly ISqlConnectionFactory _connectionFactory;
 
@@ -90,10 +78,10 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
             await using var reader = await command.ExecuteReaderAsync();
             await reader.ReadAsync();
 
-            int totalLikes = reader.GetInt32(UserReelInteractionAggregate_TotalLikes_Index);
-            long totalWatchTimeSec = reader.GetInt64(UserReelInteractionAggregate_TotalWatchTimeSec_Index);
-            double avgWatchTimeSec = reader.GetDouble(UserReelInteractionAggregate_AvgWatchTimeSec_Index);
-            int totalClipsViewed = reader.GetInt32(UserReelInteractionAggregate_TotalClipsViewed_Index);
+            int totalLikes = reader.GetInt32(DataReaderColumnIndexes.UserReelInteractionAggregate.TotalLikes);
+            long totalWatchTimeSec = reader.GetInt64(DataReaderColumnIndexes.UserReelInteractionAggregate.TotalWatchTimeSec);
+            double avgWatchTimeSec = reader.GetDouble(DataReaderColumnIndexes.UserReelInteractionAggregate.AvgWatchTimeSec);
+            int totalClipsViewed = reader.GetInt32(DataReaderColumnIndexes.UserReelInteractionAggregate.TotalClipsViewed);
             double likeToViewRatio = this.CalculateLikeToViewRatio(totalLikes, totalClipsViewed);
 
             return new UserProfileModel
@@ -201,14 +189,14 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
         {
             return new UserProfileModel
             {
-                UserProfileId = reader.GetInt32(UserProfileModel_UserProfileId_Index),
-                UserId = reader.GetInt32(UserProfileModel_UserId_Index),
-                TotalLikes = reader.GetInt32(UserProfileModel_TotalLikes_Index),
-                TotalWatchTimeSec = reader.GetInt64(UserProfileModel_TotalWatchTimeSec_Index),
-                AvgWatchTimeSec = reader.GetDouble(UserProfileModel_AvgWatchTimeSec_Index),
-                TotalClipsViewed = reader.GetInt32(UserProfileModel_TotalClipsViewed_Index),
-                LikeToViewRatio = reader.GetDouble(UserProfileModel_LikeToViewRatio_Index),
-                LastUpdated = reader.GetDateTime(UserProfileModel_LastUpdated_Index),
+                UserProfileId = reader.GetInt32(DataReaderColumnIndexes.UserProfileModel.UserProfileId),
+                UserId = reader.GetInt32(DataReaderColumnIndexes.UserProfileModel.UserId),
+                TotalLikes = reader.GetInt32(DataReaderColumnIndexes.UserProfileModel.TotalLikes),
+                TotalWatchTimeSec = reader.GetInt64(DataReaderColumnIndexes.UserProfileModel.TotalWatchTimeSec),
+                AvgWatchTimeSec = reader.GetDouble(DataReaderColumnIndexes.UserProfileModel.AvgWatchTimeSec),
+                TotalClipsViewed = reader.GetInt32(DataReaderColumnIndexes.UserProfileModel.TotalClipsViewed),
+                LikeToViewRatio = reader.GetDouble(DataReaderColumnIndexes.UserProfileModel.LikeToViewRatio),
+                LastUpdated = reader.GetDateTime(DataReaderColumnIndexes.UserProfileModel.LastUpdated),
             };
         }
     }
