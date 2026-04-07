@@ -9,9 +9,8 @@ $testProject = Join-Path $repoRoot "UnitTests/UnitTests.csproj"
 $coverageDir = Join-Path $repoRoot "coverage"
 $reportDir = Join-Path $repoRoot "coveragereport"
 $coverageFile = Join-Path $coverageDir "coverage.cobertura.xml"
-$testDll = Join-Path $repoRoot "UnitTests/bin/$Configuration/net8.0/UnitTests.dll"
+$testResultsDir = Join-Path $repoRoot "UnitTests/TestResults"
 $globalToolsDir = Join-Path $HOME ".dotnet/tools"
-$coverletExe = Join-Path $globalToolsDir "coverlet.exe"
 $reportGeneratorExe = Join-Path $globalToolsDir "reportgenerator.exe"
 
 function Ensure-DotnetTool {
@@ -27,12 +26,7 @@ function Ensure-DotnetTool {
 }
 
 Write-Host "Checking required global tools..."
-Ensure-DotnetTool -PackageId "coverlet.console"
 Ensure-DotnetTool -PackageId "dotnet-reportgenerator-globaltool"
-
-if (-not (Test-Path $coverletExe)) {
-    throw "coverlet executable not found at '$coverletExe'. Ensure global dotnet tools are installed correctly."
-}
 
 if (-not (Test-Path $reportGeneratorExe)) {
     throw "reportgenerator executable not found at '$reportGeneratorExe'. Ensure global dotnet tools are installed correctly."
@@ -45,17 +39,31 @@ if (Test-Path $coverageDir) {
 if (Test-Path $reportDir) {
     Remove-Item -Recurse -Force $reportDir
 }
+if (Test-Path $testResultsDir) {
+    Remove-Item -Recurse -Force $testResultsDir
+}
 New-Item -ItemType Directory -Path $coverageDir | Out-Null
 
 Write-Host "Building test project..."
 dotnet build $testProject -c $Configuration -v minimal | Out-Host
 
-Write-Host "Running tests with coverlet..."
-& $coverletExe $testDll `
-    --target "dotnet" `
-    --targetargs "test $testProject -c $Configuration --no-build -v minimal" `
-    --format "cobertura" `
-    --output $coverageFile
+Write-Host "Running tests with coverage collector..."
+dotnet test $testProject `
+    -c $Configuration `
+    --no-build `
+    --results-directory $testResultsDir `
+    --collect:"XPlat Code Coverage" `
+    -v minimal | Out-Host
+
+$coverageCandidate = Get-ChildItem -Path $testResultsDir -Filter "coverage.cobertura.xml" -Recurse |
+    Sort-Object LastWriteTime -Descending |
+    Select-Object -First 1 -ExpandProperty FullName
+
+if (-not $coverageCandidate) {
+    throw "coverage.cobertura.xml was not generated under '$testResultsDir'."
+}
+
+Copy-Item -Path $coverageCandidate -Destination $coverageFile -Force
 
 Write-Host "Generating HTML coverage report..."
 & $reportGeneratorExe `

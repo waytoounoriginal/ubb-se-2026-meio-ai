@@ -1,84 +1,39 @@
-using System.Diagnostics;
-using Windows.Media.Core;
-using Windows.Media.Playback;
-
 namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
 {
     /// <summary>
-    /// Tracks playback state and prefetches clip media sources.
-    /// Implements IDisposable to clean up cached MediaSource COM objects at shutdown.
-    /// Owner: Tudor
+    /// Prefetches clip URLs and returns transmission data for feed playback.
+    /// Media object creation is intentionally handled outside this service.
+    /// Owner: Tudor.
     /// </summary>
-    public class ClipPlaybackService : IClipPlaybackService, IDisposable
+    public class ClipPlaybackService : IClipPlaybackService
     {
-        private readonly Dictionary<string, MediaSource> _prefetchedSources = new();
-        private readonly Stopwatch _elapsed = new();
+        private readonly HashSet<string> _prefetchedClipUrls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        public bool IsPlaying { get; private set; }
-
-        public Task PlayAsync(string videoUrl)
-        {
-            IsPlaying = true;
-            _elapsed.Restart();
-            return Task.CompletedTask;
-        }
-
-        public Task PauseAsync()
-        {
-            IsPlaying = false;
-            _elapsed.Stop();
-            return Task.CompletedTask;
-        }
-
-        public Task ResumeAsync()
-        {
-            IsPlaying = true;
-            _elapsed.Start();
-            return Task.CompletedTask;
-        }
-
-        public Task SeekAsync(double positionSeconds)
-        {
-            return Task.CompletedTask;
-        }
-
-        public double GetElapsedSeconds()
-        {
-            return _elapsed.Elapsed.TotalSeconds;
-        }
-
+        /// <inheritdoc />
         public Task PrefetchClipAsync(string videoUrl)
         {
-            if (!string.IsNullOrEmpty(videoUrl) && !_prefetchedSources.ContainsKey(videoUrl))
+            if (!string.IsNullOrWhiteSpace(videoUrl))
             {
-                try
-                {
-                    _prefetchedSources[videoUrl] = MediaSource.CreateFromUri(new Uri(videoUrl));
-                }
-                catch { } // Ignore bad URIs silently
+                this._prefetchedClipUrls.Add(videoUrl);
             }
+
             return Task.CompletedTask;
         }
 
-        public MediaSource GetMediaSource(string videoUrl)
+        /// <summary>
+        /// Gets transmission data for the specified clip URL.
+        /// Removes prefetch marker when consumed to preserve one-time handoff semantics.
+        /// </summary>
+        /// <param name="videoUrl">The clip URL.</param>
+        /// <returns>A DTO containing playback transmission metadata.</returns>
+        public ClipMediaSourceTransmission GetClipTransmission(string videoUrl)
         {
-            // Remove from cache on retrieval — each MediaPlayer must own its own
-            // MediaSource COM object. Sharing a single source across multiple players
-            // causes COM access violations when one player disposes or recycles it.
-            if (_prefetchedSources.Remove(videoUrl, out var source))
+            bool wasPrefetched = this._prefetchedClipUrls.Remove(videoUrl);
+            return new ClipMediaSourceTransmission
             {
-                return source;
-            }
-            return MediaSource.CreateFromUri(new Uri(videoUrl));
-        }
-
-        public void Dispose()
-        {
-            foreach (var source in _prefetchedSources.Values)
-            {
-                try { source.Dispose(); } catch { }
-            }
-            _prefetchedSources.Clear();
+                VideoUrl = videoUrl,
+                WasPrefetched = wasPrefetched,
+            };
         }
     }
 }

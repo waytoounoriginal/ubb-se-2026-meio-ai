@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:local="using:ubb_se_2026_meio_ai.Features.ReelsFeed.Views"
+    xmlns:messages="using:ubb_se_2026_meio_ai"
     xmlns:models="using:ubb_se_2026_meio_ai.Core.Models"
     mc:Ignorable="d"
     Background="Black">
@@ -45,7 +46,7 @@
                        Foreground="LightCoral" FontWeight="Bold"
                        TextWrapping="Wrap" MaxWidth="300"
                        HorizontalAlignment="Center" TextAlignment="Center" />
-            <Button Content="Retry" Click="RetryButton_Click"
+                <Button Content="{x:Bind messages:AppMessages.ReelsFeedRetryButtonText, Mode=OneWay}" Click="RetryButton_Click"
                     HorizontalAlignment="Center"
                     Style="{StaticResource AccentButtonStyle}" />
         </StackPanel>
@@ -58,13 +59,13 @@
             <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE714;"
                       FontSize="64" Foreground="#88FFFFFF"
                       HorizontalAlignment="Center" />
-            <TextBlock Text="No clips yet"
+                <TextBlock Text="{x:Bind messages:AppMessages.ReelsFeedEmptyTitle, Mode=OneWay}"
                        Foreground="White" FontSize="20" FontWeight="SemiBold"
                        HorizontalAlignment="Center" />
-            <TextBlock Text="Check back later for new reels!"
+                <TextBlock Text="{x:Bind messages:AppMessages.ReelsFeedEmptySubtitle, Mode=OneWay}"
                        Foreground="#88FFFFFF" FontSize="14"
                        HorizontalAlignment="Center" />
-            <Button Content="Refresh" Click="RetryButton_Click"
+                <Button Content="{x:Bind messages:AppMessages.ReelsFeedRefreshButtonText, Mode=OneWay}" Click="RetryButton_Click"
                     HorizontalAlignment="Center"
                     Style="{StaticResource AccentButtonStyle}"
                     Margin="0,8,0,0" />

@@ -14,6 +14,7 @@ using ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels;
 using ubb_se_2026_meio_ai.Features.PersonalityMatch.Services;
 using ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels;
 using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
+using ubb_se_2026_meio_ai.Core.Platform;
 using System.Diagnostics;
 using System.IO;
 
@@ -108,6 +109,16 @@ namespace ubb_se_2026_meio_ai
 
         protected override async void OnLaunched(LaunchActivatedEventArgs args)
         {
+            // Ensure that the appdata folder is created
+            string appFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "MeioAI"
+                );
+
+            if (!Directory.Exists(appFolder)) {
+                Directory.CreateDirectory(appFolder);
+            }
+
             try
             {
                 // Ensure shared tables exist before any feature code runs.
@@ -143,10 +154,10 @@ namespace ubb_se_2026_meio_ai
         /// </summary>
         private static string ResolveYouTubeApiKey()
         {
-            if (!string.IsNullOrWhiteSpace(YouTubeApiKey))
-            {
-                return YouTubeApiKey;
-            }
+            //if (!string.IsNullOrWhiteSpace(YouTubeApiKey))
+            //{
+            //    return YouTubeApiKey;
+            //}
 
             return Environment.GetEnvironmentVariable("YOUTUBE_API_KEY") ?? string.Empty;
         }
@@ -160,6 +171,7 @@ namespace ubb_se_2026_meio_ai
         {
             // ── Core / Database ──────────────────────────────────────────
             services.AddSingleton<ISqlConnectionFactory, SqlConnectionFactory>();
+            services.AddSingleton<IAppWindowContext, AppWindowContext>();
             services.AddTransient<DatabaseInitializer>();
 
             // ── Andrei — Trailer Scraping Services ───────────────────────
@@ -211,6 +223,7 @@ namespace ubb_se_2026_meio_ai
             services.AddTransient<IInteractionRepository, InteractionRepository>();
             services.AddTransient<IProfileRepository, ProfileRepository>();
             services.AddTransient<Features.ReelsFeed.Repositories.IPreferenceRepository, Features.ReelsFeed.Repositories.PreferenceRepository>();
+            services.AddTransient<IRecommendationRepository, RecommendationRepository>();
 
             // Tudor – Services
             services.AddTransient<IReelInteractionService, ReelInteractionService>();

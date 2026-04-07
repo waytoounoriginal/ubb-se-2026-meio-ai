@@ -7,56 +7,81 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
     /// Orchestrates user–reel interactions by delegating persistence to
     /// <see cref="IInteractionRepository"/> and preference boosts to
     /// <see cref="IPreferenceRepository"/>.
-    /// Owner: Tudor
+    /// Owner: Tudor.
     /// </summary>
     public class ReelInteractionService : IReelInteractionService
     {
+        private const double LikeBoostAmount = 1.5;
         private readonly IInteractionRepository _interactionRepository;
         private readonly IPreferenceRepository _preferenceRepository;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ReelInteractionService"/> class.
+        /// </summary>
+        /// <param name="interactionRepository">Repository used for reel interaction persistence.</param>
+        /// <param name="preferenceRepository">Repository used for updating movie preference boosts.</param>
         public ReelInteractionService(
             IInteractionRepository interactionRepository,
             IPreferenceRepository preferenceRepository)
         {
-            _interactionRepository = interactionRepository;
-            _preferenceRepository = preferenceRepository;
+            this._interactionRepository = interactionRepository;
+            this._preferenceRepository = preferenceRepository;
         }
 
-        /// <summary>
-        /// Toggles the IsLiked flag and, when a reel transitions to liked,
-        /// boosts the associated movie's preference score by +1.5.
-        /// </summary>
+        /// <inheritdoc />
         public async Task ToggleLikeAsync(int userId, int reelId)
         {
-            var existing = await _interactionRepository.GetInteractionAsync(userId, reelId);
-            bool wasLiked = existing?.IsLiked ?? false;
+            // Implementation detail: apply a preference boost only on unliked -> liked transitions.
+            var existingInteraction = await this._interactionRepository.GetInteractionAsync(userId, reelId);
+            bool wasLiked = existingInteraction?.IsLiked ?? false;
 
-            await _interactionRepository.ToggleLikeAsync(userId, reelId);
+            await this._interactionRepository.ToggleLikeAsync(userId, reelId);
 
             // Boost preference only when transitioning from unliked → liked
             if (!wasLiked)
             {
-                int? movieId = await _interactionRepository.GetReelMovieIdAsync(reelId);
-                if (movieId.HasValue)
+                int? associatedMovieId = await this._interactionRepository.GetReelMovieIdAsync(reelId);
+                if (associatedMovieId.HasValue)
                 {
-                    await _preferenceRepository.BoostPreferenceOnLikeAsync(userId, movieId.Value);
+                    await this.BoostPreferenceOnLikeAsync(userId, associatedMovieId.Value);
                 }
             }
         }
 
+        /// <summary>
+        /// Boosts user's preference for a movie by applying upsert logic:
+        /// if preference doesn't exist, insert with boost amount;  otherwise, add boost amount.
+        /// </summary>
+        private async Task BoostPreferenceOnLikeAsync(int userId, int movieId)
+        {
+            var preferenceExists = await this._preferenceRepository.PreferenceExistsAsync(userId, movieId);
+
+            if (!preferenceExists)
+            {
+                await this._preferenceRepository.InsertPreferenceAsync(userId, movieId, LikeBoostAmount);
+            }
+            else
+            {
+                await this._preferenceRepository.UpdatePreferenceAsync(userId, movieId, LikeBoostAmount);
+            }
+        }
+
+        /// <inheritdoc />
         public async Task RecordViewAsync(int userId, int reelId, double watchDurationSec, double watchPercentage)
         {
-            await _interactionRepository.UpdateViewDataAsync(userId, reelId, watchDurationSec, watchPercentage);
+            await this._interactionRepository.UpdateViewDataAsync(userId, reelId, watchDurationSec, watchPercentage);
         }
 
+        /// <inheritdoc />
         public async Task<UserReelInteractionModel?> GetInteractionAsync(int userId, int reelId)
         {
-            return await _interactionRepository.GetInteractionAsync(userId, reelId);
+            return await this._interactionRepository.GetInteractionAsync(userId, reelId);
         }
 
+        /// <inheritdoc />
         public async Task<int> GetLikeCountAsync(int reelId)
         {
-            return await _interactionRepository.GetLikeCountAsync(reelId);
+            return await this._interactionRepository.GetLikeCountAsync(reelId);
         }
     }
 }
