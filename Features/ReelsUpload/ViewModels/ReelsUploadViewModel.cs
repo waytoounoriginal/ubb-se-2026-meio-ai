@@ -49,12 +49,16 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
         [ObservableProperty]
         private string _localVideoFilePath = string.Empty;
 
+        // constants
+        const string videoFileExtension = ".mp4";
+
+        const int nullId = 0;
+
         // Button 1 click: let the user browse their PC for a video
         [RelayCommand]
         private async Task SelectVideoFileAsync()
         {
             var filePicker = new Windows.Storage.Pickers.FileOpenPicker();
-            string videoFileExtension = ".mp4";
             filePicker.FileTypeFilter.Add(videoFileExtension);
 
             // In WinUI 3 Desktop apps, the file picker needs to know WHICH window it belongs to!
@@ -172,7 +176,6 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
                 var newMovieResults = new System.Collections.Generic.List<MovieCardModel>();
                 string movieIdField = "MovieId", titleField = "Title", posterField = "PosterUrl";
                 string primaryGenreField = "PrimaryGenre", releaseYearField = "ReleaseYear", descriptionField = "Description";
-                int nullId = 0;
 
                 while (await sqlCommandOutputReader.ReadAsync())
                 {

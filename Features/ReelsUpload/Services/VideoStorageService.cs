@@ -19,6 +19,10 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
         // Simulating a blob storage directory inside the AppData folder for local development
         private readonly string _blobStorageDirectory;
 
+        const string videoFileExtension = ".mp4";
+
+        const int nullId = 0;
+
         public VideoStorageService(ISqlConnectionFactory sqlConnectionFactory)
         {
             _sqlConnectionFactory = sqlConnectionFactory;
@@ -39,7 +43,6 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
             if (string.IsNullOrWhiteSpace(localFilePath) || !File.Exists(localFilePath))
                 return false;
 
-            string videoFileExtension = ".mp4";
             var fileExtension = Path.GetExtension(localFilePath).ToLowerInvariant();
             if (fileExtension != videoFileExtension)
             {
@@ -103,8 +106,6 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
             await using var sqlCommand = new SqlCommand(sqlInsertInstruction, databaseConnection);
 
             // Map nullable MovieId to 0 to satisfy your NOT NULL db constraint (since we can't use DBNull anymore)
-            int nullId = 0;
-
             sqlCommand.Parameters.AddWithValue("@MovieId", request.MovieId ?? nullId);
             sqlCommand.Parameters.AddWithValue("@CreatorUserId", request.UploaderUserId);
             sqlCommand.Parameters.AddWithValue("@VideoUrl", destinationBlobPath);
