@@ -14,6 +14,7 @@ using ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels;
 using ubb_se_2026_meio_ai.Features.PersonalityMatch.Services;
 using ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels;
 using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
+using ubb_se_2026_meio_ai.Core.Platform;
 using System.Diagnostics;
 using System.IO;
 
@@ -170,6 +171,7 @@ namespace ubb_se_2026_meio_ai
         {
             // ── Core / Database ──────────────────────────────────────────
             services.AddSingleton<ISqlConnectionFactory, SqlConnectionFactory>();
+            services.AddSingleton<IAppWindowContext, AppWindowContext>();
             services.AddTransient<DatabaseInitializer>();
 
             // ── Andrei — Trailer Scraping Services ───────────────────────
@@ -221,6 +223,7 @@ namespace ubb_se_2026_meio_ai
             services.AddTransient<IInteractionRepository, InteractionRepository>();
             services.AddTransient<IProfileRepository, ProfileRepository>();
             services.AddTransient<Features.ReelsFeed.Repositories.IPreferenceRepository, Features.ReelsFeed.Repositories.PreferenceRepository>();
+            services.AddTransient<IRecommendationRepository, RecommendationRepository>();
 
             // Tudor – Services
             services.AddTransient<IReelInteractionService, ReelInteractionService>();

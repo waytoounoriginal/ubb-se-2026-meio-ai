@@ -105,6 +105,10 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
                     {
                         if (queueIndex == selectedIndex)
                         {
+                            var selectedReel = this.ViewModel.ReelQueue[queueIndex];
+                            reelView.SetPlaybackItem(
+                                selectedReel.VideoUrl,
+                                this.ViewModel.BuildPlaybackItem(selectedReel.VideoUrl));
                             reelView.PlayVideo();
                         }
                         else

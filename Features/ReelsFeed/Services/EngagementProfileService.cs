@@ -10,11 +10,6 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
     /// </summary>
     public class EngagementProfileService : IEngagementProfileService
     {
-        private const int EngagementStats_TotalLikes_Index = 0;
-        private const int EngagementStats_TotalWatchTimeSec_Index = 1;
-        private const int EngagementStats_AverageWatchTimeSec_Index = 2;
-        private const int EngagementStats_TotalClipsViewed_Index = 3;
-
         private readonly IProfileRepository _profileRepository;
 
         public EngagementProfileService(IProfileRepository profileRepository)

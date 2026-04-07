@@ -8,7 +8,7 @@ using System;
 using System.ComponentModel;
 using ubb_se_2026_meio_ai.Core.Models;
 using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
-using Windows.Media.Core;
+using Windows.Media.Playback;
 
 namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
 {
@@ -62,9 +62,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
             }
         }
 
-        private readonly IClipPlaybackService _playbackService;
         private readonly IReelInteractionService _interactionService;
         private DispatcherTimer? _progressTimer;
+        private string? _loadedVideoUrl;
 
         /// <summary>
         /// Per-instance flag to prevent double-disposal and post-dispose access.
@@ -84,7 +84,6 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         public ReelItemView()
         {
             this.InitializeComponent();
-            this._playbackService = App.Services.GetRequiredService<IClipPlaybackService>();
             this._interactionService = App.Services.GetRequiredService<IReelInteractionService>();
 
             // Do NOT hook MediaEnded here — it's done in OnReelChanged after setting Source,
@@ -121,13 +120,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
                 view._disposed = false;
 
                 // Set the new source — MediaPlayerElement will auto-create a new MediaPlayer
-                if (!string.IsNullOrEmpty(reel.VideoUrl))
-                {
-                    var playbackService = view._playbackService as ClipPlaybackService;
-                    var mediaSource = playbackService?.GetMediaSource(reel.VideoUrl)
-                        ?? MediaSource.CreateFromUri(new Uri(reel.VideoUrl));
-                    view.ReelPlayer.Source = new Windows.Media.Playback.MediaPlaybackItem(mediaSource);
-                }
+                view.ReelPlayer.Source = null;
+                view._loadedVideoUrl = null;
 
                 // Hook MediaEnded on the newly created MediaPlayer
                 if (view.ReelPlayer.MediaPlayer != null)
@@ -518,6 +512,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
                 player.Source = null;
                 previousSource?.Dispose();
                 player.Dispose();
+                this._loadedVideoUrl = null;
             }
             catch
             {
@@ -612,6 +607,43 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
             catch
             {
                 // DispatcherQueue may already be torn down — this is expected during close
+            }
+        }
+
+        /// <summary>
+        /// Sets the playback item to the internal player element.
+        /// </summary>
+        /// <param name="videoUrl">The reel URL represented by this playback item.</param>
+        /// <param name="playbackItem">Playback item built by the ViewModel.</param>
+        public void SetPlaybackItem(string? videoUrl, MediaPlaybackItem? playbackItem)
+        {
+            if (this._disposed || ReelItemView.IsAppClosing)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(videoUrl) &&
+                string.Equals(this._loadedVideoUrl, videoUrl, StringComparison.OrdinalIgnoreCase) &&
+                this.ReelPlayer.Source != null)
+            {
+                return;
+            }
+
+            try
+            {
+                this.DisposeCurrentPlayer();
+                this._disposed = false;
+                this.ReelPlayer.Source = playbackItem;
+                this._loadedVideoUrl = videoUrl;
+
+                if (this.ReelPlayer.MediaPlayer != null)
+                {
+                    this.ReelPlayer.MediaPlayer.IsLoopingEnabled = false;
+                    this.ReelPlayer.MediaPlayer.MediaEnded += this.MediaPlayer_MediaEnded;
+                }
+            }
+            catch
+            {
             }
         }
     }

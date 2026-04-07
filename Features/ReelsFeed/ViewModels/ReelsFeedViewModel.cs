@@ -7,6 +7,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using ubb_se_2026_meio_ai;
 using ubb_se_2026_meio_ai.Core.Models;
 using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
+using Windows.Media.Core;
+using Windows.Media.Playback;
 
 namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
 {
@@ -27,6 +29,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
         private readonly IRecommendationService _recommendationService;
         private readonly IClipPlaybackService _clipPlaybackService;
         private readonly IReelInteractionService _reelInteractionService;
+        private readonly Dictionary<string, MediaPlaybackItem> _prefetchedPlaybackItems =
+            new Dictionary<string, MediaPlaybackItem>(StringComparer.OrdinalIgnoreCase);
+        private readonly object _prefetchLock = new ();
 
         /// <summary>Tracks wall-clock watch time for the currently visible reel.</summary>
         private readonly Stopwatch _watchStopwatch = new ();
@@ -88,6 +93,10 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
             this.ErrorMessage = null;
             this.IsEmpty = false;
             this.ReelQueue.Clear();
+            lock (this._prefetchLock)
+            {
+                this._prefetchedPlaybackItems.Clear();
+            }
 
             try
             {
@@ -141,9 +150,49 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
                     var nearbyReel = this.ReelQueue[queueIndex];
                     if (!string.IsNullOrEmpty(nearbyReel.VideoUrl))
                     {
-                        _ = this._clipPlaybackService.PrefetchClipAsync(nearbyReel.VideoUrl);
+                        _ = this.PrefetchPlaybackItemAsync(nearbyReel.VideoUrl);
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Prefetches transmission metadata and eagerly builds a playback item cache entry.
+        /// </summary>
+        /// <param name="videoUrl">The reel video URL.</param>
+        private async Task PrefetchPlaybackItemAsync(string videoUrl)
+        {
+            if (string.IsNullOrWhiteSpace(videoUrl))
+            {
+                return;
+            }
+
+            lock (this._prefetchLock)
+            {
+                if (this._prefetchedPlaybackItems.ContainsKey(videoUrl))
+                {
+                    return;
+                }
+            }
+
+            await this._clipPlaybackService.PrefetchClipAsync(videoUrl);
+
+            try
+            {
+                var transmission = this._clipPlaybackService.GetClipTransmission(videoUrl);
+                var mediaSource = MediaSource.CreateFromUri(new Uri(transmission.VideoUrl));
+                var playbackItem = new MediaPlaybackItem(mediaSource);
+
+                lock (this._prefetchLock)
+                {
+                    if (!this._prefetchedPlaybackItems.ContainsKey(videoUrl))
+                    {
+                        this._prefetchedPlaybackItems[videoUrl] = playbackItem;
+                    }
+                }
+            }
+            catch
+            {
             }
         }
 
@@ -263,6 +312,39 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
                     reelItem.IsLiked = false;
                     reelItem.LikeCount = 0;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Builds a playback item for a reel using transmission data from the playback service.
+        /// MediaSource creation is intentionally performed in ViewModel layer.
+        /// </summary>
+        /// <param name="videoUrl">The reel video URL.</param>
+        /// <returns>A playback item for the player, or null if URL is invalid.</returns>
+        public MediaPlaybackItem? BuildPlaybackItem(string? videoUrl)
+        {
+            if (string.IsNullOrWhiteSpace(videoUrl))
+            {
+                return null;
+            }
+
+            lock (this._prefetchLock)
+            {
+                if (this._prefetchedPlaybackItems.Remove(videoUrl, out var prefetchedPlaybackItem))
+                {
+                    return prefetchedPlaybackItem;
+                }
+            }
+
+            try
+            {
+                var transmission = this._clipPlaybackService.GetClipTransmission(videoUrl);
+                var mediaSource = MediaSource.CreateFromUri(new Uri(transmission.VideoUrl));
+                return new MediaPlaybackItem(mediaSource);
+            }
+            catch
+            {
+                return null;
             }
         }
     }

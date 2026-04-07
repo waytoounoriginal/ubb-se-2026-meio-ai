@@ -8,7 +8,6 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
     /// </summary>
     public class PreferenceRepository : IPreferenceRepository
     {
-        private const double LikeBoostAmount = 1.5;
         private readonly ISqlConnectionFactory _connectionFactory;
 
         /// <summary>
@@ -21,26 +20,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
         }
 
         /// <inheritdoc />
-        public async Task BoostPreferenceOnLikeAsync(int userId, int movieId)
-        {
-            var preferenceExists = await this.PreferenceExistsAsync(userId, movieId);
-
-            if (!preferenceExists)
-            {
-                await this.InsertPreferenceAsync(userId, movieId, LikeBoostAmount);
-                return;
-            }
-
-            await this.UpdatePreferenceAsync(userId, movieId, LikeBoostAmount);
-        }
-
-        /// <summary>
-        /// Checks whether a user preference row exists for the given user and movie.
-        /// </summary>
-        /// <param name="userId">The ID of the user.</param>
-        /// <param name="movieId">The ID of the movie.</param>
-        /// <returns>True if a matching preference row exists; otherwise false.</returns>
-        private async Task<bool> PreferenceExistsAsync(int userId, int movieId)
+        public async Task<bool> PreferenceExistsAsync(int userId, int movieId)
         {
             const string checkPreferenceExistsSql = "SELECT 1 FROM UserMoviePreference WHERE UserId = @UserId AND MovieId = @MovieId";
 
@@ -52,13 +32,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
             return preferenceExistsResult != null;
         }
 
-        /// <summary>
-        /// Inserts a new preference row with the provided initial score.
-        /// </summary>
-        /// <param name="userId">The ID of the user.</param>
-        /// <param name="movieId">The ID of the movie.</param>
-        /// <param name="score">The initial preference score.</param>
-        private async Task InsertPreferenceAsync(int userId, int movieId, double score)
+        /// <inheritdoc />
+        public async Task InsertPreferenceAsync(int userId, int movieId, double score)
         {
             const string insertPreferenceSql = @"
                 INSERT INTO UserMoviePreference (UserId, MovieId, Score, LastModified, ChangeFromPreviousValue)
@@ -73,13 +48,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
             await insertPreferenceCommand.ExecuteNonQueryAsync();
         }
 
-        /// <summary>
-        /// Updates an existing preference row by applying the provided boost.
-        /// </summary>
-        /// <param name="userId">The ID of the user.</param>
-        /// <param name="movieId">The ID of the movie.</param>
-        /// <param name="boost">The score delta to apply.</param>
-        private async Task UpdatePreferenceAsync(int userId, int movieId, double boost)
+        /// <inheritdoc />
+        public async Task UpdatePreferenceAsync(int userId, int movieId, double boost)
         {
             const string updatePreferenceSql = @"
                 UPDATE UserMoviePreference

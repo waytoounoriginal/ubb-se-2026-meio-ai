@@ -88,6 +88,7 @@
 		<Compile Remove="Features\**\Models\**\*.cs" />
 		<Compile Remove="Features\**\Repositories\**\*.cs" />
 		<Compile Remove="Features\**\Services\**\*.cs" />
+		<Compile Remove="Features\**\ViewModels\**\*.cs" />
 		<EmbeddedResource Remove="UnitTests\**\*" />
 		<EmbeddedResource Remove="MeioAi.Logic\**\*" />
 		<None Remove="UnitTests\**\*" />

@@ -11,6 +11,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
     /// </summary>
     public class ReelInteractionService : IReelInteractionService
     {
+        private const double LikeBoostAmount = 1.5;
         private readonly IInteractionRepository _interactionRepository;
         private readonly IPreferenceRepository _preferenceRepository;
 
@@ -42,8 +43,26 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
                 int? associatedMovieId = await this._interactionRepository.GetReelMovieIdAsync(reelId);
                 if (associatedMovieId.HasValue)
                 {
-                    await this._preferenceRepository.BoostPreferenceOnLikeAsync(userId, associatedMovieId.Value);
+                    await this.BoostPreferenceOnLikeAsync(userId, associatedMovieId.Value);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Boosts user's preference for a movie by applying upsert logic:
+        /// if preference doesn't exist, insert with boost amount;  otherwise, add boost amount.
+        /// </summary>
+        private async Task BoostPreferenceOnLikeAsync(int userId, int movieId)
+        {
+            var preferenceExists = await this._preferenceRepository.PreferenceExistsAsync(userId, movieId);
+
+            if (!preferenceExists)
+            {
+                await this._preferenceRepository.InsertPreferenceAsync(userId, movieId, LikeBoostAmount);
+            }
+            else
+            {
+                await this._preferenceRepository.UpdatePreferenceAsync(userId, movieId, LikeBoostAmount);
             }
         }
 

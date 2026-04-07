@@ -18,6 +18,11 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
         private const int UserProfileModel_LikeToViewRatio_Index = 6;
         private const int UserProfileModel_LastUpdated_Index = 7;
 
+        private const int UserReelInteractionAggregate_TotalLikes_Index = 0;
+        private const int UserReelInteractionAggregate_TotalWatchTimeSec_Index = 1;
+        private const int UserReelInteractionAggregate_AvgWatchTimeSec_Index = 2;
+        private const int UserReelInteractionAggregate_TotalClipsViewed_Index = 3;
+
         private readonly ISqlConnectionFactory _connectionFactory;
 
         /// <summary>
@@ -27,6 +32,20 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
         public ProfileRepository(ISqlConnectionFactory connectionFactory)
         {
             this._connectionFactory = connectionFactory;
+        }
+
+        /// <summary>
+        /// Calculates the like-to-view ratio based on total likes and total clips viewed.
+        /// </summary>
+        /// <param name="totalLikes">Total number of likes.</param>
+        /// <param name="totalClipsViewed">Total number of clips viewed.</param>
+        /// <returns>The ratio of likes to views, or 0 if no clips have been viewed.</returns>
+        private double CalculateLikeToViewRatio(int totalLikes, int totalClipsViewed)
+        {
+            if (totalClipsViewed == 0)
+                return 0;
+
+            return (double)totalLikes / totalClipsViewed;
         }
 
         /// <inheritdoc />
@@ -71,13 +90,11 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
             await using var reader = await command.ExecuteReaderAsync();
             await reader.ReadAsync();
 
-            int totalLikes = reader.GetInt32(0);
-            long totalWatchTimeSec = reader.GetInt64(1);
-            double avgWatchTimeSec = reader.GetDouble(2);
-            int totalClipsViewed = reader.GetInt32(3);
-            double likeToViewRatio = totalClipsViewed > 0
-                ? (double)totalLikes / totalClipsViewed
-                : 0;
+            int totalLikes = reader.GetInt32(UserReelInteractionAggregate_TotalLikes_Index);
+            long totalWatchTimeSec = reader.GetInt64(UserReelInteractionAggregate_TotalWatchTimeSec_Index);
+            double avgWatchTimeSec = reader.GetDouble(UserReelInteractionAggregate_AvgWatchTimeSec_Index);
+            int totalClipsViewed = reader.GetInt32(UserReelInteractionAggregate_TotalClipsViewed_Index);
+            double likeToViewRatio = this.CalculateLikeToViewRatio(totalLikes, totalClipsViewed);
 
             return new UserProfileModel
             {

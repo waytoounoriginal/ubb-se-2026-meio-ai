@@ -1,70 +1,39 @@
-using Windows.Media.Core;
-
 namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
 {
     /// <summary>
-    /// Prefetches clip media sources for feed playback.
-    /// Implements IDisposable to clean up cached MediaSource COM objects at shutdown.
+    /// Prefetches clip URLs and returns transmission data for feed playback.
+    /// Media object creation is intentionally handled outside this service.
     /// Owner: Tudor.
     /// </summary>
-    public class ClipPlaybackService : IClipPlaybackService, IDisposable
+    public class ClipPlaybackService : IClipPlaybackService
     {
-        private readonly Dictionary<string, MediaSource> _prefetchedMediaSources = new Dictionary<string, MediaSource>();
+        private readonly HashSet<string> _prefetchedClipUrls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         /// <inheritdoc />
         public Task PrefetchClipAsync(string videoUrl)
         {
-            if (!string.IsNullOrEmpty(videoUrl) && !this._prefetchedMediaSources.ContainsKey(videoUrl))
+            if (!string.IsNullOrWhiteSpace(videoUrl))
             {
-                try
-                {
-                    this._prefetchedMediaSources[videoUrl] = MediaSource.CreateFromUri(new Uri(videoUrl));
-                }
-                catch
-                {
-                    // Ignore bad URIs silently.
-                }
+                this._prefetchedClipUrls.Add(videoUrl);
             }
 
             return Task.CompletedTask;
         }
 
         /// <summary>
-        /// Gets a media source for the specified clip URL.
-        /// Reuses and removes a prefetched source when available; otherwise creates a new source.
+        /// Gets transmission data for the specified clip URL.
+        /// Removes prefetch marker when consumed to preserve one-time handoff semantics.
         /// </summary>
         /// <param name="videoUrl">The clip URL.</param>
-        /// <returns>A media source instance suitable for a player.</returns>
-        public MediaSource GetMediaSource(string videoUrl)
+        /// <returns>A DTO containing playback transmission metadata.</returns>
+        public ClipMediaSourceTransmission GetClipTransmission(string videoUrl)
         {
-            // Remove from cache on retrieval — each MediaPlayer must own its own
-            // MediaSource COM object. Sharing a single source across multiple players
-            // causes COM access violations when one player disposes or recycles it.
-            if (this._prefetchedMediaSources.Remove(videoUrl, out var prefetchedMediaSource))
+            bool wasPrefetched = this._prefetchedClipUrls.Remove(videoUrl);
+            return new ClipMediaSourceTransmission
             {
-                return prefetchedMediaSource;
-            }
-
-            return MediaSource.CreateFromUri(new Uri(videoUrl));
-        }
-
-        /// <summary>
-        /// Disposes all cached media sources and clears the prefetch cache.
-        /// </summary>
-        public void Dispose()
-        {
-            foreach (var cachedMediaSource in this._prefetchedMediaSources.Values)
-            {
-                try
-                {
-                    cachedMediaSource.Dispose();
-                }
-                catch
-                {
-                }
-            }
-
-            this._prefetchedMediaSources.Clear();
+                VideoUrl = videoUrl,
+                WasPrefetched = wasPrefetched,
+            };
         }
     }
 }
