@@ -81,6 +81,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Remove="Features\ReelsUpload\Repository\**" />
+		<Compile Remove="Features\ReelsUpload\Services\**" />
 		<Compile Remove="UnitTests\**\*.cs" />
 		<Compile Remove="MeioAi.Logic\**\*.cs" />
 		<Compile Remove="Core\Database\**\*.cs" />
@@ -89,10 +91,16 @@
 		<Compile Remove="Features\**\Repositories\**\*.cs" />
 		<Compile Remove="Features\**\Services\**\*.cs" />
 		<Compile Remove="Features\**\ViewModels\**\*.cs" />
+		<EmbeddedResource Remove="Features\ReelsUpload\Repository\**" />
+		<EmbeddedResource Remove="Features\ReelsUpload\Services\**" />
 		<EmbeddedResource Remove="UnitTests\**\*" />
 		<EmbeddedResource Remove="MeioAi.Logic\**\*" />
+		<None Remove="Features\ReelsUpload\Repository\**" />
+		<None Remove="Features\ReelsUpload\Services\**" />
 		<None Remove="UnitTests\**\*" />
 		<None Remove="MeioAi.Logic\**\*" />
+		<Page Remove="Features\ReelsUpload\Repository\**" />
+		<Page Remove="Features\ReelsUpload\Services\**" />
 		<Page Remove="UnitTests\**\*" />
 		<Page Remove="MeioAi.Logic\**\*" />
 		<ApplicationDefinition Remove="UnitTests\**\*" />
@@ -119,4 +127,10 @@
 		<PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
 		<PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
 	</PropertyGroup>
+	<ItemGroup>
+	  <PRIResource Remove="Features\ReelsUpload\Services\**" />
+	</ItemGroup>
+	<ItemGroup>
+	  <PRIResource Remove="Features\ReelsUpload\Repository\**" />
+	</ItemGroup>
 </Project>
