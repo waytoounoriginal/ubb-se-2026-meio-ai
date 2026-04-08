@@ -1,8 +1,4 @@
-﻿// <copyright file="YouTubeScraperServiceTests.cs" company="PlaceholderCompany">
-// Copyright (c) PlaceholderCompany. All rights reserved.
-// </copyright>
-
-namespace UnitTests.TrailerScraping
+﻿namespace UnitTests.TrailerScraping
 {
     using NUnit.Framework;
     using ubb_se_2026_meio_ai.Features.TrailerScraping.Services;
