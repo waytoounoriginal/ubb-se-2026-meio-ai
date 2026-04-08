@@ -207,9 +207,9 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
                     AdvanceToNextCard();
                 }
             }
-            catch (Exception)
+            catch (Exception exception)
             {
-                // Silently fail to allow existing cards to be swiped.
+                StatusMessage = $"Sync Error: {exception.Message}";
             }
             finally
             {
