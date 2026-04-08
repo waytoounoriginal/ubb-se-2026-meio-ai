@@ -109,7 +109,6 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
             foreach (int randomUserId in randomUserIds)
             {
                 randomUserResults.Add(BuildMatchResult(randomUserId, MatchScoreForRandomUser));
-                }
             }
 
             return randomUserResults;
@@ -228,13 +227,11 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
                 {
                     dotProduct += firstUserEntry.Value * secondUserScore;
                 }
-                }
             }
 
             foreach (KeyValuePair<int, double> secondUserEntry in secondUserVector)
             {
                 secondVectorMagnitudeSquared += secondUserEntry.Value * secondUserEntry.Value;
-            }
             }
 
             bool eitherVectorHasZeroMagnitude = firstVectorMagnitudeSquared == 0 || secondVectorMagnitudeSquared == 0;
