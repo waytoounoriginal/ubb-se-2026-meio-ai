@@ -23,6 +23,8 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
         /// <summary> The service used for swipe actions. </summary>
         private readonly ISwipeService _swipeService;
 
+        private readonly IMovieCardFeedService _feedService;
+
         /// <summary> The service used for movie feed retrieval. </summary>
         private readonly IMovieCardFeedService _movieCardFeedService;
 

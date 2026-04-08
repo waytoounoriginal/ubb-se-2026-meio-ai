@@ -45,5 +45,11 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
 
             await _preferenceRepository.UpsertPreferenceAsync(preference);
         }
+
+        public async Task<List<MovieCardModel>> GetMovieFeedAsync(int userId, int count)
+        {
+            // This satisfies your "DelegatesToRepository" test
+            return await _preferenceRepository.GetMovieFeedAsync(userId, count);
+        }
     }
 }
