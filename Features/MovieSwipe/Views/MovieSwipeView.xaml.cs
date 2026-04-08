@@ -16,10 +16,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Views
     {
 
         private const double SwipeThresholdFraction = 0.30;
-
-
         private const double FlyOffDistance = 600;
-
         private const int FlyOffDurationMs = 250;
 
         private bool _isDragging;
@@ -32,6 +29,8 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Views
         {
             ViewModel = App.Services.GetRequiredService<MovieSwipeViewModel>();
             this.InitializeComponent();
+
+            this.Loaded += async (sender, args) => await ViewModel.InitializeAsync();
 
             // Bind card content whenever CurrentCard changes
             ViewModel.PropertyChanged += ViewModel_PropertyChanged;

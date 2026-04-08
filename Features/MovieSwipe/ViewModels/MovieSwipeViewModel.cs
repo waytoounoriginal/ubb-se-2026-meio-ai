@@ -6,45 +6,67 @@ using ubb_se_2026_meio_ai.Features.MovieSwipe.Services;
 
 namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
 {
-
+    /// <summary>
+    /// ViewModel for the Movie Swipe screen. Handles the logic for the card queue and user interactions.
+    /// </summary>
     public partial class MovieSwipeViewModel : ObservableObject
     {
+        /// <summary> Number of cards to fetch per request. </summary>
         private const int BufferSize = 5;
-        private const int RefillThreshold = 2;
-        private const int DefaultUserId = 1; // Hardcoded until auth is implemented
 
+        /// <summary> Threshold of remaining cards that triggers a refill. </summary>
+        private const int RefillThreshold = 2;
+
+        /// <summary> Placeholder user ID until authentication is fully integrated. </summary>
+        private const int DefaultUserId = 1;
+
+        /// <summary> The service used for swipe actions. </summary>
         private readonly ISwipeService _swipeService;
+
+        /// <summary> The service used for movie feed retrieval. </summary>
+        private readonly IMovieCardFeedService _movieCardFeedService;
+
+        /// <summary> Flag to prevent concurrent refill operations. </summary>
         private bool _isRefilling;
 
-        public MovieSwipeViewModel(ISwipeService swipeService)
+        /// <summary> Initializes a new instance of the <see cref="MovieSwipeViewModel"/> class. </summary>
+        /// <param name="swipeService">The swipe action service.</param>
+        /// <param name="movieCardFeedService">The feed retrieval service.</param>
+        public MovieSwipeViewModel(ISwipeService swipeService, IMovieCardFeedService movieCardFeedService)
         {
             _swipeService = swipeService;
+            _movieCardFeedService = movieCardFeedService;
             CardQueue = new ObservableCollection<MovieCardModel>();
-
-      
-            _ = LoadInitialCardsAsync();
         }
 
-    
+        /// <summary> The current movie card displayed to the user. </summary>
         [ObservableProperty]
         private MovieCardModel? _currentCard;
 
-      
+        /// <summary> The collection of upcoming movie cards. </summary>
         public ObservableCollection<MovieCardModel> CardQueue { get; }
 
-
+        /// <summary> Indicates whether a data loading operation is in progress. </summary>
         [ObservableProperty]
         private bool _isLoading;
 
-
+        /// <summary> Indicates whether there are no more movies left to swipe. </summary>
         [ObservableProperty]
         private bool _isAllCaughtUp;
 
-     
+        /// <summary> Current status or error message for the UI. </summary>
         [ObservableProperty]
         private string _statusMessage = "Swipe right to like, left to skip.";
 
+        /// <summary> Command used to trigger the initial loading of the movie feed. </summary>
+        /// <returns>A task representing the operation.</returns>
+        [RelayCommand]
+        public async Task InitializeAsync()
+        {
+            await LoadInitialCardsAsync();
+        }
 
+        /// <summary> Handles the primary logic for loading the first set of cards into the queue. </summary>
         private async Task LoadInitialCardsAsync()
         {
             try
@@ -52,7 +74,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
                 IsLoading = true;
                 IsAllCaughtUp = false;
 
-                var movies = await _swipeService.GetMovieFeedAsync(DefaultUserId, BufferSize);
+                var movies = await _movieCardFeedService.FetchMovieFeedAsync(DefaultUserId, BufferSize);
 
                 CardQueue.Clear();
                 foreach (var movie in movies)
@@ -62,15 +84,16 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
 
                 AdvanceToNextCard();
 
-                if (CardQueue.Count == 0 && CurrentCard == null)
+                const int emptyCount = 0;
+                if (CardQueue.Count == emptyCount && CurrentCard == null)
                 {
                     IsAllCaughtUp = true;
                     StatusMessage = "No movies found in database.";
                 }
             }
-            catch (Exception)
+            catch (Exception exception)
             {
-                StatusMessage = "Could not load movies. Please try again later.";
+                StatusMessage = $"Error loading movies: {exception.Message}";
             }
             finally
             {
@@ -78,19 +101,24 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
             }
         }
 
+        /// <summary> Logic for handling a "Like" action. </summary>
+        /// <returns>A task representing the operation.</returns>
         [RelayCommand]
         private async Task SwipeRightAsync()
         {
             await ProcessSwipeAsync(isLiked: true);
         }
 
+        /// <summary> Logic for handling a "Skip" action. </summary>
+        /// <returns>A task representing the operation.</returns>
         [RelayCommand]
         private async Task SwipeLeftAsync()
         {
             await ProcessSwipeAsync(isLiked: false);
         }
 
-
+        /// <summary> Orchestrates the swipe by updating the UI immediately and starting persistence. </summary>
+        /// <param name="isLiked">The direction of the swipe.</param>
         private async Task ProcessSwipeAsync(bool isLiked)
         {
             if (CurrentCard == null)
@@ -103,30 +131,25 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
             // Advance immediately for responsive UI
             AdvanceToNextCard();
 
-            // Start persistence but don't block showing the next card.
-            Task persistTask = _swipeService.UpdatePreferenceScoreAsync(DefaultUserId, swipedCard.MovieId, isLiked);
-
-            // Refill as soon as possible so the next card appears even if DB write is slow.
-            await TryRefillQueueAsync(swipedCard.MovieId);
-
             try
             {
-                await persistTask;
+                await _swipeService.UpdatePreferenceScoreAsync(DefaultUserId, swipedCard.MovieId, isLiked);
+                await TryRefillQueueAsync(swipedCard.MovieId);
             }
-            catch (Exception)
+            catch (Exception exception)
             {
-                // Preference update failed — the swipe is still consumed to avoid
-                // showing the same card again. The score will be missing but no crash.
+                StatusMessage = $"Failed to save preference: {exception.Message}";
             }
         }
 
-
+        /// <summary> Pops the next card from the queue and updates the current display. </summary>
         private void AdvanceToNextCard()
         {
-            if (CardQueue.Count > 0)
+            const int firstIndex = 0;
+            if (CardQueue.Count > firstIndex)
             {
-                CurrentCard = CardQueue[0];
-                CardQueue.RemoveAt(0);
+                CurrentCard = CardQueue[firstIndex];
+                CardQueue.RemoveAt(firstIndex);
                 IsAllCaughtUp = false;
             }
             else
@@ -137,10 +160,10 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
             }
         }
 
-
+        /// <summary> Fetches more movies if the internal queue falls below the threshold. </summary>
+        /// <param name="recentlySwipedMovieId">Optional ID to ensure the swiped movie isn't immediately re-added.</param>
         private async Task TryRefillQueueAsync(int? recentlySwipedMovieId = null)
         {
-            // Guard: don't refill if already refilling or above threshold
             if (_isRefilling || CardQueue.Count > RefillThreshold)
             {
                 return;
@@ -150,9 +173,9 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
 
             try
             {
-                var newMovies = await _swipeService.GetMovieFeedAsync(DefaultUserId, BufferSize);
+                var newMovies = await _movieCardFeedService.FetchMovieFeedAsync(DefaultUserId, BufferSize);
 
-                var existingIds = new HashSet<int>(CardQueue.Select(m => m.MovieId));
+                var existingIds = new HashSet<int>(CardQueue.Select(movie => movie.MovieId));
                 if (CurrentCard != null)
                 {
                     existingIds.Add(CurrentCard.MovieId);
@@ -174,9 +197,8 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
                     existingIds.Add(movie.MovieId);
                 }
 
-                // If CurrentCard was set to null because queue was empty,
-                // but we just got new movies, advance again.
-                if (CurrentCard == null && CardQueue.Count > 0)
+                const int emptyCount = 0;
+                if (CurrentCard == null && CardQueue.Count > emptyCount)
                 {
                     IsAllCaughtUp = false;
                     StatusMessage = "Swipe right to like, left to skip.";
@@ -185,7 +207,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
             }
             catch (Exception)
             {
-                // Silently fail — user can keep swiping remaining cards
+                // Silently fail to allow existing cards to be swiped.
             }
             finally
             {

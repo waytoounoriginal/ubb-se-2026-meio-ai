@@ -11,8 +11,11 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
     /// </summary>
     public class PreferenceRepository : IPreferenceRepository
     {
+        /// <summary> The connection factory for creating SQL connections. </summary>
         private readonly ISqlConnectionFactory _connectionFactory;
 
+        /// <summary> Initializes a new instance of the <see cref="PreferenceRepository"/> class. </summary>
+        /// <param name="connectionFactory">The SQL connection factory.</param>
         public PreferenceRepository(ISqlConnectionFactory connectionFactory)
         {
             _connectionFactory = connectionFactory;
@@ -34,13 +37,19 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
             await using SqlDataReader reader = await command.ExecuteReaderAsync();
             if (await reader.ReadAsync())
             {
+                const int idColumnIndex = 0;
+                const int userColumnIndex = 1;
+                const int movieColumnIndex = 2;
+                const int scoreColumnIndex = 3;
+                const int dateColumnIndex = 4;
+
                 return new UserMoviePreferenceModel
                 {
-                    UserMoviePreferenceId = reader.GetInt32(0),
-                    UserId = reader.GetInt32(1),
-                    MovieId = reader.GetInt32(2),
-                    Score = reader.GetDouble(3),
-                    LastModified = reader.GetDateTime(4),
+                    UserMoviePreferenceId = reader.GetInt32(idColumnIndex),
+                    UserId = reader.GetInt32(userColumnIndex),
+                    MovieId = reader.GetInt32(movieColumnIndex),
+                    Score = reader.GetDouble(scoreColumnIndex),
+                    LastModified = reader.GetDateTime(dateColumnIndex),
                 };
             }
 
@@ -50,8 +59,6 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
         /// <inheritdoc />
         public async Task UpsertPreferenceAsync(UserMoviePreferenceModel preference)
         {
-            // MERGE ensures atomic insert-or-update.
-            // If no row exists → insert at (0 + Score). If row exists → add Score to current.
             const string sql = @"
                 MERGE UserMoviePreference AS target
                 USING (SELECT @UserId AS UserId, @MovieId AS MovieId) AS source
@@ -74,10 +81,9 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
             await command.ExecuteNonQueryAsync();
         }
 
-
+        /// <inheritdoc />
         public async Task<List<MovieCardModel>> GetMovieFeedAsync(int userId, int count)
         {
-            
             const string sql = @"
                 SELECT TOP (@Count) m.MovieId, m.Title, m.PosterUrl, m.PrimaryGenre
                 FROM   Movie m
@@ -98,19 +104,24 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
             await using SqlDataReader reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
+                const int idIndex = 0;
+                const int titleIndex = 1;
+                const int posterIndex = 2;
+                const int genreIndex = 3;
+
                 results.Add(new MovieCardModel
                 {
-                    MovieId = reader.GetInt32(0),
-                    Title = reader.GetString(1),
-                    PosterUrl = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
-                    PrimaryGenre = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
+                    MovieId = reader.GetInt32(idIndex),
+                    Title = reader.GetString(titleIndex),
+                    PosterUrl = reader.IsDBNull(posterIndex) ? string.Empty : reader.GetString(posterIndex),
+                    PrimaryGenre = reader.IsDBNull(genreIndex) ? string.Empty : reader.GetString(genreIndex),
                 });
             }
 
             return results;
         }
 
- 
+        /// <inheritdoc />
         public async Task<Dictionary<int, List<UserMoviePreferenceModel>>> GetAllPreferencesExceptUserAsync(int excludeUserId)
         {
             const string sql = @"
@@ -127,29 +138,35 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
             await using SqlDataReader reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
-                var pref = new UserMoviePreferenceModel
+                const int idIdx = 0;
+                const int userIdx = 1;
+                const int movieIdx = 2;
+                const int scoreIdx = 3;
+                const int dateIdx = 4;
+
+                var preference = new UserMoviePreferenceModel
                 {
-                    UserMoviePreferenceId = reader.GetInt32(0),
-                    UserId = reader.GetInt32(1),
-                    MovieId = reader.GetInt32(2),
-                    Score = reader.GetDouble(3),
-                    LastModified = reader.GetDateTime(4),
+                    UserMoviePreferenceId = reader.GetInt32(idIdx),
+                    UserId = reader.GetInt32(userIdx),
+                    MovieId = reader.GetInt32(movieIdx),
+                    Score = reader.GetDouble(scoreIdx),
+                    LastModified = reader.GetDateTime(dateIdx),
                 };
 
-                if (!result.ContainsKey(pref.UserId))
+                if (!result.ContainsKey(preference.UserId))
                 {
-                    result[pref.UserId] = new List<UserMoviePreferenceModel>();
+                    result[preference.UserId] = new List<UserMoviePreferenceModel>();
                 }
 
-                result[pref.UserId].Add(pref);
+                result[preference.UserId].Add(preference);
             }
 
             return result;
         }
 
+        /// <inheritdoc />
         public async Task<List<int>> GetUnswipedMovieIdsAsync(int userId)
         {
-            
             const string sql = @"
                 SELECT m.MovieId
                 FROM   Movie m
@@ -157,7 +174,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
                     ON ump.MovieId = m.MovieId AND ump.UserId = @UserId
                 WHERE  ump.UserMoviePreferenceId IS NULL;";
 
-            var ids = new List<int>();
+            var movieIds = new List<int>();
 
             await using SqlConnection connection = await _connectionFactory.CreateConnectionAsync();
             await using SqlCommand command = new SqlCommand(sql, connection);
@@ -166,10 +183,11 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
             await using SqlDataReader reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
-                ids.Add(reader.GetInt32(0));
+                const int firstColumn = 0;
+                movieIds.Add(reader.GetInt32(firstColumn));
             }
 
-            return ids;
+            return movieIds;
         }
     }
 }
