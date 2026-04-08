@@ -1,7 +1,3 @@
-// <copyright file="IReelRepository.cs" company="PlaceholderCompany">
-// Copyright (c) PlaceholderCompany. All rights reserved.
-// </copyright>
-
 namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Services
 {
     using System.Collections.Generic;

@@ -1,8 +1,4 @@
-﻿// <copyright file="VideoDownloadServiceTests.cs" company="PlaceholderCompany">
-// Copyright (c) PlaceholderCompany. All rights reserved.
-// </copyright>
-
-namespace UnitTests.TrailerScraping
+﻿namespace UnitTests.TrailerScraping
 {
     using System.IO;
     using NUnit.Framework;

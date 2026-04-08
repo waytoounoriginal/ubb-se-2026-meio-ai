@@ -1,7 +1,3 @@
-// <copyright file="ScrapedVideoResult.cs" company="PlaceholderCompany">
-// Copyright (c) PlaceholderCompany. All rights reserved.
-// </copyright>
-
 namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
 {
     /// <summary>
