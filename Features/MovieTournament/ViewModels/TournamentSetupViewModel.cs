@@ -1,106 +1,175 @@
+using System;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
-using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
 using ubb_se_2026_meio_ai.Core.Models;
+using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
 
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
 {
+    /// <summary>
+    /// View model for the tournament setup page, allowing the user to configure
+    /// the pool size and start a new tournament.
+    /// </summary>
     public partial class TournamentSetupViewModel : ObservableObject
     {
-        private readonly ITournamentLogicService _tournamentService;
-        private readonly IMovieTournamentRepository _repository;
-        private readonly int _currentUserId = 1;
+        private const int CurrentUserId = 1;
+        private const int MinimumPoolSize = 4;
+        private const int BackgroundImageCount = 4;
+
+        private const string FallbackPoster1 = "https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg";
+        private const string FallbackPoster2 = "https://media.themoviedb.org/t/p/w600_and_h900_face/qJ2tW6WMUDux911r6m7haRef0WH.jpg";
+        private const string FallbackPoster3 = "https://media.themoviedb.org/t/p/w600_and_h900_face/q2qXg4OmJgm0qGaBYLdXzP8nHPy.jpg";
+        private const string FallbackPoster4 = "https://media.themoviedb.org/t/p/w600_and_h900_face/nrmXQ0zcZUL8jFLrakWc90IR8z9.jpg";
+
+        private readonly ITournamentLogicService tournamentLogicService;
+        private readonly IMovieTournamentRepository tournamentRepository;
 
         [ObservableProperty]
-        private int _poolSize = 4;
+        private int poolSize = MinimumPoolSize;
 
         [ObservableProperty]
-        private int _maxPoolSize = 4;
+        private int maxPoolSize = MinimumPoolSize;
 
         [ObservableProperty]
-        private string _setupErrorMessage = string.Empty;
+        private string setupErrorMessage = string.Empty;
 
-        [ObservableProperty] private string? _bg1;
-        [ObservableProperty] private string? _bg2;
-        [ObservableProperty] private string? _bg3;
-        [ObservableProperty] private string? _bg4;
+        [ObservableProperty]
+        private string? backgroundPoster1;
 
+        [ObservableProperty]
+        private string? backgroundPoster2;
 
+        [ObservableProperty]
+        private string? backgroundPoster3;
+
+        [ObservableProperty]
+        private string? backgroundPoster4;
+
+        /// <summary>
+        /// Raised when the tournament has been successfully started
+        /// and the view should navigate to the match page.
+        /// </summary>
         public event EventHandler? TournamentStarted;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TournamentSetupViewModel"/> class.
+        /// Dependencies are injected but no initialization logic runs here.
+        /// Call <see cref="InitializeAsync"/> explicitly after construction.
+        /// </summary>
+        /// <param name="tournamentLogicService">The service managing tournament bracket logic.</param>
+        /// <param name="tournamentRepository">The repository used to load pool data.</param>
         public TournamentSetupViewModel(
-            ITournamentLogicService tournamentService,
-            IMovieTournamentRepository repository)
+            ITournamentLogicService tournamentLogicService,
+            IMovieTournamentRepository tournamentRepository)
         {
-            _tournamentService = tournamentService;
-            _repository = repository;
-            LoadDataAsync();
+            this.tournamentLogicService = tournamentLogicService;
+            this.tournamentRepository = tournamentRepository;
         }
 
-        private async void LoadDataAsync()
+        /// <summary>
+        /// Loads the pool size and background poster images from the repository.
+        /// Should be called once after construction, typically from the view's loaded event or page navigation.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous initialization operation.</returns>
+        public async Task InitializeAsync()
+        {
+            await this.LoadSetupDataAsync();
+        }
+
+        /// <summary>
+        /// Converts a poster URL into an <see cref="ImageSource"/> suitable for binding.
+        /// Returns <see langword="null"/> if the URL is null, empty, or malformed.
+        /// </summary>
+        /// <param name="posterUrl">The URL of the poster image.</param>
+        /// <returns>A <see cref="BitmapImage"/>, or <see langword="null"/> if the URL is invalid.</returns>
+        public ImageSource? GetImageSource(string? posterUrl)
+        {
+            if (string.IsNullOrWhiteSpace(posterUrl))
+            {
+                return null;
+            }
+
+            try
+            {
+                return new BitmapImage(new Uri(posterUrl));
+            }
+            catch (UriFormatException)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Validates the selected pool size and starts the tournament,
+        /// raising <see cref="TournamentStarted"/> on success.
+        /// Sets <see cref="SetupErrorMessage"/> if validation fails or the service throws.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous start operation.</returns>
+        [RelayCommand]
+        public async Task StartTournamentAsync()
+        {
+            if (this.PoolSize < MinimumPoolSize)
+            {
+                this.SetupErrorMessage = $"Pool size must be at least {MinimumPoolSize}.\nIf you don't have enough, go like some movies!";
+                return;
+            }
+
+            if (this.PoolSize > this.MaxPoolSize)
+            {
+                this.SetupErrorMessage = $"Pool size cannot exceed {this.MaxPoolSize}.";
+                return;
+            }
+
+            this.SetupErrorMessage = string.Empty;
+
+            try
+            {
+                await this.tournamentLogicService.StartTournamentAsync(CurrentUserId, this.PoolSize);
+                this.TournamentStarted?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception exception)
+            {
+                this.SetupErrorMessage = $"Failed to start tournament: {exception.Message}";
+            }
+        }
+
+        /// <summary>
+        /// Loads the maximum pool size and up to four background poster URLs from the repository.
+        /// Falls back to hardcoded themoviedb.org images if fewer than four movies are available.
+        /// Sets <see cref="SetupErrorMessage"/> if the repository call fails.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous load operation.</returns>
+        public async Task LoadSetupDataAsync()
         {
             try
             {
-                MaxPoolSize = await _repository.GetTournamentPoolSizeAsync(_currentUserId);
+                this.MaxPoolSize = await this.tournamentRepository.GetTournamentPoolSizeAsync(CurrentUserId);
 
-                var bgMovies = await _repository.GetTournamentPoolAsync(_currentUserId, 4);
-                if (bgMovies.Count >= 4)
+                var backgroundMovies = await this.tournamentRepository.GetTournamentPoolAsync(
+                    CurrentUserId, BackgroundImageCount);
+
+                if (backgroundMovies.Count >= BackgroundImageCount)
                 {
-                    Bg1 = bgMovies[0].PosterUrl;
-                    Bg2 = bgMovies[1].PosterUrl;
-                    Bg3 = bgMovies[2].PosterUrl;
-                    Bg4 = bgMovies[3].PosterUrl;
+                    this.BackgroundPoster1 = backgroundMovies[0].PosterUrl;
+                    this.BackgroundPoster2 = backgroundMovies[1].PosterUrl;
+                    this.BackgroundPoster3 = backgroundMovies[2].PosterUrl;
+                    this.BackgroundPoster4 = backgroundMovies[3].PosterUrl;
                 }
                 else
                 {
-                  
-                    Bg1 = "https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg";
-                    Bg2 = "https://media.themoviedb.org/t/p/w600_and_h900_face/qJ2tW6WMUDux911r6m7haRef0WH.jpg";
-                    Bg3 = "https://media.themoviedb.org/t/p/w600_and_h900_face/q2qXg4OmJgm0qGaBYLdXzP8nHPy.jpg";
-                    Bg4 = "https://media.themoviedb.org/t/p/w600_and_h900_face/nrmXQ0zcZUL8jFLrakWc90IR8z9.jpg";
+                    this.BackgroundPoster1 = FallbackPoster1;
+                    this.BackgroundPoster2 = FallbackPoster2;
+                    this.BackgroundPoster3 = FallbackPoster3;
+                    this.BackgroundPoster4 = FallbackPoster4;
                 }
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                SetupErrorMessage = "Error loading: " + ex.Message;
+                this.SetupErrorMessage = $"Error loading data: {exception.Message}";
             }
-        }
-
-        [RelayCommand]
-        private async Task StartTournamentAsync()
-        {
-            if (PoolSize < 4)
-            {
-                SetupErrorMessage = "Pool size must be at least 4.\nIf you don't have enough, go like some movies!";
-                return;
-            }
-
-            if (PoolSize > MaxPoolSize)
-            {
-                SetupErrorMessage = $"Pool size cannot exceed {MaxPoolSize}.";
-                return;
-            }
-
-            SetupErrorMessage = string.Empty;
-
-            try
-            {
-                await _tournamentService.StartTournamentAsync(_currentUserId, PoolSize);
-                TournamentStarted?.Invoke(this, EventArgs.Empty);
-            }
-            catch (Exception ex)
-            {
-                SetupErrorMessage = "Failed to start tournament: " + ex.Message;
-            }
-        }
-
-        public ImageSource? GetImageSource(string? url)
-        {
-            if (string.IsNullOrWhiteSpace(url)) return null;
-            try { return new BitmapImage(new Uri(url)); }
-            catch { return null; }
         }
     }
 }

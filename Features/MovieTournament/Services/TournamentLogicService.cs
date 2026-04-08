@@ -1,147 +1,188 @@
-using ubb_se_2026_meio_ai.Features.MovieTournament.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using ubb_se_2026_meio_ai.Core.Models;
+using ubb_se_2026_meio_ai.Features.MovieTournament.Models;
 
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
 {
+    /// <summary>
+    /// Implements the tournament bracket logic, including pool shuffling,
+    /// match generation, winner advancement, and bye-match handling.
+    /// </summary>
     public class TournamentLogicService : ITournamentLogicService
     {
-        private readonly IMovieTournamentRepository _repository;
-        private readonly Random _random;
-        private TournamentState? _state;
+        private const int MinimumPoolSize = 4;
+        private const double FinalWinnerScoreBoost = 2.0;
 
-        public TournamentState CurrentState => _state ?? throw new InvalidOperationException("No active tournament.");
-        public bool IsTournamentActive => _state != null && _state.PendingMatches.Count > 0;
+        private readonly IMovieTournamentRepository tournamentRepository;
+        private readonly Random randomNumberGenerator;
+        private TournamentState? activeTournamentState;
 
-        public TournamentLogicService(IMovieTournamentRepository repository)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TournamentLogicService"/> class.
+        /// </summary>
+        /// <param name="tournamentRepository">
+        /// The repository used to fetch movie pools and persist score boosts.
+        /// </param>
+        public TournamentLogicService(IMovieTournamentRepository tournamentRepository)
         {
-            _repository = repository;
-            _random = new Random();
+            this.tournamentRepository = tournamentRepository;
+            this.randomNumberGenerator = new Random();
         }
 
+        /// <inheritdoc/>
+        public TournamentState CurrentState =>
+            this.activeTournamentState ?? throw new InvalidOperationException("No active tournament.");
+
+        /// <inheritdoc/>
+        public bool IsTournamentActive =>
+            this.activeTournamentState != null && this.activeTournamentState.PendingMatches.Count > 0;
+
+        /// <inheritdoc/>
         public async Task StartTournamentAsync(int userId, int poolSize)
         {
-            if (poolSize < 4)
-                throw new ArgumentException("Pool size must be at least 4.");
+            if (poolSize < MinimumPoolSize)
+            {
+                throw new ArgumentException($"Pool size must be at least {MinimumPoolSize}.");
+            }
 
-            var movies = await _repository.GetTournamentPoolAsync(userId, poolSize);
-            
+            var movies = await this.tournamentRepository.GetTournamentPoolAsync(userId, poolSize);
+
             if (movies.Count < poolSize)
-                throw new InvalidOperationException($"Not enough movies. Requested {poolSize}, but found {movies.Count}.");
-
-            _state = new TournamentState();
-
- 
-            for (int i = movies.Count - 1; i > 0; i--)
             {
-                int j = _random.Next(i + 1);
-                var temp = movies[i];
-                movies[i] = movies[j];
-                movies[j] = temp;
+                throw new InvalidOperationException(
+                    $"Not enough movies. Requested {poolSize}, but found {movies.Count}.");
             }
 
-            int pairCount = movies.Count / 2;
-            bool hasBye = movies.Count % 2 != 0;
+            this.activeTournamentState = new TournamentState();
 
-            for (int i = 0; i < pairCount; i++)
-            {
-                _state.PendingMatches.Add(new MatchPair(movies[i * 2], movies[i * 2 + 1]));
-            }
-
-            if (hasBye)
-            {
-                var byeMovie = movies.Last();
-                var byePair = new MatchPair(byeMovie, null!) { WinnerId = byeMovie.MovieId };
-                _state.CompletedMatches.Add(byePair);
-                _state.CurrentRoundWinners.Add(byeMovie);
-            }
+            this.ShuffleMovies(movies);
+            this.GenerateMatchesFromMovieList(movies);
         }
 
+        /// <inheritdoc/>
         public async Task AdvanceWinnerAsync(int userId, int winnerId)
         {
-            if (_state == null || _state.PendingMatches.Count == 0)
+            if (this.activeTournamentState == null || this.activeTournamentState.PendingMatches.Count == 0)
+            {
                 throw new InvalidOperationException("No pending matches to advance.");
-
-            var currentMatch = _state.PendingMatches[0];
-
-            if (currentMatch.MovieA.MovieId != winnerId && 
-                (currentMatch.MovieB == null || currentMatch.MovieB.MovieId != winnerId))
-            {
-                throw new ArgumentException("Winner ID does not match any movie in the current pair.");
             }
 
-            currentMatch.WinnerId = winnerId;
-            _state.PendingMatches.RemoveAt(0);
-            _state.CompletedMatches.Add(currentMatch);
+            var currentMatch = this.activeTournamentState.PendingMatches[0];
 
-            var winnerMovie = currentMatch.MovieA.MovieId == winnerId ? currentMatch.MovieA : currentMatch.MovieB;
-            _state.CurrentRoundWinners.Add(winnerMovie);
+            bool winnerIsFirstMovie = currentMatch.FirstMovie.MovieId == winnerId;
+            bool winnerIsSecondMovie = currentMatch.SecondMovie != null && currentMatch.SecondMovie.MovieId == winnerId;
 
-       
-            if (_state.PendingMatches.Count == 0 && _state.CurrentRoundWinners.Count > 1)
+            if (!winnerIsFirstMovie && !winnerIsSecondMovie)
             {
-                GenerateNextRound();
+                throw new ArgumentException("Winner ID does not match any movie in the current match.");
             }
 
-            if (IsTournamentComplete())
-            {
-                var finalWinner = GetFinalWinner();
-                await _repository.BoostMovieScoreAsync(userId, finalWinner.MovieId, 2.0);
-            }
-        }
+            currentMatch.RecordWinner(winnerId);
+            this.activeTournamentState.PendingMatches.RemoveAt(0);
+            this.activeTournamentState.CompletedMatches.Add(currentMatch);
 
-        private void GenerateNextRound()
-        {
-            var winners = new List<MovieCardModel>(_state!.CurrentRoundWinners);
-            _state.CurrentRoundWinners.Clear();
-            _state.CurrentRound++;
+            var winnerMovie = winnerIsFirstMovie ? currentMatch.FirstMovie : currentMatch.SecondMovie!;
+            this.activeTournamentState.CurrentRoundWinners.Add(winnerMovie);
 
-      
-            for (int i = winners.Count - 1; i > 0; i--)
+            if (this.activeTournamentState.PendingMatches.Count == 0
+                && this.activeTournamentState.CurrentRoundWinners.Count > 1)
             {
-                int j = _random.Next(i + 1);
-                var temp = winners[i];
-                winners[i] = winners[j];
-                winners[j] = temp;
+                this.GenerateNextRound();
             }
 
-            int pairCount = winners.Count / 2;
-            bool hasBye = winners.Count % 2 != 0;
-
-            for (int i = 0; i < pairCount; i++)
+            if (this.IsTournamentComplete())
             {
-                _state.PendingMatches.Add(new MatchPair(winners[i * 2], winners[i * 2 + 1]));
-            }
-
-            if (hasBye)
-            {
-                var byeMovie = winners.Last();
-                var byePair = new MatchPair(byeMovie, null!) { WinnerId = byeMovie.MovieId };
-                _state.CompletedMatches.Add(byePair);
-                _state.CurrentRoundWinners.Add(byeMovie);
+                var finalWinner = this.GetFinalWinner();
+                await this.tournamentRepository.BoostMovieScoreAsync(userId, finalWinner.MovieId, FinalWinnerScoreBoost);
             }
         }
 
+        /// <inheritdoc/>
         public MatchPair? GetCurrentMatch()
         {
-            return _state?.PendingMatches.FirstOrDefault();
+            return this.activeTournamentState?.PendingMatches.FirstOrDefault();
         }
 
+        /// <inheritdoc/>
         public bool IsTournamentComplete()
         {
-            return _state != null && _state.PendingMatches.Count == 0 && _state.CurrentRoundWinners.Count == 1;
+            return this.activeTournamentState != null
+                && this.activeTournamentState.PendingMatches.Count == 0
+                && this.activeTournamentState.CurrentRoundWinners.Count == 1;
         }
 
+        /// <inheritdoc/>
         public MovieCardModel GetFinalWinner()
         {
-            if (!IsTournamentComplete())
+            if (!this.IsTournamentComplete())
+            {
                 throw new InvalidOperationException("Tournament is not yet complete.");
-                
-            return _state!.CurrentRoundWinners[0];
+            }
+
+            return this.activeTournamentState!.CurrentRoundWinners[0];
         }
 
+        /// <inheritdoc/>
         public void ResetTournament()
         {
-            _state = null;
+            this.activeTournamentState = null;
+        }
+
+        /// <summary>
+        /// Advances the tournament to the next round by shuffling the current round's
+        /// winners and generating a new set of matches from them.
+        /// </summary>
+        private void GenerateNextRound()
+        {
+            var roundWinners = new List<MovieCardModel>(this.activeTournamentState!.CurrentRoundWinners);
+            this.activeTournamentState.CurrentRoundWinners.Clear();
+            this.activeTournamentState.CurrentRound++;
+
+            this.ShuffleMovies(roundWinners);
+            this.GenerateMatchesFromMovieList(roundWinners);
+        }
+
+        /// <summary>
+        /// Shuffles a list of movies in place using the Fisher-Yates algorithm.
+        /// </summary>
+        /// <param name="movies">The list of movies to shuffle.</param>
+        private void ShuffleMovies(List<MovieCardModel> movies)
+        {
+            for (int index = movies.Count - 1; index > 0; index--)
+            {
+                int swapIndex = this.randomNumberGenerator.Next(index + 1);
+                (movies[index], movies[swapIndex]) = (movies[swapIndex], movies[index]);
+            }
+        }
+
+        /// <summary>
+        /// Generates match pairs from a list of movies and adds them to the active tournament state.
+        /// If the list has an odd number of movies, the last movie receives a bye
+        /// and advances automatically to the next round.
+        /// </summary>
+        /// <param name="movies">The list of movies to pair into matches.</param>
+        private void GenerateMatchesFromMovieList(List<MovieCardModel> movies)
+        {
+            int pairCount = movies.Count / 2;
+            bool hasByeMatch = movies.Count % 2 != 0;
+
+            for (int index = 0; index < pairCount; index++)
+            {
+                this.activeTournamentState!.PendingMatches.Add(
+                    new MatchPair(movies[index * 2], movies[index * 2 + 1]));
+            }
+
+            if (hasByeMatch)
+            {
+                var byeMovie = movies.Last();
+                var byeMatch = new MatchPair(byeMovie, null);
+                byeMatch.RecordWinner(byeMovie.MovieId);
+                this.activeTournamentState!.CompletedMatches.Add(byeMatch);
+                this.activeTournamentState.CurrentRoundWinners.Add(byeMovie);
+            }
         }
     }
 }

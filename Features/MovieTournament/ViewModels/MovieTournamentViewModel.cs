@@ -1,191 +1,273 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
-using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
 using ubb_se_2026_meio_ai.Core.Models;
-using static System.Net.WebRequestMethods;
+using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
 
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
 {
-
+    /// <summary>
+    /// Unified view model for the movie tournament feature.
+    /// Manages three view states: Setup (0), Match (1), and Winner (2),
+    /// driven by a single <see cref="CurrentViewState"/> property.
+    /// Call <see cref="InitializeAsync"/> after construction to restore
+    /// the correct state based on the current tournament status.
+    /// </summary>
     public partial class MovieTournamentViewModel : ObservableObject
     {
-        private readonly ITournamentLogicService _tournamentService;
-        private readonly IMovieTournamentRepository _repository;
-        private readonly int _currentUserId = 1; 
+        private const int SetupViewState = 0;
+        private const int MatchViewState = 1;
+        private const int WinnerViewState = 2;
+        private const int MinimumPoolSize = 4;
+        private const int BackgroundImageCount = 4;
+        private const int CurrentUserId = 1;
+
+        private const string FallbackPoster1 = "https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg";
+        private const string FallbackPoster2 = "https://media.themoviedb.org/t/p/w600_and_h900_face/qJ2tW6WMUDux911r6m7haRef0WH.jpg";
+        private const string FallbackPoster3 = "https://media.themoviedb.org/t/p/w600_and_h900_face/q2qXg4OmJgm0qGaBYLdXzP8nHPy.jpg";
+        private const string FallbackPoster4 = "https://media.themoviedb.org/t/p/w600_and_h900_face/nrmXQ0zcZUL8jFLrakWc90IR8z9.jpg";
+
+        private readonly ITournamentLogicService tournamentLogicService;
+        private readonly IMovieTournamentRepository tournamentRepository;
 
         [ObservableProperty]
-        private string _pageTitle = "Movie Tournament";
-
-        // View States: 0 = Setup, 1 = Match, 2 = Winner
-        [ObservableProperty]
-        private int _currentViewState = 0;
-
-        
-        [ObservableProperty]
-        private int _poolSize = 0;
+        private int currentViewState = SetupViewState;
 
         [ObservableProperty]
-        private int _maxPoolSize = 4;
+        private int poolSize = MinimumPoolSize;
 
         [ObservableProperty]
-        private string _setupErrorMessage = string.Empty;
-
-        [ObservableProperty] private string? _bg1;
-        [ObservableProperty] private string? _bg2;
-        [ObservableProperty] private string? _bg3;
-        [ObservableProperty] private string? _bg4;
-
-        // Second View state ( movieA vs movieB )
-        [ObservableProperty]
-        private MovieCardModel? _movieOptionA;
+        private int maxPoolSize = MinimumPoolSize;
 
         [ObservableProperty]
-        private MovieCardModel? _movieOptionB;
+        private string setupErrorMessage = string.Empty;
 
         [ObservableProperty]
-        private int _roundNumber;
+        private string? backgroundPoster1;
 
         [ObservableProperty]
-        private string _roundDisplay = string.Empty;
+        private string? backgroundPoster2;
 
-        // Winner view state
         [ObservableProperty]
-        private MovieCardModel? _winnerMovie;
+        private string? backgroundPoster3;
 
+        [ObservableProperty]
+        private string? backgroundPoster4;
+
+        [ObservableProperty]
+        private MovieCardModel? movieOptionA;
+
+        [ObservableProperty]
+        private MovieCardModel? movieOptionB;
+
+        [ObservableProperty]
+        private string roundDisplay = string.Empty;
+
+        [ObservableProperty]
+        private MovieCardModel? winnerMovie;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MovieTournamentViewModel"/> class.
+        /// Dependencies are injected but no initialization logic runs here.
+        /// Call <see cref="InitializeAsync"/> explicitly after construction.
+        /// </summary>
+        /// <param name="tournamentLogicService">Service that manages tournament logic and state.</param>
+        /// <param name="tournamentRepository">Repository used to load pool size and background posters.</param>
         public MovieTournamentViewModel(
-            ITournamentLogicService tournamentService,
-            IMovieTournamentRepository repository)
+            ITournamentLogicService tournamentLogicService,
+            IMovieTournamentRepository tournamentRepository)
         {
-            _tournamentService = tournamentService;
-            _repository = repository;
+            this.tournamentLogicService = tournamentLogicService;
+            this.tournamentRepository = tournamentRepository;
+        }
 
-            if (_tournamentService.IsTournamentActive)
+        /// <summary>
+        /// Restores the view model to the correct state based on the current tournament status.
+        /// Should be called once after construction, typically from the view's loaded event or page navigation.
+        /// <list type="bullet">
+        ///   <item>If a tournament is active, transitions to the match view and displays the current match.</item>
+        ///   <item>If a tournament is complete, transitions to the winner view and sets the winner movie.</item>
+        ///   <item>Otherwise, loads setup data (pool size and background posters) for the setup view.</item>
+        /// </list>
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous initialization operation.</returns>
+        public async Task InitializeAsync()
+        {
+            if (this.tournamentLogicService.IsTournamentActive)
             {
-                UpdateCurrentMatchDisplay();
-                CurrentViewState = 1; 
+                this.UpdateCurrentMatchDisplay();
+                this.CurrentViewState = MatchViewState;
             }
-            else if (_tournamentService.IsTournamentComplete())
+            else if (this.tournamentLogicService.IsTournamentComplete())
             {
-                WinnerMovie = _tournamentService.GetFinalWinner();
-                CurrentViewState = 2; 
+                this.WinnerMovie = this.tournamentLogicService.GetFinalWinner();
+                this.CurrentViewState = WinnerViewState;
             }
             else
             {
-                
-                LoadMaxPoolSizeAsync();
+                await this.LoadSetupDataAsync();
             }
         }
 
-        private async void LoadMaxPoolSizeAsync()
+        /// <summary>
+        /// Converts a poster URL string into a <see cref="BitmapImage"/> suitable for binding.
+        /// Returns <see langword="null"/> for null, empty, whitespace, or malformed URLs.
+        /// </summary>
+        /// <param name="posterUrl">The URL string to convert.</param>
+        /// <returns>
+        /// A <see cref="BitmapImage"/> if the URL is valid; otherwise <see langword="null"/>.
+        /// </returns>
+        public ImageSource? GetImageSource(string? posterUrl)
         {
-            try
-            {
-                await Task.Yield(); 
-                MaxPoolSize = await _repository.GetTournamentPoolSizeAsync(_currentUserId);
-                
-                
-                var bgMovies = await _repository.GetTournamentPoolAsync(_currentUserId, 4);
-                if (bgMovies.Count >= 4)
-                {
-                    Bg1 = bgMovies[0].PosterUrl;
-                    Bg2 = bgMovies[1].PosterUrl;
-                    Bg3 = bgMovies[2].PosterUrl;
-                    Bg4 = bgMovies[3].PosterUrl;
-                }
-                else
-                {
-                    Bg1 = new String("https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg");
-                    Bg2 = new String("https://media.themoviedb.org/t/p/w600_and_h900_face/qJ2tW6WMUDux911r6m7haRef0WH.jpg");
-                    Bg3 = new String("https://media.themoviedb.org/t/p/w600_and_h900_face/q2qXg4OmJgm0qGaBYLdXzP8nHPy.jpg");
-                    Bg4 = new String("https://media.themoviedb.org/t/p/w600_and_h900_face/nrmXQ0zcZUL8jFLrakWc90IR8z9.jpg");
-
-
-                }    
-            }
-            catch (Exception ex)
-            {
-                SetupErrorMessage = "Error loading pool size: " + ex.Message;
-            }
-        }
-
-        [RelayCommand]
-        private async Task StartTournamentAsync()
-        {
-            if (PoolSize < 4)
-            {
-                SetupErrorMessage = "Pool size must be at least 4.\nIf you don't have enough, go like some movies!";
-                return;
-            }
-            
-            if (PoolSize > MaxPoolSize)
-            {
-                SetupErrorMessage = $"Pool size cannot exceed {MaxPoolSize}.";
-                return;
-            }
-
-            SetupErrorMessage = string.Empty;
-
-            try
-            {
-                await _tournamentService.StartTournamentAsync(_currentUserId, PoolSize);
-                UpdateCurrentMatchDisplay();
-                CurrentViewState = 1; 
-            }
-            catch (Exception ex)
-            {
-                SetupErrorMessage = "Failed to start tournament: " + ex.Message;
-            }
-        }
-
-        [RelayCommand]
-        private async Task SelectMovieAsync(int movieId)
-        {
-            await _tournamentService.AdvanceWinnerAsync(_currentUserId, movieId);
-
-            if (_tournamentService.IsTournamentComplete())
-            {
-                WinnerMovie = _tournamentService.GetFinalWinner();
-                CurrentViewState = 2; 
-            }
-            else
-            {
-                UpdateCurrentMatchDisplay();
-            }
-        }
-
-        [RelayCommand]
-        private void ResetTournament()
-        {
-            _tournamentService.ResetTournament();
-            CurrentViewState = 0; 
-            LoadMaxPoolSizeAsync(); 
-        }
-
-        private void UpdateCurrentMatchDisplay()
-        {
-            var match = _tournamentService.GetCurrentMatch();
-            if (match != null)
-            {
-                MovieOptionA = match.MovieA;
-                MovieOptionB = match.MovieB;
-                RoundNumber = _tournamentService.CurrentState.CurrentRound;
-                RoundDisplay = $"Round {RoundNumber}";
-            }
-        }
-
-        public ImageSource? GetImageSource(string? url)
-        {
-            if (string.IsNullOrWhiteSpace(url)) return null;
-            try
-            {
-                return new BitmapImage(new Uri(url));
-            }
-            catch
+            if (string.IsNullOrWhiteSpace(posterUrl))
             {
                 return null;
             }
+
+            try
+            {
+                return new BitmapImage(new Uri(posterUrl));
+            }
+            catch (UriFormatException)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Validates the selected pool size and, if valid, starts the tournament via the logic service.
+        /// On success, transitions to the match view and displays the first match.
+        /// On failure, sets <see cref="SetupErrorMessage"/> with a descriptive message.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous start operation.</returns>
+        [RelayCommand]
+        public async Task StartTournamentAsync()
+        {
+            if (this.PoolSize < MinimumPoolSize)
+            {
+                this.SetupErrorMessage = $"Pool size must be at least {MinimumPoolSize}.\nIf you don't have enough, go like some movies!";
+                return;
+            }
+
+            if (this.PoolSize > this.MaxPoolSize)
+            {
+                this.SetupErrorMessage = $"Pool size cannot exceed {this.MaxPoolSize}.";
+                return;
+            }
+
+            this.SetupErrorMessage = string.Empty;
+
+            try
+            {
+                await this.tournamentLogicService.StartTournamentAsync(CurrentUserId, this.PoolSize);
+                this.UpdateCurrentMatchDisplay();
+                this.CurrentViewState = MatchViewState;
+            }
+            catch (Exception exception)
+            {
+                this.SetupErrorMessage = $"Failed to start tournament: {exception.Message}";
+            }
+        }
+
+        /// <summary>
+        /// Advances the tournament by recording the winning movie of the current match.
+        /// If the tournament is now complete, transitions to the winner view.
+        /// Otherwise, updates the display with the next match.
+        /// </summary>
+        /// <param name="movieId">The identifier of the movie selected as the winner of the current match.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous selection operation.</returns>
+        [RelayCommand]
+        public async Task SelectMovieAsync(int movieId)
+        {
+            await this.tournamentLogicService.AdvanceWinnerAsync(CurrentUserId, movieId);
+
+            if (this.tournamentLogicService.IsTournamentComplete())
+            {
+                this.WinnerMovie = this.tournamentLogicService.GetFinalWinner();
+                this.CurrentViewState = WinnerViewState;
+            }
+            else
+            {
+                this.UpdateCurrentMatchDisplay();
+            }
+        }
+
+        /// <summary>
+        /// Resets the tournament state via the logic service, returns to the setup view,
+        /// and reloads setup data (pool size and background posters) asynchronously.
+        /// </summary>
+        [RelayCommand]
+        public void ResetTournament()
+        {
+            this.tournamentLogicService.ResetTournament();
+            this.CurrentViewState = SetupViewState;
+            _ = this.LoadSetupDataAsync();
+        }
+
+        /// <summary>
+        /// Loads the maximum pool size and up to four background poster URLs from the repository.
+        /// Missing poster slots are filled with fallback images hosted on themoviedb.org.
+        /// Sets <see cref="SetupErrorMessage"/> if the repository call fails.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous load operation.</returns>
+        public async Task LoadSetupDataAsync()
+        {
+            try
+            {
+                await Task.Yield();
+
+                this.MaxPoolSize = await this.tournamentRepository.GetTournamentPoolSizeAsync(CurrentUserId);
+
+                var backgroundMovies = await this.tournamentRepository.GetTournamentPoolAsync(
+                    CurrentUserId, BackgroundImageCount);
+
+                var posters = new List<string?>
+                {
+                    FallbackPoster1,
+                    FallbackPoster2,
+                    FallbackPoster3,
+                    FallbackPoster4,
+                };
+
+                for (int i = 0; i < backgroundMovies.Count && i < BackgroundImageCount; i++)
+                {
+                    if (!string.IsNullOrWhiteSpace(backgroundMovies[i].PosterUrl))
+                    {
+                        posters[i] = backgroundMovies[i].PosterUrl;
+                    }
+                }
+
+                this.BackgroundPoster1 = posters[0];
+                this.BackgroundPoster2 = posters[1];
+                this.BackgroundPoster3 = posters[2];
+                this.BackgroundPoster4 = posters[3];
+            }
+            catch (Exception exception)
+            {
+                this.SetupErrorMessage = $"Error loading pool data: {exception.Message}";
+            }
+        }
+
+        /// <summary>
+        /// Reads the current match from the logic service and updates the bound properties
+        /// <see cref="MovieOptionA"/>, <see cref="MovieOptionB"/>, and <see cref="RoundDisplay"/>.
+        /// Does nothing if <see cref="ITournamentLogicService.GetCurrentMatch"/> returns <see langword="null"/>.
+        /// </summary>
+        private void UpdateCurrentMatchDisplay()
+        {
+            var currentMatch = this.tournamentLogicService.GetCurrentMatch();
+            if (currentMatch == null)
+            {
+                return;
+            }
+
+            this.MovieOptionA = currentMatch.FirstMovie;
+            this.MovieOptionB = currentMatch.SecondMovie;
+            this.RoundDisplay = $"Round {this.tournamentLogicService.CurrentState.CurrentRound}";
         }
     }
 }

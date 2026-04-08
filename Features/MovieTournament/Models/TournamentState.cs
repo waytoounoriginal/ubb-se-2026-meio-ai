@@ -1,25 +1,46 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using ubb_se_2026_meio_ai.Core.Models;
 
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.Models
 {
+    /// <summary>
+    /// Represents the current state of a movie tournament,
+    /// including all pending and completed matches, the active round number,
+    /// and the list of winners advancing to the next round.
+    /// </summary>
     public class TournamentState
     {
-        public List<MatchPair> PendingMatches { get; set; }
-        public List<MatchPair> CompletedMatches { get; set; }
-        public int CurrentRound { get; set; }
-        public List<MovieCardModel> CurrentRoundWinners { get; set; }
-
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TournamentState"/> class,
+        /// starting at round one with empty match and winner lists.
+        /// </summary>
         public TournamentState()
         {
-            PendingMatches = new List<MatchPair>();
-            CompletedMatches = new List<MatchPair>();
-            CurrentRoundWinners = new List<MovieCardModel>();
-            CurrentRound = 1;
+            this.PendingMatches = new List<MatchPair>();
+            this.CompletedMatches = new List<MatchPair>();
+            this.CurrentRoundWinners = new List<MovieCardModel>();
+            this.CurrentRound = 1;
         }
+
+        /// <summary>
+        /// Gets or sets the list of matches that have not yet been played in the current round.
+        /// </summary>
+        public List<MatchPair> PendingMatches { get; set; }
+
+        /// <summary>
+        /// Gets or sets the list of matches that have already been played and have a recorded winner.
+        /// </summary>
+        public List<MatchPair> CompletedMatches { get; set; }
+
+        /// <summary>
+        /// Gets or sets the one-based number of the round currently being played.
+        /// </summary>
+        public int CurrentRound { get; set; }
+
+        /// <summary>
+        /// Gets or sets the list of movies that have won their match in the current round
+        /// and will advance to the next round.
+        /// </summary>
+        public List<MovieCardModel> CurrentRoundWinners { get; set; }
     }
 }

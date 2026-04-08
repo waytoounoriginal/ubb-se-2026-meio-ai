@@ -1,27 +1,43 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.Views
 {
+    /// <summary>
+    /// Host page for the movie tournament feature.
+    /// On load, navigates the inner frame to the appropriate sub-page
+    /// based on the current tournament state.
+    /// </summary>
     public sealed partial class MovieTournamentPage : Page
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MovieTournamentPage"/> class
+        /// and registers the loaded event handler.
+        /// </summary>
         public MovieTournamentPage()
         {
             this.InitializeComponent();
-            this.Loaded += OnLoaded;
+            this.Loaded += this.OnLoaded;
         }
 
-        private void OnLoaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+        private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            var tournamentService = App.Services.GetRequiredService<ITournamentLogicService>();
+            var tournamentLogicService = App.Services.GetRequiredService<ITournamentLogicService>();
 
-            if (tournamentService.IsTournamentActive)
-                TournamentFrame.Navigate(typeof(TournamentMatchPage));
-            else if (tournamentService.IsTournamentComplete())
-                TournamentFrame.Navigate(typeof(TournamentWinnerPage));
+            if (tournamentLogicService.IsTournamentActive)
+            {
+                this.TournamentFrame.Navigate(typeof(TournamentMatchPage));
+            }
+            else if (tournamentLogicService.IsTournamentComplete())
+            {
+                this.TournamentFrame.Navigate(typeof(TournamentWinnerPage));
+            }
             else
-                TournamentFrame.Navigate(typeof(TournamentSetupPage));
+            {
+                this.TournamentFrame.Navigate(typeof(TournamentSetupPage));
+            }
         }
     }
 }

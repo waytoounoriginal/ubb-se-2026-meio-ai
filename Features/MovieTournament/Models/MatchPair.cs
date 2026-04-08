@@ -1,33 +1,75 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using ubb_se_2026_meio_ai.Core.Models;
 
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.Models
 {
+    /// <summary>
+    /// Represents a single match pairing between two movies in the tournament bracket.
+    /// A match may be a bye match if only one movie is present in the pairing.
+    /// </summary>
     public class MatchPair
     {
-        public MovieCardModel MovieA { get; set; }
-        public MovieCardModel MovieB { get; set; }
-        public int? WinnerId { get; set; }
-
-        public MatchPair(MovieCardModel movieA, MovieCardModel movieB)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MatchPair"/> class.
+        /// </summary>
+        /// <param name="firstMovie">The first movie in the match.</param>
+        /// <param name="secondMovie">
+        /// The second movie in the match, or <see langword="null"/> if this is a bye match.
+        /// </param>
+        public MatchPair(MovieCardModel firstMovie, MovieCardModel? secondMovie)
         {
-            MovieA = movieA;
-            MovieB = movieB;
-            WinnerId = null;
+            this.FirstMovie = firstMovie;
+            this.SecondMovie = secondMovie;
+            this.WinnerMovieId = null;
         }
 
+        /// <summary>
+        /// Gets the first movie competing in this match.
+        /// </summary>
+        public MovieCardModel FirstMovie { get; }
+
+        /// <summary>
+        /// Gets the second movie competing in this match.
+        /// Returns <see langword="null"/> when this is a bye match.
+        /// </summary>
+        public MovieCardModel? SecondMovie { get; }
+
+        /// <summary>
+        /// Gets the identifier of the movie that won this match.
+        /// Returns <see langword="null"/> if the match has not been completed yet.
+        /// </summary>
+        public int? WinnerMovieId { get; private set; }
+
+        /// <summary>
+        /// Records the winner of this match by storing the winning movie's identifier.
+        /// </summary>
+        /// <param name="winnerMovieId">The identifier of the winning movie.</param>
+        public void RecordWinner(int winnerMovieId)
+        {
+            this.WinnerMovieId = winnerMovieId;
+        }
+
+        /// <summary>
+        /// Determines whether this match has been completed,
+        /// meaning a winner has been recorded.
+        /// </summary>
+        /// <returns>
+        /// <see langword="true"/> if a winner has been recorded; otherwise, <see langword="false"/>.
+        /// </returns>
         public bool IsCompleted()
         {
-            return WinnerId != null;
+            return this.WinnerMovieId != null;
         }
 
-        public bool IsBye()
+        /// <summary>
+        /// Determines whether this match is a bye match,
+        /// meaning the first movie advances automatically with no opponent.
+        /// </summary>
+        /// <returns>
+        /// <see langword="true"/> if there is no second movie; otherwise, <see langword="false"/>.
+        /// </returns>
+        public bool IsByeMatch()
         {
-            return MovieB == null;
+            return this.SecondMovie == null;
         }
     }
 }
