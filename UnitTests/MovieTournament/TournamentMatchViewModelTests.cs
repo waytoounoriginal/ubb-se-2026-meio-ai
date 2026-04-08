@@ -12,7 +12,7 @@ namespace UnitTests.MovieTournament
     [TestFixture]
     public class TournamentMatchViewModelTests
     {
-        private const int USER_ID = 1;
+        private const int UserId = 1;
 
         private Mock<ITournamentLogicService> mockedTournamentLogicService = null!;
         private MatchPair defaultMatch = null!;
@@ -22,83 +22,82 @@ namespace UnitTests.MovieTournament
         [SetUp]
         public void SetUp()
         {
-            mockedTournamentLogicService = new Mock<ITournamentLogicService>();
+            this.mockedTournamentLogicService = new Mock<ITournamentLogicService>();
 
-            defaultMatch = new MatchPair(
+            this.defaultMatch = new MatchPair(
                 new MovieCardModel { MovieId = 1, Title = "Movie A" },
                 new MovieCardModel { MovieId = 2, Title = "Movie B" });
 
-            defaultState = new TournamentState();
-            defaultState.PendingMatches.Add(defaultMatch);
-            defaultState.CurrentRound = 1;
+            this.defaultState = new TournamentState();
+            this.defaultState.PendingMatches.Add(this.defaultMatch);
+            this.defaultState.CurrentRound = 1;
 
-            mockedTournamentLogicService
+            this.mockedTournamentLogicService
                 .Setup(x => x.GetCurrentMatch())
-                .Returns(defaultMatch);
+                .Returns(this.defaultMatch);
 
-            mockedTournamentLogicService
+            this.mockedTournamentLogicService
                 .SetupGet(x => x.CurrentState)
-                .Returns(defaultState);
+                .Returns(this.defaultState);
 
-            viewModel = new TournamentMatchViewModel(mockedTournamentLogicService.Object);
+            this.viewModel = new TournamentMatchViewModel(this.mockedTournamentLogicService.Object);
+            this.viewModel.Initialize();
         }
 
         [TearDown]
         public void TearDown()
         {
-            mockedTournamentLogicService = null!;
-            defaultMatch = null!;
-            defaultState = null!;
-            viewModel = null!;
+            this.mockedTournamentLogicService = null!;
+            this.defaultMatch = null!;
+            this.defaultState = null!;
+            this.viewModel = null!;
         }
 
         [Test]
-        public void Ctor_validMatch_setsMovieOptionA()
+        public void Initialize_validMatch_setsMovieOptionA()
         {
-            Assert.That(viewModel.MovieOptionA, Is.SameAs(defaultMatch.FirstMovie));
+            Assert.That(this.viewModel.MovieOptionA, Is.SameAs(this.defaultMatch.FirstMovie));
         }
 
         [Test]
-        public void Ctor_validMatch_setsMovieOptionB()
+        public void Initialize_validMatch_setsMovieOptionB()
         {
-            Assert.That(viewModel.MovieOptionB, Is.SameAs(defaultMatch.SecondMovie));
+            Assert.That(this.viewModel.MovieOptionB, Is.SameAs(this.defaultMatch.SecondMovie));
         }
 
         [Test]
-        public void Ctor_validMatch_setsRoundDisplay()
+        public void Initialize_validMatch_setsRoundDisplay()
         {
-            Assert.That(viewModel.RoundDisplay, Is.EqualTo("Round 1"));
+            Assert.That(this.viewModel.RoundDisplay, Is.EqualTo("Round 1"));
         }
 
         [Test]
-        public void Ctor_nullCurrentMatch_doesNotThrow_andLeavesPropertiesDefault()
+        public void Initialize_nullCurrentMatch_doesNotThrowAndLeavesPropertiesDefault()
         {
-            mockedTournamentLogicService
+            this.mockedTournamentLogicService
                 .Setup(x => x.GetCurrentMatch())
                 .Returns((MatchPair?)null);
 
-            TournamentMatchViewModel vm = null!;
-            Assert.DoesNotThrow(() =>
-            {
-                vm = new TournamentMatchViewModel(mockedTournamentLogicService.Object);
-            });
+            var viewModel = new TournamentMatchViewModel(this.mockedTournamentLogicService.Object);
 
-            Assert.That(vm.MovieOptionA, Is.Null);
-            Assert.That(vm.MovieOptionB, Is.Null);
-            Assert.That(vm.RoundDisplay, Is.EqualTo(string.Empty));
+            Assert.DoesNotThrow(() => viewModel.Initialize());
+
+            Assert.That(viewModel.MovieOptionA, Is.Null);
+            Assert.That(viewModel.MovieOptionB, Is.Null);
+            Assert.That(viewModel.RoundDisplay, Is.EqualTo(string.Empty));
         }
 
         [Test]
         public void RefreshCurrentMatch_nullCurrentMatch_doesNotUpdateProperties()
         {
-            mockedTournamentLogicService
+            this.mockedTournamentLogicService
                 .Setup(x => x.GetCurrentMatch())
                 .Returns((MatchPair?)null);
 
-            viewModel.RefreshCurrentMatch();
+            this.viewModel.RefreshCurrentMatch();
 
-            Assert.That(viewModel.MovieOptionA, Is.SameAs(defaultMatch.FirstMovie));
-            Assert.That(viewModel.MovieOptionB, Is.SameAs(defaultMatch.SecondMovie));
+            Assert.That(this.viewModel.MovieOptionA, Is.SameAs(this.defaultMatch.FirstMovie));
+            Assert.That(this.viewModel.MovieOptionB, Is.SameAs(this.defaultMatch.SecondMovie));
         }
 
         [Test]
@@ -112,17 +111,17 @@ namespace UnitTests.MovieTournament
             newState.PendingMatches.Add(newMatch);
             newState.CurrentRound = 3;
 
-            mockedTournamentLogicService
+            this.mockedTournamentLogicService
                 .Setup(x => x.GetCurrentMatch())
                 .Returns(newMatch);
 
-            mockedTournamentLogicService
+            this.mockedTournamentLogicService
                 .SetupGet(x => x.CurrentState)
                 .Returns(newState);
 
-            viewModel.RefreshCurrentMatch();
+            this.viewModel.RefreshCurrentMatch();
 
-            Assert.That(viewModel.MovieOptionA, Is.SameAs(newMatch.FirstMovie));
+            Assert.That(this.viewModel.MovieOptionA, Is.SameAs(newMatch.FirstMovie));
         }
 
         [Test]
@@ -136,17 +135,17 @@ namespace UnitTests.MovieTournament
             newState.PendingMatches.Add(newMatch);
             newState.CurrentRound = 3;
 
-            mockedTournamentLogicService
+            this.mockedTournamentLogicService
                 .Setup(x => x.GetCurrentMatch())
                 .Returns(newMatch);
 
-            mockedTournamentLogicService
+            this.mockedTournamentLogicService
                 .SetupGet(x => x.CurrentState)
                 .Returns(newState);
 
-            viewModel.RefreshCurrentMatch();
+            this.viewModel.RefreshCurrentMatch();
 
-            Assert.That(viewModel.MovieOptionB, Is.SameAs(newMatch.SecondMovie));
+            Assert.That(this.viewModel.MovieOptionB, Is.SameAs(newMatch.SecondMovie));
         }
 
         [Test]
@@ -160,43 +159,43 @@ namespace UnitTests.MovieTournament
             newState.PendingMatches.Add(newMatch);
             newState.CurrentRound = 3;
 
-            mockedTournamentLogicService
+            this.mockedTournamentLogicService
                 .Setup(x => x.GetCurrentMatch())
                 .Returns(newMatch);
 
-            mockedTournamentLogicService
+            this.mockedTournamentLogicService
                 .SetupGet(x => x.CurrentState)
                 .Returns(newState);
 
-            viewModel.RefreshCurrentMatch();
+            this.viewModel.RefreshCurrentMatch();
 
-            Assert.That(viewModel.RoundDisplay, Is.EqualTo("Round 3"));
+            Assert.That(this.viewModel.RoundDisplay, Is.EqualTo("Round 3"));
         }
 
         [Test]
         public async Task SelectMovieAsync_callsAdvanceWinnerWithCorrectArguments()
         {
-            const int WINNER_ID = 1;
+            const int WinnerId = 1;
 
-            mockedTournamentLogicService
-                .Setup(x => x.AdvanceWinnerAsync(USER_ID, WINNER_ID))
+            this.mockedTournamentLogicService
+                .Setup(x => x.AdvanceWinnerAsync(UserId, WinnerId))
                 .Returns(Task.CompletedTask);
 
-            mockedTournamentLogicService
+            this.mockedTournamentLogicService
                 .Setup(x => x.IsTournamentComplete())
                 .Returns(false);
 
-            await viewModel.SelectMovieAsync(WINNER_ID);
+            await this.viewModel.SelectMovieAsync(WinnerId);
 
-            mockedTournamentLogicService.Verify(
-                x => x.AdvanceWinnerAsync(USER_ID, WINNER_ID),
+            this.mockedTournamentLogicService.Verify(
+                x => x.AdvanceWinnerAsync(UserId, WinnerId),
                 Times.Once);
         }
 
         [Test]
         public async Task SelectMovieAsync_tournamentNotComplete_refreshesCurrentMatch()
         {
-            const int WINNER_ID = 1;
+            const int WinnerId = 1;
 
             var nextMatch = new MatchPair(
                 new MovieCardModel { MovieId = 3, Title = "Next A" },
@@ -206,46 +205,46 @@ namespace UnitTests.MovieTournament
             nextState.PendingMatches.Add(nextMatch);
             nextState.CurrentRound = 2;
 
-            mockedTournamentLogicService
-                .Setup(x => x.AdvanceWinnerAsync(USER_ID, WINNER_ID))
+            this.mockedTournamentLogicService
+                .Setup(x => x.AdvanceWinnerAsync(UserId, WinnerId))
                 .Returns(Task.CompletedTask);
 
-            mockedTournamentLogicService
+            this.mockedTournamentLogicService
                 .Setup(x => x.IsTournamentComplete())
                 .Returns(false);
 
-            mockedTournamentLogicService
+            this.mockedTournamentLogicService
                 .Setup(x => x.GetCurrentMatch())
                 .Returns(nextMatch);
 
-            mockedTournamentLogicService
+            this.mockedTournamentLogicService
                 .SetupGet(x => x.CurrentState)
                 .Returns(nextState);
 
-            await viewModel.SelectMovieAsync(WINNER_ID);
+            await this.viewModel.SelectMovieAsync(WinnerId);
 
-            Assert.That(viewModel.MovieOptionA, Is.SameAs(nextMatch.FirstMovie));
-            Assert.That(viewModel.MovieOptionB, Is.SameAs(nextMatch.SecondMovie));
-            Assert.That(viewModel.RoundDisplay, Is.EqualTo("Round 2"));
+            Assert.That(this.viewModel.MovieOptionA, Is.SameAs(nextMatch.FirstMovie));
+            Assert.That(this.viewModel.MovieOptionB, Is.SameAs(nextMatch.SecondMovie));
+            Assert.That(this.viewModel.RoundDisplay, Is.EqualTo("Round 2"));
         }
 
         [Test]
-        public async Task SelectMovieAsync_tournamentNotComplete_doesNotRaiseTournamentComplete()
+        public async Task SelectMovieAsync_tournamentNotComplete_doesNotRaiseTournamentCompleteEvent()
         {
-            const int WINNER_ID = 1;
+            const int WinnerId = 1;
 
-            mockedTournamentLogicService
-                .Setup(x => x.AdvanceWinnerAsync(USER_ID, WINNER_ID))
+            this.mockedTournamentLogicService
+                .Setup(x => x.AdvanceWinnerAsync(UserId, WinnerId))
                 .Returns(Task.CompletedTask);
 
-            mockedTournamentLogicService
+            this.mockedTournamentLogicService
                 .Setup(x => x.IsTournamentComplete())
                 .Returns(false);
 
             bool eventRaised = false;
-            viewModel.TournamentComplete += (_, _) => eventRaised = true;
+            this.viewModel.TournamentComplete += (_, _) => eventRaised = true;
 
-            await viewModel.SelectMovieAsync(WINNER_ID);
+            await this.viewModel.SelectMovieAsync(WinnerId);
 
             Assert.That(eventRaised, Is.False);
         }
@@ -253,20 +252,20 @@ namespace UnitTests.MovieTournament
         [Test]
         public async Task SelectMovieAsync_tournamentComplete_raisesTournamentCompleteEvent()
         {
-            const int WINNER_ID = 2;
+            const int WinnerId = 2;
 
-            mockedTournamentLogicService
-                .Setup(x => x.AdvanceWinnerAsync(USER_ID, WINNER_ID))
+            this.mockedTournamentLogicService
+                .Setup(x => x.AdvanceWinnerAsync(UserId, WinnerId))
                 .Returns(Task.CompletedTask);
 
-            mockedTournamentLogicService
+            this.mockedTournamentLogicService
                 .Setup(x => x.IsTournamentComplete())
                 .Returns(true);
 
             bool eventRaised = false;
-            viewModel.TournamentComplete += (_, _) => eventRaised = true;
+            this.viewModel.TournamentComplete += (_, _) => eventRaised = true;
 
-            await viewModel.SelectMovieAsync(WINNER_ID);
+            await this.viewModel.SelectMovieAsync(WinnerId);
 
             Assert.That(eventRaised, Is.True);
         }
@@ -274,87 +273,84 @@ namespace UnitTests.MovieTournament
         [Test]
         public async Task SelectMovieAsync_tournamentComplete_doesNotRefreshMatch()
         {
-            const int WINNER_ID = 2;
+            const int WinnerId = 2;
 
-            mockedTournamentLogicService
-                .Setup(x => x.AdvanceWinnerAsync(USER_ID, WINNER_ID))
+            this.mockedTournamentLogicService
+                .Setup(x => x.AdvanceWinnerAsync(UserId, WinnerId))
                 .Returns(Task.CompletedTask);
 
-            mockedTournamentLogicService
+            this.mockedTournamentLogicService
                 .Setup(x => x.IsTournamentComplete())
                 .Returns(true);
 
-            var movieABeforeSelect = viewModel.MovieOptionA;
-            var movieBBeforeSelect = viewModel.MovieOptionB;
+            await this.viewModel.SelectMovieAsync(WinnerId);
 
-            await viewModel.SelectMovieAsync(WINNER_ID);
-
-            mockedTournamentLogicService.Verify(
+            this.mockedTournamentLogicService.Verify(
                 x => x.GetCurrentMatch(),
-                Times.Once); 
+                Times.Once);
         }
 
         [Test]
         public async Task SelectMovieAsync_tournamentComplete_senderIsViewModel()
         {
-            const int WINNER_ID = 1;
+            const int WinnerId = 1;
 
-            mockedTournamentLogicService
-                .Setup(x => x.AdvanceWinnerAsync(USER_ID, WINNER_ID))
+            this.mockedTournamentLogicService
+                .Setup(x => x.AdvanceWinnerAsync(UserId, WinnerId))
                 .Returns(Task.CompletedTask);
 
-            mockedTournamentLogicService
+            this.mockedTournamentLogicService
                 .Setup(x => x.IsTournamentComplete())
                 .Returns(true);
 
             object? capturedSender = null;
-            viewModel.TournamentComplete += (sender, _) => capturedSender = sender;
+            this.viewModel.TournamentComplete += (sender, _) => capturedSender = sender;
 
-            await viewModel.SelectMovieAsync(WINNER_ID);
+            await this.viewModel.SelectMovieAsync(WinnerId);
 
-            Assert.That(capturedSender, Is.SameAs(viewModel));
+            Assert.That(capturedSender, Is.SameAs(this.viewModel));
         }
 
         [Test]
         public void GoBack_callsResetTournament()
         {
-            viewModel.GoBack();
+            this.viewModel.GoBack();
 
-            mockedTournamentLogicService.Verify(x => x.ResetTournament(), Times.Once);
+            this.mockedTournamentLogicService.Verify(x => x.ResetTournament(), Times.Once);
         }
 
         [Test]
         public void GoBack_raisesNavigateBackEvent()
         {
             bool eventRaised = false;
-            viewModel.NavigateBack += (_, _) => eventRaised = true;
+            this.viewModel.NavigateBack += (_, _) => eventRaised = true;
 
-            viewModel.GoBack();
+            this.viewModel.GoBack();
 
             Assert.That(eventRaised, Is.True);
         }
 
         [Test]
-        public void GoBack_raisesNavigateBack_senderIsViewModel()
+        public void GoBack_senderIsViewModel()
         {
             object? capturedSender = null;
-            viewModel.NavigateBack += (sender, _) => capturedSender = sender;
+            this.viewModel.NavigateBack += (sender, _) => capturedSender = sender;
 
-            viewModel.GoBack();
+            this.viewModel.GoBack();
 
-            Assert.That(capturedSender, Is.SameAs(viewModel));
+            Assert.That(capturedSender, Is.SameAs(this.viewModel));
         }
 
         [Test]
-        public void GoBack_resetsBeforeRaisingEvent()
+        public void GoBack_resetsBeforeRaisingNavigateBackEvent()
         {
             bool resetCalledBeforeEvent = false;
 
-            viewModel.NavigateBack += (_, _) =>
+            this.viewModel.NavigateBack += (_, _) =>
             {
                 try
                 {
-                    mockedTournamentLogicService.Verify(x => x.ResetTournament(), Times.Once);
+                    this.mockedTournamentLogicService.Verify(x => x.ResetTournament(), Times.Once);
                     resetCalledBeforeEvent = true;
                 }
                 catch
@@ -363,7 +359,7 @@ namespace UnitTests.MovieTournament
                 }
             };
 
-            viewModel.GoBack();
+            this.viewModel.GoBack();
 
             Assert.That(resetCalledBeforeEvent, Is.True);
         }
@@ -371,7 +367,7 @@ namespace UnitTests.MovieTournament
         [Test]
         public void GetImageSource_nullString_returnsNull()
         {
-            var result = viewModel.GetImageSource(null);
+            var result = this.viewModel.GetImageSource(null);
 
             Assert.That(result, Is.Null);
         }
@@ -379,7 +375,7 @@ namespace UnitTests.MovieTournament
         [Test]
         public void GetImageSource_emptyString_returnsNull()
         {
-            var result = viewModel.GetImageSource(string.Empty);
+            var result = this.viewModel.GetImageSource(string.Empty);
 
             Assert.That(result, Is.Null);
         }
@@ -387,7 +383,7 @@ namespace UnitTests.MovieTournament
         [Test]
         public void GetImageSource_whitespaceString_returnsNull()
         {
-            var result = viewModel.GetImageSource("   ");
+            var result = this.viewModel.GetImageSource("   ");
 
             Assert.That(result, Is.Null);
         }
@@ -395,12 +391,11 @@ namespace UnitTests.MovieTournament
         [Test]
         public void GetImageSource_invalidUri_returnsNull()
         {
-            const string INVALID_URL = "not a valid uri";
+            const string InvalidUrl = "not a valid uri";
 
-            var result = viewModel.GetImageSource(INVALID_URL);
+            var result = this.viewModel.GetImageSource(InvalidUrl);
 
             Assert.That(result, Is.Null);
         }
-
     }
 }

@@ -55,8 +55,9 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         public event EventHandler? TournamentStarted;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TournamentSetupViewModel"/> class
-        /// and begins loading the pool size and background poster images.
+        /// Initializes a new instance of the <see cref="TournamentSetupViewModel"/> class.
+        /// Dependencies are injected but no initialization logic runs here.
+        /// Call <see cref="InitializeAsync"/> explicitly after construction.
         /// </summary>
         /// <param name="tournamentLogicService">The service managing tournament bracket logic.</param>
         /// <param name="tournamentRepository">The repository used to load pool data.</param>
@@ -66,7 +67,16 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         {
             this.tournamentLogicService = tournamentLogicService;
             this.tournamentRepository = tournamentRepository;
-            _ = this.LoadSetupDataAsync();
+        }
+
+        /// <summary>
+        /// Loads the pool size and background poster images from the repository.
+        /// Should be called once after construction, typically from the view's loaded event or page navigation.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous initialization operation.</returns>
+        public async Task InitializeAsync()
+        {
+            await this.LoadSetupDataAsync();
         }
 
         /// <summary>
@@ -95,7 +105,9 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         /// <summary>
         /// Validates the selected pool size and starts the tournament,
         /// raising <see cref="TournamentStarted"/> on success.
+        /// Sets <see cref="SetupErrorMessage"/> if validation fails or the service throws.
         /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous start operation.</returns>
         [RelayCommand]
         public async Task StartTournamentAsync()
         {
@@ -124,6 +136,12 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
             }
         }
 
+        /// <summary>
+        /// Loads the maximum pool size and up to four background poster URLs from the repository.
+        /// Falls back to hardcoded themoviedb.org images if fewer than four movies are available.
+        /// Sets <see cref="SetupErrorMessage"/> if the repository call fails.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous load operation.</returns>
         public async Task LoadSetupDataAsync()
         {
             try

@@ -39,18 +39,28 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         public event EventHandler? NavigateBack;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TournamentMatchViewModel"/> class
-        /// and loads the first pending match.
+        /// Initializes a new instance of the <see cref="TournamentMatchViewModel"/> class.
+        /// Dependencies are injected but no initialization logic runs here.
+        /// Call <see cref="Initialize"/> explicitly after construction.
         /// </summary>
         /// <param name="tournamentLogicService">The service managing tournament bracket logic.</param>
         public TournamentMatchViewModel(ITournamentLogicService tournamentLogicService)
         {
             this.tournamentLogicService = tournamentLogicService;
+        }
+
+        /// <summary>
+        /// Loads the first pending match into the view model.
+        /// Should be called once after construction, typically from the view's loaded event or page navigation.
+        /// </summary>
+        public void Initialize()
+        {
             this.RefreshCurrentMatch();
         }
 
         /// <summary>
         /// Refreshes the displayed match by reading the current pending match from the service.
+        /// Does nothing if <see cref="ITournamentLogicService.GetCurrentMatch"/> returns <see langword="null"/>.
         /// </summary>
         public void RefreshCurrentMatch()
         {
@@ -67,7 +77,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
 
         /// <summary>
         /// Converts a poster URL into an <see cref="ImageSource"/> suitable for binding.
-        /// Returns <see langword="null"/> if the URL is null, empty, or malformed.
+        /// Returns <see langword="null"/> if the URL is null, empty, whitespace, or malformed.
         /// </summary>
         /// <param name="posterUrl">The URL of the poster image.</param>
         /// <returns>A <see cref="BitmapImage"/>, or <see langword="null"/> if the URL is invalid.</returns>
@@ -89,10 +99,12 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         }
 
         /// <summary>
-        /// Records the selected movie as the winner of the current match
-        /// and advances the tournament, raising <see cref="TournamentComplete"/> if finished.
+        /// Records the selected movie as the winner of the current match and advances the tournament.
+        /// Raises <see cref="TournamentComplete"/> if no further matches remain,
+        /// otherwise refreshes the display with the next match.
         /// </summary>
         /// <param name="movieId">The identifier of the movie selected as the winner.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous selection operation.</returns>
         [RelayCommand]
         public async Task SelectMovieAsync(int movieId)
         {
@@ -110,7 +122,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
 
         /// <summary>
         /// Resets the active tournament and raises <see cref="NavigateBack"/>
-        /// to return to the setup page.
+        /// to return the view to the setup page.
         /// </summary>
         [RelayCommand]
         public void GoBack()

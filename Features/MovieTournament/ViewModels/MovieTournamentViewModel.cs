@@ -14,6 +14,8 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
     /// Unified view model for the movie tournament feature.
     /// Manages three view states: Setup (0), Match (1), and Winner (2),
     /// driven by a single <see cref="CurrentViewState"/> property.
+    /// Call <see cref="InitializeAsync"/> after construction to restore
+    /// the correct state based on the current tournament status.
     /// </summary>
     public partial class MovieTournamentViewModel : ObservableObject
     {
@@ -68,13 +70,33 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         [ObservableProperty]
         private MovieCardModel? winnerMovie;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MovieTournamentViewModel"/> class.
+        /// Dependencies are injected but no initialization logic runs here.
+        /// Call <see cref="InitializeAsync"/> explicitly after construction.
+        /// </summary>
+        /// <param name="tournamentLogicService">Service that manages tournament logic and state.</param>
+        /// <param name="tournamentRepository">Repository used to load pool size and background posters.</param>
         public MovieTournamentViewModel(
             ITournamentLogicService tournamentLogicService,
             IMovieTournamentRepository tournamentRepository)
         {
             this.tournamentLogicService = tournamentLogicService;
             this.tournamentRepository = tournamentRepository;
+        }
 
+        /// <summary>
+        /// Restores the view model to the correct state based on the current tournament status.
+        /// Should be called once after construction, typically from the view's loaded event or page navigation.
+        /// <list type="bullet">
+        ///   <item>If a tournament is active, transitions to the match view and displays the current match.</item>
+        ///   <item>If a tournament is complete, transitions to the winner view and sets the winner movie.</item>
+        ///   <item>Otherwise, loads setup data (pool size and background posters) for the setup view.</item>
+        /// </list>
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous initialization operation.</returns>
+        public async Task InitializeAsync()
+        {
             if (this.tournamentLogicService.IsTournamentActive)
             {
                 this.UpdateCurrentMatchDisplay();
@@ -87,10 +109,18 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
             }
             else
             {
-                _ = this.LoadSetupDataAsync();
+                await this.LoadSetupDataAsync();
             }
         }
 
+        /// <summary>
+        /// Converts a poster URL string into a <see cref="BitmapImage"/> suitable for binding.
+        /// Returns <see langword="null"/> for null, empty, whitespace, or malformed URLs.
+        /// </summary>
+        /// <param name="posterUrl">The URL string to convert.</param>
+        /// <returns>
+        /// A <see cref="BitmapImage"/> if the URL is valid; otherwise <see langword="null"/>.
+        /// </returns>
         public ImageSource? GetImageSource(string? posterUrl)
         {
             if (string.IsNullOrWhiteSpace(posterUrl))
@@ -108,6 +138,12 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
             }
         }
 
+        /// <summary>
+        /// Validates the selected pool size and, if valid, starts the tournament via the logic service.
+        /// On success, transitions to the match view and displays the first match.
+        /// On failure, sets <see cref="SetupErrorMessage"/> with a descriptive message.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous start operation.</returns>
         [RelayCommand]
         public async Task StartTournamentAsync()
         {
@@ -137,6 +173,13 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
             }
         }
 
+        /// <summary>
+        /// Advances the tournament by recording the winning movie of the current match.
+        /// If the tournament is now complete, transitions to the winner view.
+        /// Otherwise, updates the display with the next match.
+        /// </summary>
+        /// <param name="movieId">The identifier of the movie selected as the winner of the current match.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous selection operation.</returns>
         [RelayCommand]
         public async Task SelectMovieAsync(int movieId)
         {
@@ -153,6 +196,10 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
             }
         }
 
+        /// <summary>
+        /// Resets the tournament state via the logic service, returns to the setup view,
+        /// and reloads setup data (pool size and background posters) asynchronously.
+        /// </summary>
         [RelayCommand]
         public void ResetTournament()
         {
@@ -161,6 +208,12 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
             _ = this.LoadSetupDataAsync();
         }
 
+        /// <summary>
+        /// Loads the maximum pool size and up to four background poster URLs from the repository.
+        /// Missing poster slots are filled with fallback images hosted on themoviedb.org.
+        /// Sets <see cref="SetupErrorMessage"/> if the repository call fails.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous load operation.</returns>
         public async Task LoadSetupDataAsync()
         {
             try
@@ -177,7 +230,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
                     FallbackPoster1,
                     FallbackPoster2,
                     FallbackPoster3,
-                    FallbackPoster4
+                    FallbackPoster4,
                 };
 
                 for (int i = 0; i < backgroundMovies.Count && i < BackgroundImageCount; i++)
@@ -199,6 +252,11 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
             }
         }
 
+        /// <summary>
+        /// Reads the current match from the logic service and updates the bound properties
+        /// <see cref="MovieOptionA"/>, <see cref="MovieOptionB"/>, and <see cref="RoundDisplay"/>.
+        /// Does nothing if <see cref="ITournamentLogicService.GetCurrentMatch"/> returns <see langword="null"/>.
+        /// </summary>
         private void UpdateCurrentMatchDisplay()
         {
             var currentMatch = this.tournamentLogicService.GetCurrentMatch();

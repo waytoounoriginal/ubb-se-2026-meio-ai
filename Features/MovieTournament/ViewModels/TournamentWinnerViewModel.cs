@@ -26,14 +26,22 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         public event EventHandler? NavigateToSetup;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TournamentWinnerViewModel"/> class
-        /// and loads the final winner if the tournament is complete.
+        /// Initializes a new instance of the <see cref="TournamentWinnerViewModel"/> class.
+        /// Dependencies are injected but no initialization logic runs here.
+        /// Call <see cref="Initialize"/> explicitly after construction.
         /// </summary>
         /// <param name="tournamentLogicService">The service managing tournament bracket logic.</param>
         public TournamentWinnerViewModel(ITournamentLogicService tournamentLogicService)
         {
             this.tournamentLogicService = tournamentLogicService;
+        }
 
+        /// <summary>
+        /// Loads the final winner from the service if the tournament is complete.
+        /// Should be called once after construction, typically from the view's loaded event or page navigation.
+        /// </summary>
+        public void Initialize()
+        {
             if (this.tournamentLogicService.IsTournamentComplete())
             {
                 this.WinnerMovie = this.tournamentLogicService.GetFinalWinner();
