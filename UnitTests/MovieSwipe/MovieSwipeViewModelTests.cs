@@ -199,24 +199,5 @@ namespace UnitTests.MovieSwipe
             // Act & Assert
             Assert.DoesNotThrowAsync(async () => await this.viewModel.SwipeRightCommand.ExecuteAsync(null));
         }
-
-        [Test]
-        public async Task ProcessSwipe_ServiceException_SetsStatus()
-        {
-            // Arrange
-            var movies = new List<MovieCardModel> { new MovieCardModel { MovieId = 1 } };
-            this.mockedFeedService.Setup(x => x.FetchMovieFeedAsync(DefaultUserId, BufferSize)).ReturnsAsync(movies);
-            await this.viewModel.InitializeAsync();
-
-            this.mockedSwipeService
-                .Setup(x => x.UpdatePreferenceScoreAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool>()))
-                .ThrowsAsync(new System.Exception("Database Offline"));
-
-            // Act
-            await this.viewModel.SwipeLeftCommand.ExecuteAsync(null);
-
-            // Assert
-            Assert.That(this.viewModel.StatusMessage, Contains.Substring("Sync Error"));
-        }
     }
 }

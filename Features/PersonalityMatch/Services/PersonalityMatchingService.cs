@@ -205,7 +205,7 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
                 double cosineSimilarity = ComputeCosineSimilarity(currentUserScoreVector, otherUserScoreVector);
                 double similarityPercentage = Math.Round(cosineSimilarity * SimilarityScaleToPercentage, SimilarityDecimalPlaces);
 
-                if (similarityPercentage > MinimumSimilarityPercentageToInclude)
+                if (similarityPercentage >= MinimumSimilarityPercentageToInclude)
                 {
                     similarityScores.Add((otherUserId, similarityPercentage));
                 }
