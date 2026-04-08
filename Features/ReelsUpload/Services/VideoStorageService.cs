@@ -5,6 +5,7 @@ using Microsoft.Data.SqlClient;
 using ubb_se_2026_meio_ai.Core.Database;
 using ubb_se_2026_meio_ai.Core.Models;
 using ubb_se_2026_meio_ai.Features.ReelsUpload.Models;
+using ubb_se_2026_meio_ai.Features.ReelsUpload.Repository;
 
 namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
 {
@@ -14,7 +15,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
     /// </summary>
     public class VideoStorageService : IVideoStorageService
     {
-        private readonly ISqlConnectionFactory _sqlConnectionFactory;
+        private readonly IVideoStorageRepository _memoryRepository;
         
         // Simulating a blob storage directory inside the AppData folder for local development
         private readonly string _blobStorageDirectory;
@@ -25,9 +26,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
 
         const double maximumReelDurationSeconds = 60.0;
 
-        public VideoStorageService(ISqlConnectionFactory sqlConnectionFactory)
+        public VideoStorageService(IVideoStorageRepository memoryRepository)
         {
-            _sqlConnectionFactory = sqlConnectionFactory;
+            _memoryRepository = memoryRepository;
             
             _blobStorageDirectory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), 
@@ -51,7 +52,6 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
                 return false;
             }
 
-            // Real video parsing using Native Windows 10/11 APIs!
             try
             {
                 var storageFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(localFilePath);
@@ -75,14 +75,12 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
             if (!File.Exists(request.LocalFilePath))
                 throw new FileNotFoundException("The selected video file could not be found.", request.LocalFilePath);
 
-            // 1. "Upload" to Blob Storage (Simulated by copying file locally to AppData)
+            // "Upload" to Blob Storage
             string fileName = Guid.NewGuid().ToString() + Path.GetExtension(request.LocalFilePath);
             string destinationBlobPath = Path.Combine(_blobStorageDirectory, fileName);
-            
-            // We'll store the physical path as the 'VideoUrl' for local viewing
             await Task.Run(() => File.Copy(request.LocalFilePath, destinationBlobPath, overwrite: true));
 
-            // 2. Compute TRUE duration natively using Windows Storage Properties
+            // Compute TRUE duration natively
             double computedDurationSeconds = 0;
             try
             {
@@ -92,56 +90,25 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
             }
             catch
             {
-                computedDurationSeconds = 15.0; // Fallback just in case
+                computedDurationSeconds = 15.0; // Fallback
             }
 
-            // 3. Insert metadata into the database
-            await using var databaseConnection = await _sqlConnectionFactory.CreateConnectionAsync();
-            
-            string sqlInsertInstruction = @"
-                INSERT INTO Reel (MovieId, CreatorUserId, VideoUrl, ThumbnailUrl, Title, Caption, FeatureDurationSeconds, CropDataJson, BackgroundMusicId, Source, CreatedAt)
-                OUTPUT INSERTED.ReelId, INSERTED.CreatedAt
-                VALUES (@MovieId, @CreatorUserId, @VideoUrl, @ThumbnailUrl, @Title, @Caption, @FeatureDurationSeconds, @CropDataJson, @BackgroundMusicId, @Source, SYSUTCDATETIME());
-            ";
-
-            await using var sqlCommand = new SqlCommand(sqlInsertInstruction, databaseConnection);
-
-            // Map nullable MovieId to 0 to satisfy your NOT NULL db constraint (since we can't use DBNull anymore)
-            sqlCommand.Parameters.AddWithValue("@MovieId", request.MovieId ?? nullId);
-            sqlCommand.Parameters.AddWithValue("@CreatorUserId", request.UploaderUserId);
-            sqlCommand.Parameters.AddWithValue("@VideoUrl", destinationBlobPath);
-            sqlCommand.Parameters.AddWithValue("@ThumbnailUrl", String.Empty); // Optional for now
-            sqlCommand.Parameters.AddWithValue("@Title", request.Title ?? String.Empty);
-            sqlCommand.Parameters.AddWithValue("@Caption", request.Caption ?? String.Empty);
-            sqlCommand.Parameters.AddWithValue("@FeatureDurationSeconds", computedDurationSeconds);
-            sqlCommand.Parameters.AddWithValue("@CropDataJson", DBNull.Value);
-            sqlCommand.Parameters.AddWithValue("@BackgroundMusicId", DBNull.Value);
-            sqlCommand.Parameters.AddWithValue("@Source", "upload");
-
-            int generatedReelId = 0;
-            DateTime generatedCreatedAt = DateTime.UtcNow;
-
-            await using var sqlCommandOutputReader = await sqlCommand.ExecuteReaderAsync();
-            if (await sqlCommandOutputReader.ReadAsync())
+            // Prepare the model with the data we know
+            var newReel = new ReelModel
             {
-                generatedReelId = sqlCommandOutputReader.GetInt32(0);
-                generatedCreatedAt = sqlCommandOutputReader.GetDateTime(1);
-            }
-
-            // 4. Return the constructed ReelModel
-            return new ReelModel
-            {
-                ReelId = generatedReelId,
                 MovieId = request.MovieId ?? nullId,
                 CreatorUserId = request.UploaderUserId,
                 VideoUrl = destinationBlobPath,
                 ThumbnailUrl = emptyURL,
-                Title = request.Title ?? String.Empty,
-                Caption = request.Caption ?? String.Empty,
+                Title = request.Title ?? string.Empty,
+                Caption = request.Caption ?? string.Empty,
                 FeatureDurationSeconds = computedDurationSeconds,
-                Source = uploadSource,
-                CreatedAt = generatedCreatedAt
+                Source = uploadSource
+                // ReelId and CreatedAt will be filled in by the database
             };
+
+            // Delegate the database work to the Repository!
+            return await _memoryRepository.InsertReelAsync(newReel);
         }
     }
 }

@@ -22,6 +22,12 @@
   <ItemGroup>
     <Compile Include="AppMessages.cs" />
     <Compile Include="Core\DataReaderColumnIndexes.cs" />
+    <Compile Include="ReelsUpload\Repository\IMovieRepository.cs" />
+    <Compile Include="ReelsUpload\Repository\IVideoStorageRepository.cs" />
+    <Compile Include="ReelsUpload\Repository\MovieRepository.cs" />
+    <Compile Include="ReelsUpload\Repository\VideoStorageRepository.cs" />
+    <Compile Include="ReelsUpload\Services\IMovieService.cs" />
+    <Compile Include="ReelsUpload\Services\MovieService.cs" />
     <Compile Include="Core\Platform\**\*.cs" />
     <Compile Include="..\Features\**\ViewModels\**\*.cs" />
     <Compile Include="..\Core\Database\**\*.cs" />

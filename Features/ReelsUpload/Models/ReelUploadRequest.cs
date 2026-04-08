@@ -1,5 +1,9 @@
 namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Models
 {
+    /// <summary>
+    /// The request to upload a reel.
+    /// Owner: Alex
+    /// </summary>
     public class ReelUploadRequest
     {
         public string LocalFilePath { get; set; } = string.Empty;
