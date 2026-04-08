@@ -21,6 +21,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
         private readonly IVideoStorageService _videoStorageService;
         private readonly IMovieService _movieService;
 
+        const string untitledName = "Untitled Reel";
+
         public ReelsUploadViewModel(
             IAppWindowContext appWindowContext,
             IVideoStorageService videoStorageService,
@@ -41,7 +43,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
         private string _statusMessage = "Ready to upload.";
 
         // TODO: Replace with actual authenticated user ID later
-        int currentUserID = 1;
+        private const int _currentUserID = 1;
 
         [ObservableProperty]
         private string _reelTitle = string.Empty;
@@ -110,9 +112,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
                 var request = new Models.ReelUploadRequest
                 {
                     LocalFilePath = LocalVideoFilePath,
-                    Title = string.IsNullOrWhiteSpace(ReelTitle) ? "Untitled Reel" : ReelTitle,
+                    Title = string.IsNullOrWhiteSpace(ReelTitle) ? untitledName : ReelTitle,
                     Caption = ReelCaption ?? string.Empty,
-                    UploaderUserId = currentUserID,
+                    UploaderUserId = _currentUserID,
                     MovieId = LinkedMovie?.MovieId
                 };
 
