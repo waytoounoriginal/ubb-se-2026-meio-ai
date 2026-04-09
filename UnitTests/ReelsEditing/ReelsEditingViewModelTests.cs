@@ -504,6 +504,78 @@
             Assert.That(this.viewModel.StatusMessage, Does.Contain("DB Lock"));
         }
 
+        /// <summary>
+        /// Tests that ReadDouble correctly parses native JSON numbers (not strings).
+        /// </summary>
+        [Test]
+        public async Task LoadReelAsync_JsonWithNativeNumbers_ParsesDoublesCorrectly()
+        {
+            // Providing actual JSON numbers instead of strings (no quotes around 42.5 or 75.0)
+            string json = "{\"musicDuration\": 42.5, \"musicVolume\": 75.0}";
+            var reelToLoad = new ReelModel { ReelId = 1, CropDataJson = json };
+            this.mockRepo.Setup(r => r.GetReelByIdAsync(1)).ReturnsAsync(reelToLoad);
+
+            await this.viewModel.LoadReelAsync(reelToLoad);
+
+            Assert.That(this.viewModel.CurrentEdits.MusicDuration, Is.EqualTo(42.5));
+            Assert.That(this.viewModel.CurrentEdits.MusicVolume, Is.EqualTo(75.0));
+        }
+
+        /// <summary>
+        /// Tests that a persistence mismatch during SaveCrop updates the status message.
+        /// </summary>
+        [Test]
+        public async Task SaveCropCommand_GetReelReturnsMismatchedData_SetsErrorStatus()
+        {
+            this.viewModel.SelectedReel = new ReelModel { ReelId = 1, VideoUrl = "original.mp4" };
+            this.viewModel.CurrentEdits = new VideoEditMetadata();
+
+            this.mockVideoService
+                .Setup(v => v.ApplyCropAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync("cropped.mp4");
+
+            // Mock update to succeed
+            this.mockRepo
+                .Setup(r => r.UpdateReelEditsAsync(1, It.IsAny<string>(), It.IsAny<int?>(), "cropped.mp4"))
+                .ReturnsAsync(1);
+
+            // Mock get to return a mismatched JSON payload
+            this.mockRepo
+                .Setup(r => r.GetReelByIdAsync(1))
+                .ReturnsAsync(new ReelModel { ReelId = 1, CropDataJson = "{\"x\": 999}" });
+
+            await this.viewModel.SaveCropCommand.ExecuteAsync(null);
+
+            Assert.That(this.viewModel.IsStatusSuccess, Is.False);
+            Assert.That(this.viewModel.StatusMessage, Does.Contain("Save failed"));
+            Assert.That(this.viewModel.StatusMessage, Does.Contain("Crop edits were not persisted correctly"));
+        }
+
+        /// <summary>
+        /// Tests that a database failure (0 rows affected) during SaveMusic updates the status message.
+        /// </summary>
+        [Test]
+        public async Task SaveMusicCommand_RepositoryReturnsZero_SetsErrorStatus()
+        {
+            this.viewModel.SelectedReel = new ReelModel { ReelId = 1, VideoUrl = "original.mp4" };
+            this.viewModel.SelectedMusicTrack = new MusicTrackModel { MusicTrackId = 3 };
+
+            this.mockVideoService
+                .Setup(v => v.MergeAudioAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
+                .ReturnsAsync("merged.mp4");
+
+            // Simulate the DB failing to find the record
+            this.mockRepo
+                .Setup(r => r.UpdateReelEditsAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<string>()))
+                .ReturnsAsync(0);
+
+            await this.viewModel.SaveMusicCommand.ExecuteAsync(null);
+
+            Assert.That(this.viewModel.IsStatusSuccess, Is.False);
+            Assert.That(this.viewModel.StatusMessage, Does.Contain("Save failed"));
+            Assert.That(this.viewModel.StatusMessage, Does.Contain("No reel found"));
+        }
+
         #endregion
     }
 }
