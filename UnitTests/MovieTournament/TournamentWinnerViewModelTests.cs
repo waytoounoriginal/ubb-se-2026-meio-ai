@@ -28,33 +28,31 @@ namespace UnitTests.MovieTournament
             this.mockedTournamentLogicService = null!;
         }
 
-        private TournamentWinnerViewModel CreateAndInitialize()
+        private TournamentWinnerViewModel CreateViewModel()
         {
-            var viewModel = new TournamentWinnerViewModel(this.mockedTournamentLogicService.Object);
-            viewModel.Initialize();
-            return viewModel;
+            return new TournamentWinnerViewModel(this.mockedTournamentLogicService.Object);
         }
 
         [Test]
-        public void Initialize_tournamentNotComplete_winnerMovieIsNull()
+        public void Constructor_tournamentNotComplete_winnerMovieIsNull()
         {
             this.mockedTournamentLogicService
                 .Setup(x => x.IsTournamentComplete())
                 .Returns(false);
 
-            var viewModel = this.CreateAndInitialize();
+            var viewModel = this.CreateViewModel();
 
             Assert.That(viewModel.WinnerMovie, Is.Null);
         }
 
         [Test]
-        public void Initialize_tournamentNotComplete_doesNotCallGetFinalWinner()
+        public void Constructor_tournamentNotComplete_doesNotCallGetFinalWinner()
         {
             this.mockedTournamentLogicService
                 .Setup(x => x.IsTournamentComplete())
                 .Returns(false);
 
-            this.CreateAndInitialize();
+            this.CreateViewModel();
 
             this.mockedTournamentLogicService.Verify(
                 x => x.GetFinalWinner(),
@@ -62,7 +60,7 @@ namespace UnitTests.MovieTournament
         }
 
         [Test]
-        public void Initialize_tournamentComplete_setsWinnerMovie()
+        public void Constructor_tournamentComplete_setsWinnerMovie()
         {
             var winner = new MovieCardModel { MovieId = 1, Title = "The Winner" };
 
@@ -74,13 +72,13 @@ namespace UnitTests.MovieTournament
                 .Setup(x => x.GetFinalWinner())
                 .Returns(winner);
 
-            var viewModel = this.CreateAndInitialize();
+            var viewModel = this.CreateViewModel();
 
             Assert.That(viewModel.WinnerMovie, Is.SameAs(winner));
         }
 
         [Test]
-        public void Initialize_tournamentComplete_callsGetFinalWinnerOnce()
+        public void Constructor_tournamentComplete_callsGetFinalWinnerOnce()
         {
             var winner = new MovieCardModel { MovieId = 1, Title = "The Winner" };
 
@@ -92,7 +90,7 @@ namespace UnitTests.MovieTournament
                 .Setup(x => x.GetFinalWinner())
                 .Returns(winner);
 
-            this.CreateAndInitialize();
+            this.CreateViewModel();
 
             this.mockedTournamentLogicService.Verify(
                 x => x.GetFinalWinner(),
@@ -100,25 +98,9 @@ namespace UnitTests.MovieTournament
         }
 
         [Test]
-        public void Initialize_tournamentComplete_getFinalWinnerReturnsNull_winnerMovieIsNull()
-        {
-            this.mockedTournamentLogicService
-                .Setup(x => x.IsTournamentComplete())
-                .Returns(true);
-
-            this.mockedTournamentLogicService
-                .Setup(x => x.GetFinalWinner())
-                .Returns((MovieCardModel?)null);
-
-            var viewModel = this.CreateAndInitialize();
-
-            Assert.That(viewModel.WinnerMovie, Is.Null);
-        }
-
-        [Test]
         public void StartAnotherTournament_callsResetTournament()
         {
-            var viewModel = this.CreateAndInitialize();
+            var viewModel = this.CreateViewModel();
 
             viewModel.StartAnotherTournament();
 
@@ -128,7 +110,7 @@ namespace UnitTests.MovieTournament
         [Test]
         public void StartAnotherTournament_raisesNavigateToSetupEvent()
         {
-            var viewModel = this.CreateAndInitialize();
+            var viewModel = this.CreateViewModel();
 
             bool eventRaised = false;
             viewModel.NavigateToSetup += (_, _) => eventRaised = true;
@@ -141,7 +123,7 @@ namespace UnitTests.MovieTournament
         [Test]
         public void StartAnotherTournament_senderIsViewModel()
         {
-            var viewModel = this.CreateAndInitialize();
+            var viewModel = this.CreateViewModel();
 
             object? capturedSender = null;
             viewModel.NavigateToSetup += (sender, _) => capturedSender = sender;
@@ -154,7 +136,7 @@ namespace UnitTests.MovieTournament
         [Test]
         public void StartAnotherTournament_resetsBeforeRaisingEvent()
         {
-            var viewModel = this.CreateAndInitialize();
+            var viewModel = this.CreateViewModel();
 
             bool resetCalledBeforeEvent = false;
             viewModel.NavigateToSetup += (_, _) =>
@@ -178,7 +160,7 @@ namespace UnitTests.MovieTournament
         [Test]
         public void StartAnotherTournament_noSubscribers_doesNotThrow()
         {
-            var viewModel = this.CreateAndInitialize();
+            var viewModel = this.CreateViewModel();
 
             Assert.DoesNotThrow(() => viewModel.StartAnotherTournament());
         }
@@ -186,7 +168,7 @@ namespace UnitTests.MovieTournament
         [Test]
         public void GetImageSource_nullString_returnsNull()
         {
-            var viewModel = this.CreateAndInitialize();
+            var viewModel = this.CreateViewModel();
 
             Assert.That(viewModel.GetImageSource(null), Is.Null);
         }
@@ -194,7 +176,7 @@ namespace UnitTests.MovieTournament
         [Test]
         public void GetImageSource_emptyString_returnsNull()
         {
-            var viewModel = this.CreateAndInitialize();
+            var viewModel = this.CreateViewModel();
 
             Assert.That(viewModel.GetImageSource(string.Empty), Is.Null);
         }
@@ -202,7 +184,7 @@ namespace UnitTests.MovieTournament
         [Test]
         public void GetImageSource_whitespaceString_returnsNull()
         {
-            var viewModel = this.CreateAndInitialize();
+            var viewModel = this.CreateViewModel();
 
             Assert.That(viewModel.GetImageSource("   "), Is.Null);
         }
@@ -210,7 +192,7 @@ namespace UnitTests.MovieTournament
         [Test]
         public void GetImageSource_invalidUri_returnsNull()
         {
-            var viewModel = this.CreateAndInitialize();
+            var viewModel = this.CreateViewModel();
 
             Assert.That(viewModel.GetImageSource("not a valid uri"), Is.Null);
         }

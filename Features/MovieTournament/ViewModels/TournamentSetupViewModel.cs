@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -55,9 +56,8 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         public event EventHandler? TournamentStarted;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TournamentSetupViewModel"/> class.
-        /// Dependencies are injected but no initialization logic runs here.
-        /// Call <see cref="InitializeAsync"/> explicitly after construction.
+        /// Initializes a new instance of the <see cref="TournamentSetupViewModel"/> class
+        /// and immediately begins loading pool size and background poster data.
         /// </summary>
         /// <param name="tournamentLogicService">The service managing tournament bracket logic.</param>
         /// <param name="tournamentRepository">The repository used to load pool data.</param>
@@ -67,16 +67,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         {
             this.tournamentLogicService = tournamentLogicService;
             this.tournamentRepository = tournamentRepository;
-        }
-
-        /// <summary>
-        /// Loads the pool size and background poster images from the repository.
-        /// Should be called once after construction, typically from the view's loaded event or page navigation.
-        /// </summary>
-        /// <returns>A <see cref="Task"/> representing the asynchronous initialization operation.</returns>
-        public async Task InitializeAsync()
-        {
-            await this.LoadSetupDataAsync();
+            _ = this.LoadSetupDataAsync();
         }
 
         /// <summary>
@@ -151,20 +142,26 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
                 var backgroundMovies = await this.tournamentRepository.GetTournamentPoolAsync(
                     CurrentUserId, BackgroundImageCount);
 
-                if (backgroundMovies.Count >= BackgroundImageCount)
+                var posters = new List<string?>
                 {
-                    this.BackgroundPoster1 = backgroundMovies[0].PosterUrl;
-                    this.BackgroundPoster2 = backgroundMovies[1].PosterUrl;
-                    this.BackgroundPoster3 = backgroundMovies[2].PosterUrl;
-                    this.BackgroundPoster4 = backgroundMovies[3].PosterUrl;
-                }
-                else
+                    FallbackPoster1,
+                    FallbackPoster2,
+                    FallbackPoster3,
+                    FallbackPoster4,
+                };
+
+                for (int i = 0; i < backgroundMovies.Count && i < BackgroundImageCount; i++)
                 {
-                    this.BackgroundPoster1 = FallbackPoster1;
-                    this.BackgroundPoster2 = FallbackPoster2;
-                    this.BackgroundPoster3 = FallbackPoster3;
-                    this.BackgroundPoster4 = FallbackPoster4;
+                    if (!string.IsNullOrWhiteSpace(backgroundMovies[i].PosterUrl))
+                    {
+                        posters[i] = backgroundMovies[i].PosterUrl;
+                    }
                 }
+
+                this.BackgroundPoster1 = posters[0];
+                this.BackgroundPoster2 = posters[1];
+                this.BackgroundPoster3 = posters[2];
+                this.BackgroundPoster4 = posters[3];
             }
             catch (Exception exception)
             {

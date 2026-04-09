@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
 using ubb_se_2026_meio_ai.Core.Models;
-using ubb_se_2026_meio_ai.Features.MovieTournament.Models;
 using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
 using ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels;
 
@@ -42,44 +41,27 @@ namespace UnitTests.MovieTournament
             this.mockedTournamentRepository = null!;
         }
 
-        private async Task<TournamentSetupViewModel> CreateAndInitializeAsync()
+        private TournamentSetupViewModel CreateViewModel()
         {
-            var viewModel = new TournamentSetupViewModel(
+            return new TournamentSetupViewModel(
                 this.mockedTournamentLogicService.Object,
                 this.mockedTournamentRepository.Object);
-
-            await viewModel.InitializeAsync();
-            return viewModel;
         }
 
         [Test]
-        public void DefaultPoolSize_isSetToMinimum()
+        public void Constructor_defaultPoolSize_isSetToMinimum()
         {
-            var viewModel = new TournamentSetupViewModel(
-                this.mockedTournamentLogicService.Object,
-                this.mockedTournamentRepository.Object);
+            var viewModel = this.CreateViewModel();
 
             Assert.That(viewModel.PoolSize, Is.EqualTo(MinPoolSize));
         }
 
         [Test]
-        public void DefaultSetupErrorMessage_isEmpty()
+        public void Constructor_defaultSetupErrorMessage_isEmpty()
         {
-            var viewModel = new TournamentSetupViewModel(
-                this.mockedTournamentLogicService.Object,
-                this.mockedTournamentRepository.Object);
+            var viewModel = this.CreateViewModel();
 
             Assert.That(viewModel.SetupErrorMessage, Is.EqualTo(string.Empty));
-        }
-
-        [Test]
-        public async Task InitializeAsync_callsLoadSetupDataAsync()
-        {
-            await this.CreateAndInitializeAsync();
-
-            this.mockedTournamentRepository.Verify(
-                x => x.GetTournamentPoolSizeAsync(UserId),
-                Times.Once);
         }
 
         [Test]
@@ -91,7 +73,8 @@ namespace UnitTests.MovieTournament
                 .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
                 .ReturnsAsync(MaxPool);
 
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
 
             Assert.That(viewModel.MaxPoolSize, Is.EqualTo(MaxPool));
         }
@@ -109,7 +92,8 @@ namespace UnitTests.MovieTournament
                     new MovieCardModel { MovieId = 4, PosterUrl = "http://4.jpg" },
                 });
 
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
 
             Assert.That(viewModel.BackgroundPoster1, Is.EqualTo("http://1.jpg"));
             Assert.That(viewModel.BackgroundPoster2, Is.EqualTo("http://2.jpg"));
@@ -131,14 +115,15 @@ namespace UnitTests.MovieTournament
                     new MovieCardModel { MovieId = 5, PosterUrl = "http://5.jpg" },
                 });
 
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
 
             Assert.That(viewModel.BackgroundPoster1, Is.EqualTo("http://1.jpg"));
             Assert.That(viewModel.BackgroundPoster4, Is.EqualTo("http://4.jpg"));
         }
 
         [Test]
-        public async Task LoadSetupDataAsync_fewerThanFourMovies_usesAllFallbacks()
+        public async Task LoadSetupDataAsync_fewerThanFourMovies_usesFallbacks()
         {
             this.mockedTournamentRepository
                 .Setup(x => x.GetTournamentPoolAsync(UserId, BackgroundCount))
@@ -147,9 +132,10 @@ namespace UnitTests.MovieTournament
                     new MovieCardModel { MovieId = 1, PosterUrl = "http://1.jpg" },
                 });
 
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
 
-            Assert.That(viewModel.BackgroundPoster1, Is.EqualTo("https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg"));
+            Assert.That(viewModel.BackgroundPoster1, Is.EqualTo("http://1.jpg"));
             Assert.That(viewModel.BackgroundPoster2, Is.EqualTo("https://media.themoviedb.org/t/p/w600_and_h900_face/qJ2tW6WMUDux911r6m7haRef0WH.jpg"));
             Assert.That(viewModel.BackgroundPoster3, Is.EqualTo("https://media.themoviedb.org/t/p/w600_and_h900_face/q2qXg4OmJgm0qGaBYLdXzP8nHPy.jpg"));
             Assert.That(viewModel.BackgroundPoster4, Is.EqualTo("https://media.themoviedb.org/t/p/w600_and_h900_face/nrmXQ0zcZUL8jFLrakWc90IR8z9.jpg"));
@@ -162,29 +148,12 @@ namespace UnitTests.MovieTournament
                 .Setup(x => x.GetTournamentPoolAsync(UserId, BackgroundCount))
                 .ReturnsAsync(new List<MovieCardModel>());
 
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
 
             Assert.That(viewModel.BackgroundPoster1, Is.EqualTo("https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg"));
             Assert.That(viewModel.BackgroundPoster2, Is.EqualTo("https://media.themoviedb.org/t/p/w600_and_h900_face/qJ2tW6WMUDux911r6m7haRef0WH.jpg"));
             Assert.That(viewModel.BackgroundPoster3, Is.EqualTo("https://media.themoviedb.org/t/p/w600_and_h900_face/q2qXg4OmJgm0qGaBYLdXzP8nHPy.jpg"));
-            Assert.That(viewModel.BackgroundPoster4, Is.EqualTo("https://media.themoviedb.org/t/p/w600_and_h900_face/nrmXQ0zcZUL8jFLrakWc90IR8z9.jpg"));
-        }
-
-        [Test]
-        public async Task LoadSetupDataAsync_exactlyThreeMovies_usesAllFallbacks()
-        {
-            this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolAsync(UserId, BackgroundCount))
-                .ReturnsAsync(new List<MovieCardModel>
-                {
-                    new MovieCardModel { MovieId = 1, PosterUrl = "http://1.jpg" },
-                    new MovieCardModel { MovieId = 2, PosterUrl = "http://2.jpg" },
-                    new MovieCardModel { MovieId = 3, PosterUrl = "http://3.jpg" },
-                });
-
-            var viewModel = await this.CreateAndInitializeAsync();
-
-            Assert.That(viewModel.BackgroundPoster1, Is.EqualTo("https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg"));
             Assert.That(viewModel.BackgroundPoster4, Is.EqualTo("https://media.themoviedb.org/t/p/w600_and_h900_face/nrmXQ0zcZUL8jFLrakWc90IR8z9.jpg"));
         }
 
@@ -195,7 +164,8 @@ namespace UnitTests.MovieTournament
                 .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
                 .ThrowsAsync(new InvalidOperationException("DB is down"));
 
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
 
             Assert.That(viewModel.SetupErrorMessage, Is.Not.Empty.And.Contains("DB is down"));
         }
@@ -207,25 +177,29 @@ namespace UnitTests.MovieTournament
                 .Setup(x => x.GetTournamentPoolAsync(UserId, BackgroundCount))
                 .ThrowsAsync(new InvalidOperationException("Pool fetch failed"));
 
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
 
             Assert.That(viewModel.SetupErrorMessage, Is.Not.Empty.And.Contains("Pool fetch failed"));
         }
 
         [Test]
-        public async Task LoadSetupDataAsync_repositoryThrows_doesNotThrowToCallerSurface()
+        public void LoadSetupDataAsync_repositoryThrows_doesNotThrowToCallerSurface()
         {
             this.mockedTournamentRepository
                 .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
                 .ThrowsAsync(new Exception("Boom"));
 
-            Assert.DoesNotThrowAsync(async () => await this.CreateAndInitializeAsync());
+            var viewModel = this.CreateViewModel();
+
+            Assert.DoesNotThrowAsync(async () => await viewModel.LoadSetupDataAsync());
         }
 
         [Test]
         public async Task StartTournamentAsync_poolSizeBelowMinimum_setsErrorMessageContainingMinimum()
         {
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
             viewModel.PoolSize = MinPoolSize - 1;
 
             await viewModel.StartTournamentAsync();
@@ -236,7 +210,8 @@ namespace UnitTests.MovieTournament
         [Test]
         public async Task StartTournamentAsync_poolSizeBelowMinimum_doesNotCallService()
         {
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
             viewModel.PoolSize = MinPoolSize - 1;
 
             await viewModel.StartTournamentAsync();
@@ -249,7 +224,8 @@ namespace UnitTests.MovieTournament
         [Test]
         public async Task StartTournamentAsync_poolSizeBelowMinimum_doesNotRaiseTournamentStarted()
         {
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
             viewModel.PoolSize = MinPoolSize - 1;
 
             bool eventRaised = false;
@@ -269,7 +245,8 @@ namespace UnitTests.MovieTournament
                 .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
                 .ReturnsAsync(MaxPool);
 
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
             viewModel.PoolSize = MaxPool + 1;
 
             await viewModel.StartTournamentAsync();
@@ -286,7 +263,8 @@ namespace UnitTests.MovieTournament
                 .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
                 .ReturnsAsync(MaxPool);
 
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
             viewModel.PoolSize = MaxPool + 1;
 
             await viewModel.StartTournamentAsync();
@@ -305,7 +283,8 @@ namespace UnitTests.MovieTournament
                 .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
                 .ReturnsAsync(MaxPool);
 
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
             viewModel.PoolSize = MaxPool + 1;
 
             bool eventRaised = false;
@@ -330,7 +309,8 @@ namespace UnitTests.MovieTournament
                 .Setup(x => x.StartTournamentAsync(UserId, GoodSize))
                 .Returns(Task.CompletedTask);
 
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
             viewModel.PoolSize = GoodSize;
 
             await viewModel.StartTournamentAsync();
@@ -354,7 +334,8 @@ namespace UnitTests.MovieTournament
                 .Setup(x => x.StartTournamentAsync(UserId, GoodSize))
                 .Returns(Task.CompletedTask);
 
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
             viewModel.PoolSize = GoodSize;
             viewModel.SetupErrorMessage = "some previous error";
 
@@ -377,7 +358,8 @@ namespace UnitTests.MovieTournament
                 .Setup(x => x.StartTournamentAsync(UserId, GoodSize))
                 .Returns(Task.CompletedTask);
 
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
             viewModel.PoolSize = GoodSize;
 
             bool eventRaised = false;
@@ -402,7 +384,8 @@ namespace UnitTests.MovieTournament
                 .Setup(x => x.StartTournamentAsync(UserId, GoodSize))
                 .Returns(Task.CompletedTask);
 
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
             viewModel.PoolSize = GoodSize;
 
             object? capturedSender = null;
@@ -426,7 +409,8 @@ namespace UnitTests.MovieTournament
                 .Setup(x => x.StartTournamentAsync(UserId, MinPoolSize))
                 .Returns(Task.CompletedTask);
 
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
             viewModel.PoolSize = MinPoolSize;
 
             await viewModel.StartTournamentAsync();
@@ -449,7 +433,8 @@ namespace UnitTests.MovieTournament
                 .Setup(x => x.StartTournamentAsync(UserId, MaxPool))
                 .Returns(Task.CompletedTask);
 
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
             viewModel.PoolSize = MaxPool;
 
             await viewModel.StartTournamentAsync();
@@ -473,7 +458,8 @@ namespace UnitTests.MovieTournament
                 .Setup(x => x.StartTournamentAsync(UserId, GoodSize))
                 .ThrowsAsync(new InvalidOperationException("Tournament exploded"));
 
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
             viewModel.PoolSize = GoodSize;
 
             await viewModel.StartTournamentAsync();
@@ -495,7 +481,8 @@ namespace UnitTests.MovieTournament
                 .Setup(x => x.StartTournamentAsync(UserId, GoodSize))
                 .ThrowsAsync(new InvalidOperationException("Tournament exploded"));
 
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
+            await viewModel.LoadSetupDataAsync();
             viewModel.PoolSize = GoodSize;
 
             bool eventRaised = false;
@@ -507,33 +494,33 @@ namespace UnitTests.MovieTournament
         }
 
         [Test]
-        public async Task GetImageSource_nullString_returnsNull()
+        public void GetImageSource_nullString_returnsNull()
         {
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
 
             Assert.That(viewModel.GetImageSource(null), Is.Null);
         }
 
         [Test]
-        public async Task GetImageSource_emptyString_returnsNull()
+        public void GetImageSource_emptyString_returnsNull()
         {
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
 
             Assert.That(viewModel.GetImageSource(string.Empty), Is.Null);
         }
 
         [Test]
-        public async Task GetImageSource_whitespaceString_returnsNull()
+        public void GetImageSource_whitespaceString_returnsNull()
         {
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
 
             Assert.That(viewModel.GetImageSource("   "), Is.Null);
         }
 
         [Test]
-        public async Task GetImageSource_invalidUri_returnsNull()
+        public void GetImageSource_invalidUri_returnsNull()
         {
-            var viewModel = await this.CreateAndInitializeAsync();
+            var viewModel = this.CreateViewModel();
 
             Assert.That(viewModel.GetImageSource("not a valid uri"), Is.Null);
         }

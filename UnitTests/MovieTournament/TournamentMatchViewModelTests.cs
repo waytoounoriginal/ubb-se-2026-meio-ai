@@ -41,7 +41,6 @@ namespace UnitTests.MovieTournament
                 .Returns(this.defaultState);
 
             this.viewModel = new TournamentMatchViewModel(this.mockedTournamentLogicService.Object);
-            this.viewModel.Initialize();
         }
 
         [TearDown]
@@ -54,33 +53,34 @@ namespace UnitTests.MovieTournament
         }
 
         [Test]
-        public void Initialize_validMatch_setsMovieOptionA()
+        public void Constructor_validMatch_setsMovieOptionA()
         {
             Assert.That(this.viewModel.MovieOptionA, Is.SameAs(this.defaultMatch.FirstMovie));
         }
 
         [Test]
-        public void Initialize_validMatch_setsMovieOptionB()
+        public void Constructor_validMatch_setsMovieOptionB()
         {
             Assert.That(this.viewModel.MovieOptionB, Is.SameAs(this.defaultMatch.SecondMovie));
         }
 
         [Test]
-        public void Initialize_validMatch_setsRoundDisplay()
+        public void Constructor_validMatch_setsRoundDisplay()
         {
             Assert.That(this.viewModel.RoundDisplay, Is.EqualTo("Round 1"));
         }
 
         [Test]
-        public void Initialize_nullCurrentMatch_doesNotThrowAndLeavesPropertiesDefault()
+        public void Constructor_nullCurrentMatch_doesNotThrowAndLeavesPropertiesDefault()
         {
             this.mockedTournamentLogicService
                 .Setup(x => x.GetCurrentMatch())
                 .Returns((MatchPair?)null);
 
-            var viewModel = new TournamentMatchViewModel(this.mockedTournamentLogicService.Object);
+            TournamentMatchViewModel viewModel = null!;
 
-            Assert.DoesNotThrow(() => viewModel.Initialize());
+            Assert.DoesNotThrow(() =>
+                viewModel = new TournamentMatchViewModel(this.mockedTournamentLogicService.Object));
 
             Assert.That(viewModel.MovieOptionA, Is.Null);
             Assert.That(viewModel.MovieOptionB, Is.Null);
