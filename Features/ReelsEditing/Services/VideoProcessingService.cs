@@ -57,9 +57,10 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Services
         private const string JsonKeyHeight = "height";
         private const string InvariantNumberFormat = "0.###";
 
-        private static readonly TimeSpan FfmpegTimeout = TimeSpan.FromMinutes(5);
+        private static TimeSpan FfmpegTimeout = TimeSpan.FromMinutes(5);
         private static readonly string LocalFfmpegPath = Path.Combine(AppContext.BaseDirectory, FfmpegExecutableName);
         private static readonly string LocalFfprobePath = Path.Combine(AppContext.BaseDirectory, FfprobeExecutableName);
+        private static Action<string>? CropOutputPostProcessHook;
 
         private readonly IAudioLibraryRepository audioLibrary;
 
@@ -114,6 +115,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             string ffmpegArguments = string.Format(FfmpegCropArgumentsFormat, sourcePath, cropFilter, tempPath);
 
             await RunFfmpegAsync(ffmpegArguments, directory);
+            CropOutputPostProcessHook?.Invoke(tempPath);
 
             if (!File.Exists(tempPath))
             {
