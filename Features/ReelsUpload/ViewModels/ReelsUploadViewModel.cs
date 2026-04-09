@@ -112,10 +112,10 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
                 var request = new Models.ReelUploadRequest
                 {
                     LocalFilePath = LocalVideoFilePath,
-                    Title = string.IsNullOrWhiteSpace(ReelTitle) ? untitledName : ReelTitle,
+                    Title = ReelTitle,
                     Caption = ReelCaption ?? string.Empty,
                     UploaderUserId = _currentUserID,
-                    MovieId = LinkedMovie?.MovieId
+                    MovieId = LinkedMovie.MovieId
                 };
 
                 var savedReel = await _videoStorageService.UploadVideoAsync(request);

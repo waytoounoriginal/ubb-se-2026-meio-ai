@@ -16,11 +16,11 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
     public class VideoStorageService : IVideoStorageService
     {
         private readonly IVideoStorageRepository _memoryRepository;
-        
+
         // Simulating a blob storage directory inside the AppData folder for local development
         private readonly string _blobStorageDirectory;
 
-        const string videoFileExtension = ".mp4",  emptyURL = "", uploadSource = "upload";
+        const string videoFileExtension = ".mp4", emptyURL = "", uploadSource = "upload";
 
         const int nullId = 0;
 
@@ -29,12 +29,12 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
         public VideoStorageService(IVideoStorageRepository memoryRepository)
         {
             _memoryRepository = memoryRepository;
-            
+
             _blobStorageDirectory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), 
-                "MeioAI", 
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "MeioAI",
                 "Videos");
-                
+
             if (!Directory.Exists(_blobStorageDirectory))
             {
                 Directory.CreateDirectory(_blobStorageDirectory);
@@ -100,14 +100,14 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
                 CreatorUserId = request.UploaderUserId,
                 VideoUrl = destinationBlobPath,
                 ThumbnailUrl = emptyURL,
-                Title = request.Title ?? string.Empty,
-                Caption = request.Caption ?? string.Empty,
+
+                Title = request.Title,
+                Caption = request.Caption,
+
                 FeatureDurationSeconds = computedDurationSeconds,
                 Source = uploadSource
-                // ReelId and CreatedAt will be filled in by the database
             };
 
-            // Delegate the database work to the Repository!
             return await _memoryRepository.InsertReelAsync(newReel);
         }
     }
