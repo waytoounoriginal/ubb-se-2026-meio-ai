@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using NUnit.Framework;
 using ubb_se_2026_meio_ai.Core.Database;
 using ubb_se_2026_meio_ai.Features.PersonalityMatch.Services;

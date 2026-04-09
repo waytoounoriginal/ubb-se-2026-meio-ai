@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
 
 namespace UnitTests.ReelsFeed
@@ -7,7 +7,7 @@ namespace UnitTests.ReelsFeed
     public class ClipPlaybackServiceTests
     {
         [Test]
-        public async Task PrefetchClipAsync_validUrlThenGetClipTransmission_returnsPrefetchedTransmission()
+        public async Task PrefetchClipAsync_validUrlThenGetClipTransmission_returnsSameVideoUrl()
         {
             const string VIDEO_URL = "https://cdn.example.com/reel-101.mp4";
 
@@ -17,11 +17,22 @@ namespace UnitTests.ReelsFeed
             var transmission = service.GetClipTransmission(VIDEO_URL);
 
             Assert.That(transmission.VideoUrl, Is.EqualTo(VIDEO_URL));
+        }
+
+        [Test]
+        public async Task PrefetchClipAsync_validUrlThenGetClipTransmission_marksAsPrefetched()
+        {
+            const string VIDEO_URL = "https://cdn.example.com/reel-101.mp4";
+            var service = new ClipPlaybackService();
+
+            await service.PrefetchClipAsync(VIDEO_URL);
+            var transmission = service.GetClipTransmission(VIDEO_URL);
+
             Assert.That(transmission.WasPrefetched, Is.True);
         }
 
         [Test]
-        public void GetClipTransmission_urlNotPrefetched_returnsNotPrefetchedTransmission()
+        public void GetClipTransmission_urlNotPrefetched_returnsSameVideoUrl()
         {
             const string VIDEO_URL = "https://cdn.example.com/reel-102.mp4";
 
@@ -30,6 +41,16 @@ namespace UnitTests.ReelsFeed
             var transmission = service.GetClipTransmission(VIDEO_URL);
 
             Assert.That(transmission.VideoUrl, Is.EqualTo(VIDEO_URL));
+        }
+
+        [Test]
+        public void GetClipTransmission_urlNotPrefetched_marksNotPrefetched()
+        {
+            const string VIDEO_URL = "https://cdn.example.com/reel-102.mp4";
+            var service = new ClipPlaybackService();
+
+            var transmission = service.GetClipTransmission(VIDEO_URL);
+
             Assert.That(transmission.WasPrefetched, Is.False);
         }
 
@@ -45,12 +66,11 @@ namespace UnitTests.ReelsFeed
             var firstTransmission = service.GetClipTransmission(VIDEO_URL);
             var secondTransmission = service.GetClipTransmission(VIDEO_URL);
 
-            Assert.That(firstTransmission.WasPrefetched, Is.True);
-            Assert.That(secondTransmission.WasPrefetched, Is.False);
+            Assert.That(firstTransmission.WasPrefetched && !secondTransmission.WasPrefetched, Is.True);
         }
 
         [Test]
-        public async Task PrefetchClipAsync_sameUrlDifferentCaseThenGetClipTransmission_returnsPrefetchedTransmission()
+        public async Task PrefetchClipAsync_sameUrlDifferentCaseThenGetClipTransmission_returnsNormalizedVideoUrl()
         {
             const string UPPERCASE_URL = "HTTPS://CDN.EXAMPLE.COM/REEL-104.MP4";
             const string LOWERCASE_URL = "https://cdn.example.com/reel-104.mp4";
@@ -61,11 +81,24 @@ namespace UnitTests.ReelsFeed
             var transmission = service.GetClipTransmission(LOWERCASE_URL);
 
             Assert.That(transmission.VideoUrl, Is.EqualTo(LOWERCASE_URL));
+        }
+
+        [Test]
+        public async Task PrefetchClipAsync_sameUrlDifferentCaseThenGetClipTransmission_marksPrefetched()
+        {
+            const string UPPERCASE_URL = "HTTPS://CDN.EXAMPLE.COM/REEL-104.MP4";
+            const string LOWERCASE_URL = "https://cdn.example.com/reel-104.mp4";
+
+            var service = new ClipPlaybackService();
+
+            await service.PrefetchClipAsync(UPPERCASE_URL);
+            var transmission = service.GetClipTransmission(LOWERCASE_URL);
+
             Assert.That(transmission.WasPrefetched, Is.True);
         }
 
         [Test]
-        public async Task PrefetchClipAsync_invalidUrlThenGetClipTransmission_returnsNotPrefetchedTransmission()
+        public async Task PrefetchClipAsync_invalidUrlThenGetClipTransmission_returnsOriginalUrl()
         {
             const string INVALID_URL = "   ";
 
@@ -75,6 +108,18 @@ namespace UnitTests.ReelsFeed
             var transmission = service.GetClipTransmission(INVALID_URL);
 
             Assert.That(transmission.VideoUrl, Is.EqualTo(INVALID_URL));
+        }
+
+        [Test]
+        public async Task PrefetchClipAsync_invalidUrlThenGetClipTransmission_marksNotPrefetched()
+        {
+            const string INVALID_URL = "   ";
+
+            var service = new ClipPlaybackService();
+
+            await service.PrefetchClipAsync(INVALID_URL);
+            var transmission = service.GetClipTransmission(INVALID_URL);
+
             Assert.That(transmission.WasPrefetched, Is.False);
         }
 

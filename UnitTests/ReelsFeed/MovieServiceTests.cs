@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -12,7 +12,7 @@ namespace UnitTests.Core
     public class MovieServiceTests
     {
         [Test]
-        public async Task SearchTop10MoviesAsync_emptyString_returnsEmptyListAndDoesNotCallRepo()
+        public async Task SearchTop10MoviesAsync_emptyString_returnsEmptyList()
         {
             // Arrange
             var mockedRepository = new Mock<IMovieRepository>();
@@ -23,11 +23,24 @@ namespace UnitTests.Core
 
             // Assert
             Assert.That(result, Is.Empty);
-            mockedRepository.Verify(x => x.SearchTop10MoviesAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Test]
-        public async Task SearchTop10MoviesAsync_whitespaceString_returnsEmptyListAndDoesNotCallRepo()
+        public async Task SearchTop10MoviesAsync_emptyString_doesNotCallRepo()
+        {
+            // Arrange
+            var mockedRepository = new Mock<IMovieRepository>();
+            var service = new MovieService(mockedRepository.Object);
+
+            // Act
+            await service.SearchTop10MoviesAsync(string.Empty);
+
+            // Assert
+            mockedRepository.Verify(mock => mock.SearchTop10MoviesAsync(It.IsAny<string>()), Times.Never);
+        }
+
+        [Test]
+        public async Task SearchTop10MoviesAsync_whitespaceString_returnsEmptyList()
         {
             // Arrange
             var mockedRepository = new Mock<IMovieRepository>();
@@ -38,11 +51,24 @@ namespace UnitTests.Core
 
             // Assert
             Assert.That(result, Is.Empty);
-            mockedRepository.Verify(x => x.SearchTop10MoviesAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Test]
-        public async Task SearchTop10MoviesAsync_nullString_returnsEmptyListAndDoesNotCallRepo()
+        public async Task SearchTop10MoviesAsync_whitespaceString_doesNotCallRepo()
+        {
+            // Arrange
+            var mockedRepository = new Mock<IMovieRepository>();
+            var service = new MovieService(mockedRepository.Object);
+
+            // Act
+            await service.SearchTop10MoviesAsync("   ");
+
+            // Assert
+            mockedRepository.Verify(mock => mock.SearchTop10MoviesAsync(It.IsAny<string>()), Times.Never);
+        }
+
+        [Test]
+        public async Task SearchTop10MoviesAsync_nullString_returnsEmptyList()
         {
             // Arrange
             var mockedRepository = new Mock<IMovieRepository>();
@@ -53,11 +79,24 @@ namespace UnitTests.Core
 
             // Assert
             Assert.That(result, Is.Empty);
-            mockedRepository.Verify(x => x.SearchTop10MoviesAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Test]
-        public async Task SearchTop10MoviesAsync_validString_callsRepoAndReturnsResults()
+        public async Task SearchTop10MoviesAsync_nullString_doesNotCallRepo()
+        {
+            // Arrange
+            var mockedRepository = new Mock<IMovieRepository>();
+            var service = new MovieService(mockedRepository.Object);
+
+            // Act
+            await service.SearchTop10MoviesAsync(null!);
+
+            // Assert
+            mockedRepository.Verify(mock => mock.SearchTop10MoviesAsync(It.IsAny<string>()), Times.Never);
+        }
+
+        [Test]
+        public async Task SearchTop10MoviesAsync_validString_returnsNonNullList()
         {
             // Arrange
             const string SEARCH_TERM = "Batman";
@@ -70,7 +109,7 @@ namespace UnitTests.Core
             var mockedRepository = new Mock<IMovieRepository>();
 
             mockedRepository
-                .Setup(x => x.SearchTop10MoviesAsync(SEARCH_TERM))
+                .Setup(mock => mock.SearchTop10MoviesAsync(SEARCH_TERM))
                 .ReturnsAsync(expectedResults);
 
             var service = new MovieService(mockedRepository.Object);
@@ -80,11 +119,72 @@ namespace UnitTests.Core
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Count, Is.EqualTo(2));
-            Assert.That(result[0].Title, Is.EqualTo("Batman Begins"));
+        }
 
-            // Verify the repository was called exactly once with the correct search term
-            mockedRepository.Verify(x => x.SearchTop10MoviesAsync(SEARCH_TERM), Times.Once);
+        [Test]
+        public async Task SearchTop10MoviesAsync_validString_returnsExpectedCount()
+        {
+            // Arrange
+            const string SEARCH_TERM = "Batman";
+            var expectedResults = new List<MovieCardModel>
+            {
+                new MovieCardModel { MovieId = 1, Title = "Batman Begins" },
+                new MovieCardModel { MovieId = 2, Title = "The Dark Knight" }
+            };
+
+            var mockedRepository = new Mock<IMovieRepository>();
+            mockedRepository.Setup(mock => mock.SearchTop10MoviesAsync(SEARCH_TERM)).ReturnsAsync(expectedResults);
+            var service = new MovieService(mockedRepository.Object);
+
+            // Act
+            var result = await service.SearchTop10MoviesAsync(SEARCH_TERM);
+
+            // Assert
+            Assert.That(result.Count, Is.EqualTo(2));
+        }
+
+        [Test]
+        public async Task SearchTop10MoviesAsync_validString_returnsExpectedFirstTitle()
+        {
+            // Arrange
+            const string SEARCH_TERM = "Batman";
+            var expectedResults = new List<MovieCardModel>
+            {
+                new MovieCardModel { MovieId = 1, Title = "Batman Begins" },
+                new MovieCardModel { MovieId = 2, Title = "The Dark Knight" }
+            };
+
+            var mockedRepository = new Mock<IMovieRepository>();
+            mockedRepository.Setup(mock => mock.SearchTop10MoviesAsync(SEARCH_TERM)).ReturnsAsync(expectedResults);
+            var service = new MovieService(mockedRepository.Object);
+
+            // Act
+            var result = await service.SearchTop10MoviesAsync(SEARCH_TERM);
+
+            // Assert
+            Assert.That(result[0].Title, Is.EqualTo("Batman Begins"));
+        }
+
+        [Test]
+        public async Task SearchTop10MoviesAsync_validString_callsRepoOnce()
+        {
+            // Arrange
+            const string SEARCH_TERM = "Batman";
+            var expectedResults = new List<MovieCardModel>
+            {
+                new MovieCardModel { MovieId = 1, Title = "Batman Begins" },
+                new MovieCardModel { MovieId = 2, Title = "The Dark Knight" }
+            };
+
+            var mockedRepository = new Mock<IMovieRepository>();
+            mockedRepository.Setup(mock => mock.SearchTop10MoviesAsync(SEARCH_TERM)).ReturnsAsync(expectedResults);
+            var service = new MovieService(mockedRepository.Object);
+
+            // Act
+            await service.SearchTop10MoviesAsync(SEARCH_TERM);
+
+            // Assert
+            mockedRepository.Verify(mock => mock.SearchTop10MoviesAsync(SEARCH_TERM), Times.Once);
         }
     }
 }

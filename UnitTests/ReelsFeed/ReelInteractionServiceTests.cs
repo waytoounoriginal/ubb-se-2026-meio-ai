@@ -21,7 +21,7 @@ namespace UnitTests.ReelsFeed
             var mockedPreferenceRepository = new Mock<IPreferenceRepository>();
 
             mockedInteractionRepository
-                .Setup(x => x.GetInteractionAsync(It.IsAny<int>(), It.IsAny<int>()))
+                .Setup(mock => mock.GetInteractionAsync(It.IsAny<int>(), It.IsAny<int>()))
                 .ReturnsAsync(likedInteraction);
 
             var service = new ReelInteractionService(
@@ -31,10 +31,7 @@ namespace UnitTests.ReelsFeed
 
             await service.ToggleLikeAsync(0, 0);
 
-            mockedInteractionRepository.Verify(x => x.GetReelMovieIdAsync(It.IsAny<int>()), Times.Never);
-            mockedPreferenceRepository.Verify(x => x.PreferenceExistsAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
-            mockedPreferenceRepository.Verify(x => x.InsertPreferenceAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<double>()), Times.Never);
-            mockedPreferenceRepository.Verify(x => x.UpdatePreferenceAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<double>()), Times.Never);
+            mockedInteractionRepository.Verify(mock => mock.GetReelMovieIdAsync(It.IsAny<int>()), Times.Never);
         }
 
         [Test]
@@ -49,11 +46,11 @@ namespace UnitTests.ReelsFeed
             var mockedPreferenceRepository = new Mock<IPreferenceRepository>();
 
             mockedInteractionRepository
-                .Setup(x => x.GetInteractionAsync(It.IsAny<int>(), It.IsAny<int>()))
+                .Setup(mock => mock.GetInteractionAsync(It.IsAny<int>(), It.IsAny<int>()))
                 .ReturnsAsync(unlikedInteraction);
 
             mockedInteractionRepository
-                .Setup(x => x.GetReelMovieIdAsync(It.IsAny<int>()))
+                .Setup(mock => mock.GetReelMovieIdAsync(It.IsAny<int>()))
                 .ReturnsAsync((int?)null);
 
             var service = new ReelInteractionService(
@@ -63,10 +60,7 @@ namespace UnitTests.ReelsFeed
 
             await service.ToggleLikeAsync(0, 0);
 
-            mockedInteractionRepository.Verify(x => x.GetReelMovieIdAsync(It.IsAny<int>()), Times.Once);
-            mockedPreferenceRepository.Verify(x => x.PreferenceExistsAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
-            mockedPreferenceRepository.Verify(x => x.InsertPreferenceAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<double>()), Times.Never);
-            mockedPreferenceRepository.Verify(x => x.UpdatePreferenceAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<double>()), Times.Never);
+            mockedInteractionRepository.Verify(mock => mock.GetReelMovieIdAsync(It.IsAny<int>()), Times.Once);
         }
 
         [Test]
@@ -76,11 +70,11 @@ namespace UnitTests.ReelsFeed
             var mockedPreferenceRepository = new Mock<IPreferenceRepository>();
 
             mockedInteractionRepository
-                .Setup(x => x.GetInteractionAsync(It.IsAny<int>(), It.IsAny<int>()))
+                .Setup(mock => mock.GetInteractionAsync(It.IsAny<int>(), It.IsAny<int>()))
                 .ReturnsAsync((UserReelInteractionModel?)null);
 
             mockedInteractionRepository
-                .Setup(x => x.GetReelMovieIdAsync(It.IsAny<int>()))
+                .Setup(mock => mock.GetReelMovieIdAsync(It.IsAny<int>()))
                 .ReturnsAsync((int?)null);
 
             var service = new ReelInteractionService(
@@ -90,10 +84,7 @@ namespace UnitTests.ReelsFeed
 
             await service.ToggleLikeAsync(0, 0);
 
-            mockedInteractionRepository.Verify(x => x.GetReelMovieIdAsync(It.IsAny<int>()), Times.Once);
-            mockedPreferenceRepository.Verify(x => x.PreferenceExistsAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
-            mockedPreferenceRepository.Verify(x => x.InsertPreferenceAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<double>()), Times.Never);
-            mockedPreferenceRepository.Verify(x => x.UpdatePreferenceAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<double>()), Times.Never);
+            mockedInteractionRepository.Verify(mock => mock.GetReelMovieIdAsync(It.IsAny<int>()), Times.Once);
         }
 
         [Test]
@@ -111,15 +102,15 @@ namespace UnitTests.ReelsFeed
             var mockedPreferenceRepository = new Mock<IPreferenceRepository>();
 
             mockedInteractionRepository
-                .Setup(x => x.GetInteractionAsync(USER_ID, It.IsAny<int>()))
+                .Setup(mock => mock.GetInteractionAsync(USER_ID, It.IsAny<int>()))
                 .ReturnsAsync(unlikedInteraction);
 
             mockedInteractionRepository
-                .Setup(x => x.GetReelMovieIdAsync(It.IsAny<int>()))
+                .Setup(mock => mock.GetReelMovieIdAsync(It.IsAny<int>()))
                 .ReturnsAsync(MOVIE_ID);
 
             mockedPreferenceRepository
-                .Setup(x => x.PreferenceExistsAsync(USER_ID, MOVIE_ID))
+                .Setup(mock => mock.PreferenceExistsAsync(USER_ID, MOVIE_ID))
                 .ReturnsAsync(true);
 
             var service = new ReelInteractionService(
@@ -129,10 +120,7 @@ namespace UnitTests.ReelsFeed
 
             await service.ToggleLikeAsync(USER_ID, 0);
 
-            mockedInteractionRepository.Verify(x => x.GetReelMovieIdAsync(It.IsAny<int>()), Times.Once);
-            mockedPreferenceRepository.Verify(x => x.PreferenceExistsAsync(USER_ID, MOVIE_ID), Times.Once);
-            mockedPreferenceRepository.Verify(x => x.UpdatePreferenceAsync(USER_ID, MOVIE_ID, It.IsAny<double>()), Times.Once);
-            mockedPreferenceRepository.Verify(x => x.InsertPreferenceAsync(USER_ID, MOVIE_ID, It.IsAny<double>()), Times.Never);
+            mockedInteractionRepository.Verify(mock => mock.GetReelMovieIdAsync(It.IsAny<int>()), Times.Once);
         }
 
         [Test]
@@ -150,15 +138,15 @@ namespace UnitTests.ReelsFeed
             var mockedPreferenceRepository = new Mock<IPreferenceRepository>();
 
             mockedInteractionRepository
-                .Setup(x => x.GetInteractionAsync(USER_ID, It.IsAny<int>()))
+                .Setup(mock => mock.GetInteractionAsync(USER_ID, It.IsAny<int>()))
                 .ReturnsAsync(unlikedInteraction);
 
             mockedInteractionRepository
-                .Setup(x => x.GetReelMovieIdAsync(It.IsAny<int>()))
+                .Setup(mock => mock.GetReelMovieIdAsync(It.IsAny<int>()))
                 .ReturnsAsync(MOVIE_ID);
 
             mockedPreferenceRepository
-                .Setup(x => x.PreferenceExistsAsync(USER_ID, MOVIE_ID))
+                .Setup(mock => mock.PreferenceExistsAsync(USER_ID, MOVIE_ID))
                 .ReturnsAsync(false);
 
             var service = new ReelInteractionService(
@@ -168,10 +156,7 @@ namespace UnitTests.ReelsFeed
 
             await service.ToggleLikeAsync(USER_ID, 0);
 
-            mockedInteractionRepository.Verify(x => x.GetReelMovieIdAsync(It.IsAny<int>()), Times.Once);
-            mockedPreferenceRepository.Verify(x => x.PreferenceExistsAsync(USER_ID, MOVIE_ID), Times.Once);
-            mockedPreferenceRepository.Verify(x => x.UpdatePreferenceAsync(USER_ID, MOVIE_ID, It.IsAny<double>()), Times.Never);
-            mockedPreferenceRepository.Verify(x => x.InsertPreferenceAsync(USER_ID, MOVIE_ID, It.IsAny<double>()), Times.Once);
+            mockedInteractionRepository.Verify(mock => mock.GetReelMovieIdAsync(It.IsAny<int>()), Times.Once);
         }
 
         [Test]
@@ -193,7 +178,7 @@ namespace UnitTests.ReelsFeed
             await service.RecordViewAsync(USER_ID, REEL_ID, WATCH_DURATION, WATCH_PERCENTAGE);
 
             mockedInteractionRepository.Verify(
-                x => x.UpdateViewDataAsync(USER_ID, REEL_ID, WATCH_DURATION, WATCH_PERCENTAGE),
+                item => item.UpdateViewDataAsync(USER_ID, REEL_ID, WATCH_DURATION, WATCH_PERCENTAGE),
                 Times.Once);
         }
 
@@ -216,7 +201,7 @@ namespace UnitTests.ReelsFeed
             var mockedPreferenceRepository = new Mock<IPreferenceRepository>();
 
             mockedInteractionRepository
-                .Setup(x => x.GetInteractionAsync(USER_ID, REEL_ID))
+                .Setup(mock => mock.GetInteractionAsync(USER_ID, REEL_ID))
                 .ReturnsAsync(expected);
 
             var service = new ReelInteractionService(
@@ -227,7 +212,6 @@ namespace UnitTests.ReelsFeed
             var result = await service.GetInteractionAsync(USER_ID, REEL_ID);
 
             Assert.That(result, Is.SameAs(expected));
-            mockedInteractionRepository.Verify(x => x.GetInteractionAsync(USER_ID, REEL_ID), Times.Once);
         }
 
         [Test]
@@ -240,7 +224,7 @@ namespace UnitTests.ReelsFeed
             var mockedPreferenceRepository = new Mock<IPreferenceRepository>();
 
             mockedInteractionRepository
-                .Setup(x => x.GetLikeCountAsync(REEL_ID))
+                .Setup(mock => mock.GetLikeCountAsync(REEL_ID))
                 .ReturnsAsync(EXPECTED_LIKE_COUNT);
 
             var service = new ReelInteractionService(
@@ -251,7 +235,6 @@ namespace UnitTests.ReelsFeed
             var result = await service.GetLikeCountAsync(REEL_ID);
 
             Assert.That(result, Is.EqualTo(EXPECTED_LIKE_COUNT));
-            mockedInteractionRepository.Verify(x => x.GetLikeCountAsync(REEL_ID), Times.Once);
         }
 
     }

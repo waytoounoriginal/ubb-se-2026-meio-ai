@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using NUnit.Framework;
 using ubb_se_2026_meio_ai.Core.Models;
 using ubb_se_2026_meio_ai.Features.MovieSwipe.Services;
@@ -26,8 +26,7 @@ namespace UnitTests.MovieSwipe
         {
             await this.service.UpdatePreferenceScoreAsync(UserId, MovieId, true);
 
-            this.mockedRepository.Verify(x => x.UpsertPreferenceAsync(It.Is<UserMoviePreferenceModel>(p =>
-                p.UserId == UserId && p.Score == SwipeService.LikeDelta && p.ChangeFromPreviousValue == 1)), Times.Once);
+            this.mockedRepository.Verify(mock => mock.UpsertPreferenceAsync(It.Is<UserMoviePreferenceModel>(item => item.UserId == UserId && item.Score == SwipeService.LikeDelta && item.ChangeFromPreviousValue == 1)), Times.Once);
         }
 
         [Test]
@@ -35,15 +34,14 @@ namespace UnitTests.MovieSwipe
         {
             await this.service.UpdatePreferenceScoreAsync(UserId, MovieId, false);
 
-            this.mockedRepository.Verify(x => x.UpsertPreferenceAsync(It.Is<UserMoviePreferenceModel>(p =>
-                p.UserId == UserId && p.Score == SwipeService.SkipDelta && p.ChangeFromPreviousValue == -1)), Times.Once);
+            this.mockedRepository.Verify(mock => mock.UpsertPreferenceAsync(It.Is<UserMoviePreferenceModel>(item => item.UserId == UserId && item.Score == SwipeService.SkipDelta && item.ChangeFromPreviousValue == -1)), Times.Once);
         }
 
         [Test]
         public async Task GetMovieFeedAsync_DelegatesToRepository()
         {
             var list = new List<MovieCardModel>();
-            this.mockedRepository.Setup(x => x.GetMovieFeedAsync(UserId, 5)).ReturnsAsync(list);
+            this.mockedRepository.Setup(mock => mock.GetMovieFeedAsync(UserId, 5)).ReturnsAsync(list);
 
             var result = await this.service.GetMovieFeedAsync(UserId, 5);
 

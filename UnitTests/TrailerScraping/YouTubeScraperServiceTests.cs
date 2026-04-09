@@ -1,4 +1,4 @@
-﻿namespace UnitTests.TrailerScraping
+namespace UnitTests.TrailerScraping
 {
     using NUnit.Framework;
     using ubb_se_2026_meio_ai.Features.TrailerScraping.Services;

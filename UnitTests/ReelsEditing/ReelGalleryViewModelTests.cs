@@ -1,4 +1,4 @@
-﻿namespace UnitTests.ReelsEditing
+namespace UnitTests.ReelsEditing
 {
     using System;
     using System.Collections.Generic;
@@ -33,7 +33,7 @@
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
         [Test]
-        public async Task LoadReelsCommand_ReelsExist_PopulatesUserReelsAndSetsFoundMessage()
+        public async Task LoadReelsCommand_ReelsExist_SetsUserReelCount()
         {
             var expectedReels = new List<ReelModel>
             {
@@ -41,13 +41,55 @@
                 new ReelModel { ReelId = 102, Title = "Coding Session" },
             };
 
-            this.mockRepo.Setup(r => r.GetUserReelsAsync(1)).ReturnsAsync(expectedReels);
+            this.mockRepo.Setup(item => item.GetUserReelsAsync(1)).ReturnsAsync(expectedReels);
 
             await this.viewModel.LoadReelsCommand.ExecuteAsync(null);
 
             Assert.That(this.viewModel.UserReels, Has.Count.EqualTo(2));
+        }
+
+        [Test]
+        public async Task LoadReelsCommand_ReelsExist_SetsFirstTitle()
+        {
+            var expectedReels = new List<ReelModel>
+            {
+                new ReelModel { ReelId = 101, Title = "Cluj Coffee Vlog" },
+                new ReelModel { ReelId = 102, Title = "Coding Session" },
+            };
+
+            this.mockRepo.Setup(item => item.GetUserReelsAsync(1)).ReturnsAsync(expectedReels);
+            await this.viewModel.LoadReelsCommand.ExecuteAsync(null);
+
             Assert.That(this.viewModel.UserReels[0].Title, Is.EqualTo("Cluj Coffee Vlog"));
+        }
+
+        [Test]
+        public async Task LoadReelsCommand_ReelsExist_SetsIsLoadedTrue()
+        {
+            var expectedReels = new List<ReelModel>
+            {
+                new ReelModel { ReelId = 101, Title = "Cluj Coffee Vlog" },
+                new ReelModel { ReelId = 102, Title = "Coding Session" },
+            };
+
+            this.mockRepo.Setup(item => item.GetUserReelsAsync(1)).ReturnsAsync(expectedReels);
+            await this.viewModel.LoadReelsCommand.ExecuteAsync(null);
+
             Assert.That(this.viewModel.IsLoaded, Is.True);
+        }
+
+        [Test]
+        public async Task LoadReelsCommand_ReelsExist_SetsFoundMessage()
+        {
+            var expectedReels = new List<ReelModel>
+            {
+                new ReelModel { ReelId = 101, Title = "Cluj Coffee Vlog" },
+                new ReelModel { ReelId = 102, Title = "Coding Session" },
+            };
+
+            this.mockRepo.Setup(item => item.GetUserReelsAsync(1)).ReturnsAsync(expectedReels);
+            await this.viewModel.LoadReelsCommand.ExecuteAsync(null);
+
             Assert.That(this.viewModel.StatusMessage, Is.EqualTo("2 reel(s) found."));
         }
 
@@ -56,14 +98,30 @@
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
         [Test]
-        public async Task LoadReelsCommand_NoReelsFound_SetsNoReelsMessage()
+        public async Task LoadReelsCommand_NoReelsFound_SetsEmptyReels()
         {
-            this.mockRepo.Setup(r => r.GetUserReelsAsync(1)).ReturnsAsync(new List<ReelModel>());
+            this.mockRepo.Setup(item => item.GetUserReelsAsync(1)).ReturnsAsync(new List<ReelModel>());
 
             await this.viewModel.LoadReelsCommand.ExecuteAsync(null);
 
             Assert.That(this.viewModel.UserReels, Is.Empty);
+        }
+
+        [Test]
+        public async Task LoadReelsCommand_NoReelsFound_SetsIsLoadedTrue()
+        {
+            this.mockRepo.Setup(item => item.GetUserReelsAsync(1)).ReturnsAsync(new List<ReelModel>());
+            await this.viewModel.LoadReelsCommand.ExecuteAsync(null);
+
             Assert.That(this.viewModel.IsLoaded, Is.True);
+        }
+
+        [Test]
+        public async Task LoadReelsCommand_NoReelsFound_SetsNoReelsMessage()
+        {
+            this.mockRepo.Setup(item => item.GetUserReelsAsync(1)).ReturnsAsync(new List<ReelModel>());
+            await this.viewModel.LoadReelsCommand.ExecuteAsync(null);
+
             Assert.That(this.viewModel.StatusMessage, Is.EqualTo("No reels uploaded yet. Upload a reel first."));
         }
 
@@ -74,13 +132,29 @@
         [Test]
         public async Task LoadReelsCommand_RepositoryThrowsException_SetsErrorMessage()
         {
-            this.mockRepo.Setup(r => r.GetUserReelsAsync(It.IsAny<int>()))
+            this.mockRepo.Setup(item => item.GetUserReelsAsync(It.IsAny<int>()))
                       .ThrowsAsync(new Exception("Database connection failed"));
 
             await this.viewModel.LoadReelsCommand.ExecuteAsync(null);
 
             Assert.That(this.viewModel.UserReels, Is.Empty);
+        }
+
+        [Test]
+        public async Task LoadReelsCommand_RepositoryThrowsException_SetsErrorText()
+        {
+            this.mockRepo.Setup(item => item.GetUserReelsAsync(It.IsAny<int>())).ThrowsAsync(new Exception("Database connection failed"));
+            await this.viewModel.LoadReelsCommand.ExecuteAsync(null);
+
             Assert.That(this.viewModel.StatusMessage, Does.Contain("Error loading reels: Database connection failed"));
+        }
+
+        [Test]
+        public async Task LoadReelsCommand_RepositoryThrowsException_SetsIsLoadedFalse()
+        {
+            this.mockRepo.Setup(item => item.GetUserReelsAsync(It.IsAny<int>())).ThrowsAsync(new Exception("Database connection failed"));
+            await this.viewModel.LoadReelsCommand.ExecuteAsync(null);
+
             Assert.That(this.viewModel.IsLoaded, Is.False);
         }
 
@@ -92,11 +166,11 @@
         public async Task EnsureLoadedAsync_NotLoaded_CallsRepository()
         {
             this.viewModel.IsLoaded = false;
-            this.mockRepo.Setup(r => r.GetUserReelsAsync(It.IsAny<int>())).ReturnsAsync(new List<ReelModel>());
+            this.mockRepo.Setup(item => item.GetUserReelsAsync(It.IsAny<int>())).ReturnsAsync(new List<ReelModel>());
 
             await this.viewModel.EnsureLoadedAsync();
 
-            this.mockRepo.Verify(r => r.GetUserReelsAsync(1), Times.Once);
+            this.mockRepo.Verify(item => item.GetUserReelsAsync(1), Times.Once);
         }
 
         /// <summary>
@@ -110,7 +184,7 @@
 
             await this.viewModel.EnsureLoadedAsync();
 
-            this.mockRepo.Verify(r => r.GetUserReelsAsync(It.IsAny<int>()), Times.Never);
+            this.mockRepo.Verify(item => item.GetUserReelsAsync(It.IsAny<int>()), Times.Never);
         }
     }
 }

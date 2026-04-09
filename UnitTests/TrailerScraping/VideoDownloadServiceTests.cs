@@ -1,4 +1,4 @@
-﻿namespace UnitTests.TrailerScraping
+namespace UnitTests.TrailerScraping
 {
     using System.IO;
     using NUnit.Framework;
