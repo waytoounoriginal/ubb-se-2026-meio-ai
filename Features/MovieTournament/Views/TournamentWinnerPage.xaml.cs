@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
 using ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels;
 
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.Views
@@ -28,5 +29,12 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Views
         /// Gets the view model that exposes the winning movie and the restart command.
         /// </summary>
         public TournamentWinnerViewModel ViewModel { get; }
+
+        /// <inheritdoc/>
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            this.ViewModel.Initialize();
+        }
     }
 }
