@@ -31,6 +31,14 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         }
 
         /// <summary>
+        /// Dispatches playback refresh after the selection change completes.
+        /// </summary>
+        private void TriggerPlaybackForCurrentCallback()
+        {
+            this.TriggerPlaybackForCurrent();
+        }
+
+        /// <summary>
         /// When the page is removed from the visual tree (e.g. window closing or navigating away),
         /// iterate every realized FlipView container and dispose its MediaPlayer.
         /// This catches containers the MainWindow visual-tree walk might miss.
@@ -81,7 +89,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
             }
 
             // Queue the playback orchestration so it executes AFTER the FlipView finishes virtualizing and generating the new UI container.
-            this.DispatcherQueue.TryEnqueue(() => this.TriggerPlaybackForCurrent());
+            this.DispatcherQueue.TryEnqueue(this.TriggerPlaybackForCurrentCallback);
         }
 
         /// <summary>

@@ -256,18 +256,22 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
             double watchPercentage = this.CalculateWatchPercentage(watchedSeconds, previouslyVisibleReel.FeatureDurationSeconds);
 
             // Fire-and-forget — feed stays navigable even if persistence fails (Task 10)
-            _ = Task.Run(async () =>
+            _ = this.RecordFlushedWatchDataAsync(previouslyVisibleReel.ReelId, watchedSeconds, watchPercentage);
+        }
+
+        /// <summary>
+        /// Persists flushed watch data without blocking the UI flow.
+        /// </summary>
+        private async Task RecordFlushedWatchDataAsync(int reelId, double watchedSeconds, double watchPercentage)
+        {
+            try
             {
-                try
-                {
-                    await this._reelInteractionService.RecordViewAsync(
-                        MockUserId, previouslyVisibleReel.ReelId, watchedSeconds, watchPercentage);
-                }
-                catch
-                {
-                    // Logged server-side; feed continues.
-                }
-            });
+                await this._reelInteractionService.RecordViewAsync(MockUserId, reelId, watchedSeconds, watchPercentage);
+            }
+            catch
+            {
+                // Logged server-side; feed continues.
+            }
         }
 
         /// <summary>

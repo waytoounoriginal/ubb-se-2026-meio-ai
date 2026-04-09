@@ -22,9 +22,20 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         private const int MockUserId = 1;
         private const int NoItemsCount = 0;
         private const int LastItemOffset = 1;
-        private const int ProgressTimerIntervalMs = 250;
+        private const int ProgressTimerIntervalMilliseconds = 250;
         private const double PercentageMultiplier = 100.0;
         private const double MaxProgressPercentage = 100.0;
+        private const double DefaultScale = 1.0;
+        private const double HeartBouncePeakScale = 1.4;
+        private const int HeartBounceMidpointMilliseconds = 150;
+        private const int HeartBounceDurationMilliseconds = 300;
+        private const double HeartBurstInitialOpacity = 0.0;
+        private const int HeartBurstFadeInMilliseconds = 100;
+        private const int HeartBurstFadeOutMilliseconds = 600;
+        private const double HeartBurstInitialScale = 0.5;
+        private const int HeartBurstScaleUpMilliseconds = 200;
+        private const double HeartBurstMidScale = 1.3;
+        private const double HeartBurstFinalScale = 1.5;
 
         /// <summary>
         /// Gets or sets a value indicating whether the app is closing.
@@ -88,12 +99,17 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
 
             // Do NOT hook MediaEnded here — it's done in OnReelChanged after setting Source,
             // so we always hook the correct auto-created MediaPlayer instance.
-            this.Unloaded += (s, e) =>
-            {
-                this.StopProgressTimer();
-                this.UnsubscribeFromReel();
-                this.DisposeMediaPlayer();
-            };
+            this.Unloaded += this.ReelItemView_Unloaded;
+        }
+
+        /// <summary>
+        /// Releases resources when the control unloads.
+        /// </summary>
+        private void ReelItemView_Unloaded(object sender, RoutedEventArgs e)
+        {
+            this.StopProgressTimer();
+            this.UnsubscribeFromReel();
+            this.DisposeMediaPlayer();
         }
 
         /// <summary>
@@ -166,7 +182,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
                             return;
                         }
 
-                        dispatcherQueue.TryEnqueue(() =>
+                        void UpdateLikeVisualsOnDispatcher()
                         {
                             if (ReelItemView.IsAppClosing || this._disposed)
                             {
@@ -181,7 +197,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
                             {
                                 // view may be torn down
                             }
-                        });
+                        }
+
+                        dispatcherQueue.TryEnqueue(UpdateLikeVisualsOnDispatcher);
                     }
                     catch
                     {
@@ -303,16 +321,16 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
                 var storyboard = new Storyboard();
 
                 var scaleX = new DoubleAnimationUsingKeyFrames();
-                scaleX.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = 1.0 });
-                scaleX.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(150), Value = 1.4 });
-                scaleX.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(300), Value = 1.0 });
+                scaleX.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = DefaultScale });
+                scaleX.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(HeartBounceMidpointMilliseconds), Value = HeartBouncePeakScale });
+                scaleX.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(HeartBounceDurationMilliseconds), Value = DefaultScale });
                 Storyboard.SetTarget(scaleX, this.HeartScale);
                 Storyboard.SetTargetProperty(scaleX, "ScaleX");
 
                 var scaleY = new DoubleAnimationUsingKeyFrames();
-                scaleY.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = 1.0 });
-                scaleY.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(150), Value = 1.4 });
-                scaleY.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(300), Value = 1.0 });
+                scaleY.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = DefaultScale });
+                scaleY.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(HeartBounceMidpointMilliseconds), Value = HeartBouncePeakScale });
+                scaleY.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(HeartBounceDurationMilliseconds), Value = DefaultScale });
                 Storyboard.SetTarget(scaleY, this.HeartScale);
                 Storyboard.SetTargetProperty(scaleY, "ScaleY");
 
@@ -336,23 +354,23 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
                 var storyboard = new Storyboard();
 
                 var opacity = new DoubleAnimationUsingKeyFrames();
-                opacity.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = 0 });
-                opacity.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(100), Value = 1.0 });
-                opacity.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(600), Value = 0 });
+                opacity.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = HeartBurstInitialOpacity });
+                opacity.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(HeartBurstFadeInMilliseconds), Value = DefaultScale });
+                opacity.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(HeartBurstFadeOutMilliseconds), Value = HeartBurstInitialOpacity });
                 Storyboard.SetTarget(opacity, this.HeartBurst);
                 Storyboard.SetTargetProperty(opacity, "Opacity");
 
                 var burstScaleX = new DoubleAnimationUsingKeyFrames();
-                burstScaleX.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = 0.5 });
-                burstScaleX.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(200), Value = 1.3 });
-                burstScaleX.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(600), Value = 1.5 });
+                burstScaleX.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = HeartBurstInitialScale });
+                burstScaleX.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(HeartBurstScaleUpMilliseconds), Value = HeartBurstMidScale });
+                burstScaleX.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(HeartBurstFadeOutMilliseconds), Value = HeartBurstFinalScale });
                 Storyboard.SetTarget(burstScaleX, this.BurstScale);
                 Storyboard.SetTargetProperty(burstScaleX, "ScaleX");
 
                 var burstScaleY = new DoubleAnimationUsingKeyFrames();
-                burstScaleY.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = 0.5 });
-                burstScaleY.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(200), Value = 1.3 });
-                burstScaleY.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(600), Value = 1.5 });
+                burstScaleY.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = HeartBurstInitialScale });
+                burstScaleY.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(HeartBurstScaleUpMilliseconds), Value = HeartBurstMidScale });
+                burstScaleY.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromMilliseconds(HeartBurstFadeOutMilliseconds), Value = HeartBurstFinalScale });
                 Storyboard.SetTarget(burstScaleY, this.BurstScale);
                 Storyboard.SetTargetProperty(burstScaleY, "ScaleY");
 
@@ -425,7 +443,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         {
             if (this._progressTimer == null)
             {
-                this._progressTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(ProgressTimerIntervalMs) };
+                this._progressTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(ProgressTimerIntervalMilliseconds) };
                 this._progressTimer.Tick += this.ProgressTimer_Tick;
             }
 
@@ -577,7 +595,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
                     return;
                 }
 
-                dispatcherQueue.TryEnqueue(() =>
+                void AdvanceToNextReelOnDispatcher()
                 {
                     if (ReelItemView.IsAppClosing || this._disposed)
                     {
@@ -602,7 +620,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
                     {
                         // view may be torn down
                     }
-                });
+                }
+
+                dispatcherQueue.TryEnqueue(AdvanceToNextReelOnDispatcher);
             }
             catch
             {
