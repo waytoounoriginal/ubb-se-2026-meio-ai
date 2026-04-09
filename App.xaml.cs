@@ -180,10 +180,10 @@ namespace ubb_se_2026_meio_ai
 
             // ── Andrei — Trailer Scraping Services ───────────────────────
             string apiKey = ResolveYouTubeApiKey();
-            services.AddSingleton(new YouTubeScraperService(apiKey));
+            services.AddSingleton<IYouTubeScraperService>(new YouTubeScraperService(apiKey));
             services.AddSingleton<IScrapeJobRepository, ScrapeJobRepository>();
-            services.AddSingleton<VideoDownloadService>();
-            services.AddTransient<VideoIngestionService>();
+            services.AddSingleton<IVideoDownloadService, VideoDownloadService>();
+            services.AddTransient<IVideoIngestionService, VideoIngestionService>();
 
             // ── ViewModels (one per feature page) ────────────────────────
             services.AddTransient<ReelsUploadViewModel>();
@@ -207,7 +207,8 @@ namespace ubb_se_2026_meio_ai
             // (Depending on your app setup, you might also need to register the ViewModel itself!)
             services.AddTransient<ReelsUploadViewModel>();
             // ── Beatrice (Reels Editing) ──
-            services.AddTransient<Features.ReelsEditing.Services.ReelRepository>();
+            services.AddTransient<Features.ReelsEditing.Services.IReelRepository,
+                                  Features.ReelsEditing.Services.ReelRepository>();
             services.AddTransient<Features.ReelsEditing.Services.IVideoProcessingService,
                                   Features.ReelsEditing.Services.VideoProcessingService>();
             services.AddTransient<Features.ReelsEditing.Services.IAudioLibraryRepository,
