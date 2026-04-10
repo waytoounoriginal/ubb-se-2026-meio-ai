@@ -26,6 +26,12 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         private MovieCardModel? movieOptionB;
 
         [ObservableProperty]
+        private ImageSource? movieOptionAImage;
+
+        [ObservableProperty]
+        private ImageSource? movieOptionBImage;
+
+        [ObservableProperty]
         private string roundDisplay = string.Empty;
 
         /// <summary>
@@ -39,27 +45,19 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         public event EventHandler? NavigateBack;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TournamentMatchViewModel"/> class.
-        /// Dependencies are injected but no initialization logic runs here.
-        /// Call <see cref="Initialize"/> explicitly after construction.
+        /// Initializes a new instance of the <see cref="TournamentMatchViewModel"/> class
+        /// and immediately loads the current match.
         /// </summary>
         /// <param name="tournamentLogicService">The service managing tournament bracket logic.</param>
         public TournamentMatchViewModel(ITournamentLogicService tournamentLogicService)
         {
             this.tournamentLogicService = tournamentLogicService;
-        }
-
-        /// <summary>
-        /// Loads the first pending match into the view model.
-        /// Should be called once after construction, typically from the view's loaded event or page navigation.
-        /// </summary>
-        public void Initialize()
-        {
             this.RefreshCurrentMatch();
         }
 
         /// <summary>
         /// Refreshes the displayed match by reading the current pending match from the service.
+        /// Updates both the movie models and their corresponding image sources.
         /// Does nothing if <see cref="ITournamentLogicService.GetCurrentMatch"/> returns <see langword="null"/>.
         /// </summary>
         public void RefreshCurrentMatch()
@@ -72,6 +70,10 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
 
             this.MovieOptionA = currentMatch.FirstMovie;
             this.MovieOptionB = currentMatch.SecondMovie;
+            this.MovieOptionAImage = this.GetImageSource(currentMatch.FirstMovie.PosterUrl);
+            this.MovieOptionBImage = currentMatch.SecondMovie != null
+                ? this.GetImageSource(currentMatch.SecondMovie.PosterUrl)
+                : null;
             this.RoundDisplay = $"Round {this.tournamentLogicService.CurrentState.CurrentRound}";
         }
 

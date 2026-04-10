@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
 using ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels;
 
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.Views
@@ -22,6 +23,13 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Views
 
             this.ViewModel.TournamentStarted += (_, _) =>
                 this.Frame.Navigate(typeof(TournamentMatchPage));
+        }
+
+        /// <inheritdoc/>
+        protected override async void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            await this.ViewModel.InitializeAsync();
         }
 
         /// <summary>

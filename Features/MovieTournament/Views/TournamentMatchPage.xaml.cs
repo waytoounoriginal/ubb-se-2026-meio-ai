@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
+using Microsoft.UI.Xaml.Navigation;
 using ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels;
 
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.Views
@@ -39,6 +40,13 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Views
         /// Gets the view model that drives the match display and winner selection.
         /// </summary>
         public TournamentMatchViewModel ViewModel { get; }
+
+        /// <inheritdoc/>
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            this.ViewModel.Initialize();
+        }
 
         private void OnMoviePointerEntered(object sender, PointerRoutedEventArgs e)
         {
