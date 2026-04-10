@@ -21,44 +21,44 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
         private const int DefaultUserId = 1;
 
         /// <summary> The service used for swipe actions. </summary>
-        private readonly ISwipeService _swipeService;
+        private readonly ISwipeService swipeService;
 
-        private readonly IMovieCardFeedService _feedService;
+        private readonly IMovieCardFeedService feedService;
 
         /// <summary> The service used for movie feed retrieval. </summary>
-        private readonly IMovieCardFeedService _movieCardFeedService;
+        private readonly IMovieCardFeedService movieCardFeedService;
 
         /// <summary> Flag to prevent concurrent refill operations. </summary>
-        private bool _isRefilling;
+        private bool isRefilling;
 
         /// <summary> Initializes a new instance of the <see cref="MovieSwipeViewModel"/> class. </summary>
         /// <param name="swipeService">The swipe action service.</param>
         /// <param name="movieCardFeedService">The feed retrieval service.</param>
         public MovieSwipeViewModel(ISwipeService swipeService, IMovieCardFeedService movieCardFeedService)
         {
-            _swipeService = swipeService;
-            _movieCardFeedService = movieCardFeedService;
+            this.swipeService = swipeService;
+            this.movieCardFeedService = movieCardFeedService;
             CardQueue = new ObservableCollection<MovieCardModel>();
         }
 
         /// <summary> The current movie card displayed to the user. </summary>
         [ObservableProperty]
-        private MovieCardModel? _currentCard;
+        private MovieCardModel? currentCard;
 
         /// <summary> The collection of upcoming movie cards. </summary>
         public ObservableCollection<MovieCardModel> CardQueue { get; }
 
         /// <summary> Indicates whether a data loading operation is in progress. </summary>
         [ObservableProperty]
-        private bool _isLoading;
+        private bool isLoading;
 
         /// <summary> Indicates whether there are no more movies left to swipe. </summary>
         [ObservableProperty]
-        private bool _isAllCaughtUp;
+        private bool isAllCaughtUp;
 
         /// <summary> Current status or error message for the UI. </summary>
         [ObservableProperty]
-        private string _statusMessage = "Swipe right to like, left to skip.";
+        private string statusMessage = "Swipe right to like, left to skip.";
 
         /// <summary> Command used to trigger the initial loading of the movie feed. </summary>
         /// <returns>A task representing the operation.</returns>
@@ -76,7 +76,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
                 IsLoading = true;
                 IsAllCaughtUp = false;
 
-                var movies = await _movieCardFeedService.FetchMovieFeedAsync(DefaultUserId, BufferSize);
+                var movies = await movieCardFeedService.FetchMovieFeedAsync(DefaultUserId, BufferSize);
 
                 CardQueue.Clear();
                 foreach (var movie in movies)
@@ -135,7 +135,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
 
             try
             {
-                await _swipeService.UpdatePreferenceScoreAsync(DefaultUserId, swipedCard.MovieId, isLiked);
+                await swipeService.UpdatePreferenceScoreAsync(DefaultUserId, swipedCard.MovieId, isLiked);
                 await TryRefillQueueAsync(swipedCard.MovieId);
             }
             catch (Exception exception)
@@ -166,16 +166,16 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
         /// <param name="recentlySwipedMovieId">Optional ID to ensure the swiped movie isn't immediately re-added.</param>
         private async Task TryRefillQueueAsync(int? recentlySwipedMovieId = null)
         {
-            if (_isRefilling || CardQueue.Count > RefillThreshold)
+            if (isRefilling || CardQueue.Count > RefillThreshold)
             {
                 return;
             }
 
-            _isRefilling = true;
+            isRefilling = true;
 
             try
             {
-                var newMovies = await _movieCardFeedService.FetchMovieFeedAsync(DefaultUserId, BufferSize);
+                var newMovies = await movieCardFeedService.FetchMovieFeedAsync(DefaultUserId, BufferSize);
 
                 var existingIds = new HashSet<int>(CardQueue.Select(movie => movie.MovieId));
                 if (CurrentCard != null)
@@ -213,7 +213,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
             }
             finally
             {
-                _isRefilling = false;
+                isRefilling = false;
             }
         }
     }

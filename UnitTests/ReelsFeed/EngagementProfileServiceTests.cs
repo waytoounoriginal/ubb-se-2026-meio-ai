@@ -13,7 +13,7 @@ namespace UnitTests.ReelsFeed
         public async Task GetProfileAsync_userIdExists_returnsProfile()
         {
             const int USER_ID = 1;
-            UserProfileModel? EXPECTED_MODEL = new UserProfileModel
+            UserProfileModel? eXPECTED_MODEL = new UserProfileModel
             {
                 UserId = USER_ID,
             };
@@ -22,12 +22,12 @@ namespace UnitTests.ReelsFeed
 
             mockedProfileRepository
                 .Setup(repository => repository.GetProfileAsync(It.IsAny<int>()))
-                .ReturnsAsync(EXPECTED_MODEL);
+                .ReturnsAsync(eXPECTED_MODEL);
 
             var result = await new EngagementProfileService(mockedProfileRepository.Object).GetProfileAsync(USER_ID);
 
             Assert.That(result, Is.Not.Null);
-            Assert.That(result!.UserId, Is.EqualTo(EXPECTED_MODEL.UserId));
+            Assert.That(result!.UserId, Is.EqualTo(eXPECTED_MODEL.UserId));
         }
 
         [Test]
@@ -79,6 +79,5 @@ namespace UnitTests.ReelsFeed
             mockedProfileRepository.Verify(repository => repository.BuildProfileFromInteractionsAsync(USER_ID), Times.Once);
             mockedProfileRepository.Verify(repository => repository.UpsertProfileAsync(aggregatedProfile), Times.Once);
         }
-
     }
 }

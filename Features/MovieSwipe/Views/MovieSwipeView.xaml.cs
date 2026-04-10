@@ -11,17 +11,15 @@ using Windows.Foundation;
 
 namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Views
 {
-
     public sealed partial class MovieSwipeView : Page
     {
-
         private const double SwipeThresholdFraction = 0.30;
         private const double FlyOffDistance = 600;
         private const int FlyOffDurationMs = 250;
 
-        private bool _isDragging;
-        private Point _dragStartPoint;
-        private uint _activePointerId;
+        private bool isDragging;
+        private Point dragStartPoint;
+        private uint activePointerId;
 
         public MovieSwipeViewModel ViewModel { get; }
 
@@ -39,7 +37,6 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Views
         }
 
         // ─── Data Binding Helpers ────────────────────────────────────────
-
         private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(ViewModel.CurrentCard))
@@ -86,17 +83,16 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Views
         }
 
         // ─── Drag / Swipe Gesture Handling ───────────────────────────────
-
         private void MovieCard_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
-            if (_isDragging)
+            if (isDragging)
             {
                 return;
             }
 
-            _isDragging = true;
-            _activePointerId = e.Pointer.PointerId;
-            _dragStartPoint = e.GetCurrentPoint(CardContainer).Position;
+            isDragging = true;
+            activePointerId = e.Pointer.PointerId;
+            dragStartPoint = e.GetCurrentPoint(CardContainer).Position;
 
             // Capture the pointer so we get move/release even if it leaves the card
             MovieCard.CapturePointer(e.Pointer);
@@ -105,13 +101,13 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Views
 
         private void MovieCard_PointerMoved(object sender, PointerRoutedEventArgs e)
         {
-            if (!_isDragging || e.Pointer.PointerId != _activePointerId)
+            if (!isDragging || e.Pointer.PointerId != activePointerId)
             {
                 return;
             }
 
             Point currentPoint = e.GetCurrentPoint(CardContainer).Position;
-            double deltaX = currentPoint.X - _dragStartPoint.X;
+            double deltaX = currentPoint.X - dragStartPoint.X;
 
             // Move the card horizontally
             CardTransform.TranslateX = deltaX;
@@ -148,7 +144,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Views
 
         private void MovieCard_PointerReleased(object sender, PointerRoutedEventArgs e)
         {
-            if (!_isDragging || e.Pointer.PointerId != _activePointerId)
+            if (!isDragging || e.Pointer.PointerId != activePointerId)
             {
                 return;
             }
@@ -163,14 +159,13 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Views
         private void MovieCard_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
         {
             // If user lifts finger outside the card or system steals capture
-            if (_isDragging && e.Pointer.PointerId == _activePointerId)
+            if (isDragging && e.Pointer.PointerId == activePointerId)
             {
                 // Treat as cancelled — snap back (Requirement 6: mid-swipe discard)
                 ResetCardPosition();
-                _isDragging = false;
+                isDragging = false;
             }
         }
-
 
         private void FinalizeSwipe()
         {
@@ -189,7 +184,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Views
                 ResetCardPosition();
             }
 
-            _isDragging = false;
+            isDragging = false;
         }
 
         private void AnimateCardOffScreen(bool isLiked)
@@ -238,7 +233,6 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Views
 
             storyboard.Begin();
         }
-
 
         private void ResetCardPosition()
         {

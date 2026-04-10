@@ -1,9 +1,9 @@
-﻿using Microsoft.Data.SqlClient;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
 using ubb_se_2026_meio_ai.Core.Database;
 using ubb_se_2026_meio_ai.Core.Models;
 
@@ -14,18 +14,18 @@ namespace ubb_se_2026_meio_ai.Core.Repositories
     /// </summary>
     public class MovieRepository : IMovieRepository
     {
-        private readonly ISqlConnectionFactory _connectionFactory;
+        private readonly ISqlConnectionFactory connectionFactory;
 
         public MovieRepository(ISqlConnectionFactory connectionFactory)
         {
-            _connectionFactory = connectionFactory;
+            this.connectionFactory = connectionFactory;
         }
 
         public async Task<List<MovieCardModel>> SearchTop10MoviesAsync(string partialMovieName)
         {
             var newMovieResults = new List<MovieCardModel>();
 
-            await using var connection = await _connectionFactory.CreateConnectionAsync();
+            await using var connection = await connectionFactory.CreateConnectionAsync();
 
             string sqlInstruction = "SELECT TOP 10 MovieId, Title, PosterUrl, PrimaryGenre, ReleaseYear, Description FROM Movie WHERE Title LIKE @SearchTerm";
             await using var sqlCommand = new SqlCommand(sqlInstruction, connection);

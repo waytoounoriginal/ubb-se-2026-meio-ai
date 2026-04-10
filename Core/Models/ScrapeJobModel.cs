@@ -1,6 +1,5 @@
 namespace ubb_se_2026_meio_ai.Core.Models
 {
-    
     public class ScrapeJobModel
     {
         public int ScrapeJobId { get; set; }

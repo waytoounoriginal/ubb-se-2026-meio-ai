@@ -10,8 +10,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
     /// </summary>
     public class ProfileRepository : IProfileRepository
     {
-
-        private readonly ISqlConnectionFactory _connectionFactory;
+        private readonly ISqlConnectionFactory connectionFactory;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProfileRepository"/> class.
@@ -19,7 +18,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
         /// <param name="connectionFactory">Factory used to create SQL connections.</param>
         public ProfileRepository(ISqlConnectionFactory connectionFactory)
         {
-            this._connectionFactory = connectionFactory;
+            this.connectionFactory = connectionFactory;
         }
 
         /// <summary>
@@ -31,7 +30,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
         private double CalculateLikeToViewRatio(int totalLikes, int totalClipsViewed)
         {
             if (totalClipsViewed == 0)
+            {
                 return 0;
+            }
 
             return (double)totalLikes / totalClipsViewed;
         }
@@ -46,7 +47,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                 WHERE UserId = @UserId
             ";
 
-            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var connection = await this.connectionFactory.CreateConnectionAsync();
             await using var getProfileCommand = new SqlCommand(getProfileSql, connection);
             getProfileCommand.Parameters.AddWithValue("@UserId", userId);
 
@@ -71,7 +72,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                 WHERE UserId = @UserId
             ";
 
-            await using var connection = await _connectionFactory.CreateConnectionAsync();
+            await using var connection = await connectionFactory.CreateConnectionAsync();
             await using var command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@UserId", userId);
 
@@ -119,7 +120,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
         {
             const string checkProfileExistsSql = "SELECT 1 FROM UserProfile WHERE UserId = @UserId";
 
-            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var connection = await this.connectionFactory.CreateConnectionAsync();
             await using var checkProfileExistsCommand = new SqlCommand(checkProfileExistsSql, connection);
             checkProfileExistsCommand.Parameters.AddWithValue("@UserId", userId);
             var profileExistsResult = await checkProfileExistsCommand.ExecuteScalarAsync();
@@ -141,7 +142,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                      @TotalClipsViewed, @LikeToViewRatio, SYSUTCDATETIME())
             ";
 
-            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var connection = await this.connectionFactory.CreateConnectionAsync();
             await using var insertProfileCommand = new SqlCommand(insertProfileSql, connection);
             insertProfileCommand.Parameters.AddWithValue("@UserId", profile.UserId);
             insertProfileCommand.Parameters.AddWithValue("@TotalLikes", profile.TotalLikes);
@@ -169,7 +170,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                 WHERE UserId = @UserId
             ";
 
-            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var connection = await this.connectionFactory.CreateConnectionAsync();
             await using var updateProfileCommand = new SqlCommand(updateProfileSql, connection);
             updateProfileCommand.Parameters.AddWithValue("@UserId", profile.UserId);
             updateProfileCommand.Parameters.AddWithValue("@TotalLikes", profile.TotalLikes);

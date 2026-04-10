@@ -19,15 +19,15 @@ namespace ubb_se_2026_meio_ai
     /// </summary>
     public sealed partial class MainWindow : Window
     {
-        private static readonly Dictionary<string, Type> PageMap = new()
+        private static readonly Dictionary<string, Type> PageMap = new ()
         {
-            ["ReelsUpload"]      = typeof(ReelsUploadPage),
-            ["TrailerScraping"]  = typeof(TrailerScrapingPage),
-            ["ReelsEditing"]     = typeof(ReelsEditingPage),
-            ["MovieSwipe"]       = typeof(MovieSwipeView),
-            ["MovieTournament"]  = typeof(MovieTournamentPage),
+            ["ReelsUpload"] = typeof(ReelsUploadPage),
+            ["TrailerScraping"] = typeof(TrailerScrapingPage),
+            ["ReelsEditing"] = typeof(ReelsEditingPage),
+            ["MovieSwipe"] = typeof(MovieSwipeView),
+            ["MovieTournament"] = typeof(MovieTournamentPage),
             ["PersonalityMatch"] = typeof(PersonalityMatchPage),
-            ["ReelsFeed"]        = typeof(ReelsFeedPage),
+            ["ReelsFeed"] = typeof(ReelsFeedPage),
         };
 
         public MainWindow()
@@ -47,10 +47,22 @@ namespace ubb_se_2026_meio_ai
                 ReelItemView.IsAppClosing = true;
 
                 // Dispose all prefetched MediaSource COM objects
-                try { (App.Services.GetService<IClipPlaybackService>() as IDisposable)?.Dispose(); } catch { }
+                try
+                {
+                    (App.Services.GetService<IClipPlaybackService>() as IDisposable)?.Dispose();
+                }
+                catch
+                {
+                }
 
                 // Walk the visual tree and dispose every MediaPlayer synchronously
-                try { DisposeAllMediaPlayers(ContentFrame); } catch { }
+                try
+                {
+                    DisposeAllMediaPlayers(ContentFrame);
+                }
+                catch
+                {
+                }
 
                 // Do NOT set ContentFrame.Content = null — it triggers Unloaded events
                 // that race with the disposal we just did. The window is closing anyway.
@@ -62,7 +74,10 @@ namespace ubb_se_2026_meio_ai
         /// </summary>
         private static void DisposeAllMediaPlayers(DependencyObject root)
         {
-            if (root == null) return;
+            if (root == null)
+            {
+                return;
+            }
 
             if (root is ReelItemView reelItem)
             {

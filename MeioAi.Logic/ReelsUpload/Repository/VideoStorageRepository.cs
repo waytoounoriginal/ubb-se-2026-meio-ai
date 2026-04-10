@@ -1,8 +1,8 @@
-﻿using Microsoft.Data.SqlClient;
-using System;
+﻿using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
 using Microsoft.Data.SqlClient;
 using ubb_se_2026_meio_ai.Core.Database;
 using ubb_se_2026_meio_ai.Core.Models;
@@ -14,16 +14,16 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Repository
     /// </summary>
     public class VideoStorageRepository : IVideoStorageRepository
     {
-        private readonly ISqlConnectionFactory _sqlConnectionFactory;
+        private readonly ISqlConnectionFactory sqlConnectionFactory;
 
         public VideoStorageRepository(ISqlConnectionFactory sqlConnectionFactory)
         {
-            this._sqlConnectionFactory = sqlConnectionFactory;
+            this.sqlConnectionFactory = sqlConnectionFactory;
         }
 
         public async Task<ReelModel> InsertReelAsync(ReelModel reel)
         {
-            await using var databaseConnection = await _sqlConnectionFactory.CreateConnectionAsync();
+            await using var databaseConnection = await sqlConnectionFactory.CreateConnectionAsync();
 
             string sqlInsertInstruction = @"
                 INSERT INTO Reel (MovieId, CreatorUserId, VideoUrl, ThumbnailUrl, Title, Caption, FeatureDurationSeconds, CropDataJson, BackgroundMusicId, Source, CreatedAt)
@@ -34,9 +34,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Repository
             await using var sqlCommand = new SqlCommand(sqlInsertInstruction, databaseConnection);
 
             // Use the data from the passed-in ReelModel
-            string movieIdParameter = "@MovieId", creatorIdParameter = "@CreatorUserId", videoUrlParameter = "@VideoUrl", 
-                thumbnailUrpParamater = "@ThumbnailUrl", titleParameter = "@Title", captionParamater = "@Caption", 
-                featureDurationSecondsParamater = "@FeatureDurationSeconds", cropDataParamater = "@CropDataJson", 
+            string movieIdParameter = "@MovieId", creatorIdParameter = "@CreatorUserId", videoUrlParameter = "@VideoUrl",
+                thumbnailUrpParamater = "@ThumbnailUrl", titleParameter = "@Title", captionParamater = "@Caption",
+                featureDurationSecondsParamater = "@FeatureDurationSeconds", cropDataParamater = "@CropDataJson",
                 backgroundMusicParameter = "@BackgroundMusicId", sourceParameter = "@Source";
 
             sqlCommand.Parameters.AddWithValue(movieIdParameter, reel.MovieId);

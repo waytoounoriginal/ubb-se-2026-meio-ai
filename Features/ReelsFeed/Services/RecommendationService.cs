@@ -13,7 +13,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
     public class RecommendationService : IRecommendationService
     {
         private const int RecentlyLikedDaysWindow = 7;
-        private readonly IRecommendationRepository _recommendationRepository;
+        private readonly IRecommendationRepository recommendationRepository;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RecommendationService"/> class.
@@ -21,14 +21,14 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
         /// <param name="recommendationRepository">Repository used to load recommendation inputs.</param>
         public RecommendationService(IRecommendationRepository recommendationRepository)
         {
-            this._recommendationRepository = recommendationRepository;
+            this.recommendationRepository = recommendationRepository;
         }
 
         /// <inheritdoc />
         public async Task<IList<ReelModel>> GetRecommendedReelsAsync(int userId, int count)
         {
             // Choose recommendation strategy based on whether user preference history exists.
-            bool userHasPreferences = await this._recommendationRepository.UserHasPreferencesAsync(userId);
+            bool userHasPreferences = await this.recommendationRepository.UserHasPreferencesAsync(userId);
 
             return userHasPreferences
                 ? await this.GetPersonalizedReelsAsync(userId, count)
@@ -41,8 +41,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
         /// </summary>
         private async Task<IList<ReelModel>> GetPersonalizedReelsAsync(int userId, int count)
         {
-            var allReels = await this._recommendationRepository.GetAllReelsAsync();
-            var userPreferenceScores = await this._recommendationRepository.GetUserPreferenceScoresAsync(userId);
+            var allReels = await this.recommendationRepository.GetAllReelsAsync();
+            var userPreferenceScores = await this.recommendationRepository.GetUserPreferenceScoresAsync(userId);
 
             return allReels
                 .OrderByDescending(reel =>
@@ -59,9 +59,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
         /// </summary>
         private async Task<IList<ReelModel>> GetColdStartReelsAsync(int userId, int count)
         {
-            var allReels = await this._recommendationRepository.GetAllReelsAsync();
-            var recentInteractions = await this._recommendationRepository.GetLikesWithinDaysAsync(RecentlyLikedDaysWindow);
-            
+            var allReels = await this.recommendationRepository.GetAllReelsAsync();
+            var recentInteractions = await this.recommendationRepository.GetLikesWithinDaysAsync(RecentlyLikedDaysWindow);
+
             // Aggregate likes by reel within the recent window
             var recentLikeCountsByReelId = recentInteractions
                 .GroupBy(interaction => interaction.ReelId)
@@ -74,6 +74,5 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
                 .Take(count)
                 .ToList();
         }
-
     }
 }

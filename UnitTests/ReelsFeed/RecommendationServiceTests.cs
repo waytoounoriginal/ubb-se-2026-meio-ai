@@ -190,8 +190,7 @@ namespace UnitTests.ReelsFeed
                 {
                     new () { MovieId = 0 },
                     new () { MovieId = 1 },
-                }
-                );
+                });
 
             mockedRecommendationRepository
                 .Setup(repository => repository.GetUserPreferenceScoresAsync(USER_ID))
@@ -220,12 +219,11 @@ namespace UnitTests.ReelsFeed
 
             mockedRecommendationRepository
                 .Setup(repository => repository.GetAllReelsAsync())
-                .ReturnsAsync(new List<ReelModel>() 
+                .ReturnsAsync(new List<ReelModel>()
                 {
                     new () { MovieId = 0 },
                     new () { MovieId = 1 },
-                }
-                );
+                });
 
             mockedRecommendationRepository
                 .Setup(repository => repository.GetLikesWithinDaysAsync(It.IsAny<int>()))

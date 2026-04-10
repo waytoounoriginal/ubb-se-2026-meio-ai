@@ -26,8 +26,7 @@ namespace UnitTests.ReelsFeed
 
             var service = new ReelInteractionService(
                 mockedInteractionRepository.Object,
-                mockedPreferenceRepository.Object
-            );
+                mockedPreferenceRepository.Object);
 
             await service.ToggleLikeAsync(0, 0);
 
@@ -58,8 +57,7 @@ namespace UnitTests.ReelsFeed
 
             var service = new ReelInteractionService(
                 mockedInteractionRepository.Object,
-                mockedPreferenceRepository.Object
-            );
+                mockedPreferenceRepository.Object);
 
             await service.ToggleLikeAsync(0, 0);
 
@@ -85,8 +83,7 @@ namespace UnitTests.ReelsFeed
 
             var service = new ReelInteractionService(
                 mockedInteractionRepository.Object,
-                mockedPreferenceRepository.Object
-            );
+                mockedPreferenceRepository.Object);
 
             await service.ToggleLikeAsync(0, 0);
 
@@ -124,8 +121,7 @@ namespace UnitTests.ReelsFeed
 
             var service = new ReelInteractionService(
                 mockedInteractionRepository.Object,
-                mockedPreferenceRepository.Object
-            );
+                mockedPreferenceRepository.Object);
 
             await service.ToggleLikeAsync(USER_ID, 0);
 
@@ -163,8 +159,7 @@ namespace UnitTests.ReelsFeed
 
             var service = new ReelInteractionService(
                 mockedInteractionRepository.Object,
-                mockedPreferenceRepository.Object
-            );
+                mockedPreferenceRepository.Object);
 
             await service.ToggleLikeAsync(USER_ID, 0);
 
@@ -187,8 +182,7 @@ namespace UnitTests.ReelsFeed
 
             var service = new ReelInteractionService(
                 mockedInteractionRepository.Object,
-                mockedPreferenceRepository.Object
-            );
+                mockedPreferenceRepository.Object);
 
             await service.RecordViewAsync(USER_ID, REEL_ID, WATCH_DURATION, WATCH_PERCENTAGE);
 
@@ -221,8 +215,7 @@ namespace UnitTests.ReelsFeed
 
             var service = new ReelInteractionService(
                 mockedInteractionRepository.Object,
-                mockedPreferenceRepository.Object
-            );
+                mockedPreferenceRepository.Object);
 
             var result = await service.GetInteractionAsync(USER_ID, REEL_ID);
 
@@ -245,14 +238,12 @@ namespace UnitTests.ReelsFeed
 
             var service = new ReelInteractionService(
                 mockedInteractionRepository.Object,
-                mockedPreferenceRepository.Object
-            );
+                mockedPreferenceRepository.Object);
 
             var result = await service.GetLikeCountAsync(REEL_ID);
 
             Assert.That(result, Is.EqualTo(EXPECTED_LIKE_COUNT));
             mockedInteractionRepository.Verify(repository => repository.GetLikeCountAsync(REEL_ID), Times.Once);
         }
-
     }
 }

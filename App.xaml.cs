@@ -1,7 +1,7 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI.Xaml;
 using System.Diagnostics;
 using System.IO;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 using ubb_se_2026_meio_ai.Core.Database;
 using ubb_se_2026_meio_ai.Core.Platform;
 using ubb_se_2026_meio_ai.Core.Repositories;
@@ -42,9 +42,9 @@ namespace ubb_se_2026_meio_ai
         /// </summary>
         public static IServiceProvider Services { get; private set; } = null!;
 
-        private Window? m_window;
+        private Window? window;
 
-        public static Window MainWindow => (Current as App)?.m_window
+        public static Window MainWindow => (Current as App)?.window
             ?? throw new InvalidOperationException("Main window has not been initialized yet.");
 
         public App()
@@ -54,12 +54,14 @@ namespace ubb_se_2026_meio_ai
             {
                 try
                 {
-                    Directory.CreateDirectory(Path.GetDirectoryName(CrashLogPath)!);
+                    Directory.CreateDirectory(Path.GetDirectoryName(CrashLogPath) !);
                     File.AppendAllText(CrashLogPath,
                         $"[{DateTime.Now:HH:mm:ss.fff}] FirstChance: {e.Exception.GetType().Name}: {e.Exception.Message}\n" +
                         $"  {e.Exception.StackTrace?.Split('\n').FirstOrDefault()?.Trim()}\n");
                 }
-                catch { /* logging must never crash */ }
+                catch
+                { /* logging must never crash */
+                }
             };
 
             AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
@@ -67,11 +69,13 @@ namespace ubb_se_2026_meio_ai
                 try
                 {
                     var ex = e.ExceptionObject as Exception;
-                    Directory.CreateDirectory(Path.GetDirectoryName(CrashLogPath)!);
+                    Directory.CreateDirectory(Path.GetDirectoryName(CrashLogPath) !);
                     File.AppendAllText(CrashLogPath,
                         $"[{DateTime.Now:HH:mm:ss.fff}] UNHANDLED (CLR): {ex?.GetType().Name}: {ex?.Message}\n{ex?.StackTrace}\n\n");
                 }
-                catch { }
+                catch
+                {
+                }
             };
 
             this.InitializeComponent();
@@ -87,7 +91,9 @@ namespace ubb_se_2026_meio_ai
                     File.AppendAllText(CrashLogPath,
                         $"[{DateTime.Now:HH:mm:ss.fff}] WinUI UnhandledException: {e.Exception.GetType().Name}: {e.Exception.Message}\n{e.Exception.StackTrace}\n\n");
                 }
-                catch { }
+                catch
+                {
+                }
                 e.Handled = true;
             };
 
@@ -116,10 +122,10 @@ namespace ubb_se_2026_meio_ai
             // Ensure that the appdata folder is created
             string appFolder = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "MeioAI"
-                );
+                "MeioAI");
 
-            if (!Directory.Exists(appFolder)) {
+            if (!Directory.Exists(appFolder))
+            {
                 Directory.CreateDirectory(appFolder);
             }
 
@@ -138,8 +144,8 @@ namespace ubb_se_2026_meio_ai
                     // Keep the app running so the UI still opens even when LocalDB is unavailable.
                 }
 
-                m_window = new MainWindow();
-                m_window.Activate();
+                window = new MainWindow();
+                window.Activate();
             }
             catch (Exception ex)
             {
@@ -148,7 +154,9 @@ namespace ubb_se_2026_meio_ai
                     File.AppendAllText(CrashLogPath,
                         $"[{DateTime.Now:HH:mm:ss.fff}] OnLaunched FAILED: {ex}\n\n");
                 }
-                catch { }
+                catch
+                {
+                }
             }
         }
 
@@ -158,11 +166,10 @@ namespace ubb_se_2026_meio_ai
         /// </summary>
         private static string ResolveYouTubeApiKey()
         {
-            //if (!string.IsNullOrWhiteSpace(YouTubeApiKey))
-            //{
+            // if (!string.IsNullOrWhiteSpace(YouTubeApiKey))
+            // {
             //    return YouTubeApiKey;
-            //}
-
+            // }
             return Environment.GetEnvironmentVariable("YOUTUBE_API_KEY") ?? string.Empty;
         }
 

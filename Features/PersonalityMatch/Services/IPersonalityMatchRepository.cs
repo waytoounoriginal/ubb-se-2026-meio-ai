@@ -3,7 +3,7 @@ using ubb_se_2026_meio_ai.Features.PersonalityMatch.Models;
 namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
 {
     /// <summary>
-    /// Defines the data access contract for the personality match feature, providing methods to retrieve user preferences, 
+    /// Defines the data access contract for the personality match feature, providing methods to retrieve user preferences,
     /// profiles, and movie information required for computing and displaying personality match results.
     /// </summary>
     public interface IPersonalityMatchRepository

@@ -172,7 +172,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
             for (int index = 0; index < pairCount; index++)
             {
                 this.activeTournamentState!.PendingMatches.Add(
-                    new MatchPair(movies[index * 2], movies[index * 2 + 1]));
+                    new MatchPair(movies[index * 2], movies[(index * 2) + 1]));
             }
 
             if (hasByeMatch)

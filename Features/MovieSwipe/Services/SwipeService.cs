@@ -20,13 +20,13 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
         private const int SkippedIndicator = -1;
 
         /// <summary> The preference repository for data persistence. </summary>
-        private readonly IPreferenceRepository _preferenceRepository;
+        private readonly IPreferenceRepository preferenceRepository;
 
         /// <summary> Initializes a new instance of the <see cref="SwipeService"/> class. </summary>
         /// <param name="preferenceRepository">The preference repository.</param>
         public SwipeService(IPreferenceRepository preferenceRepository)
         {
-            _preferenceRepository = preferenceRepository;
+            this.preferenceRepository = preferenceRepository;
         }
 
         /// <inheritdoc />
@@ -43,13 +43,13 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
                 ChangeFromPreviousValue = isLiked ? LikedIndicator : SkippedIndicator
             };
 
-            await _preferenceRepository.UpsertPreferenceAsync(preference);
+            await preferenceRepository.UpsertPreferenceAsync(preference);
         }
 
         public async Task<List<MovieCardModel>> GetMovieFeedAsync(int userId, int count)
         {
             // This satisfies your "DelegatesToRepository" test
-            return await _preferenceRepository.GetMovieFeedAsync(userId, count);
+            return await preferenceRepository.GetMovieFeedAsync(userId, count);
         }
     }
 }

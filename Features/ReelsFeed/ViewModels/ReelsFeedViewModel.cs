@@ -26,38 +26,38 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
         private const double MaxWatchRatio = 1.0;
         private const double PercentageMultiplier = 100.0;
 
-        private readonly IRecommendationService _recommendationService;
-        private readonly IClipPlaybackService _clipPlaybackService;
-        private readonly IReelInteractionService _reelInteractionService;
-        private readonly Dictionary<string, MediaPlaybackItem> _prefetchedPlaybackItems =
+        private readonly IRecommendationService recommendationService;
+        private readonly IClipPlaybackService clipPlaybackService;
+        private readonly IReelInteractionService reelInteractionService;
+        private readonly Dictionary<string, MediaPlaybackItem> prefetchedPlaybackItems =
             new Dictionary<string, MediaPlaybackItem>(StringComparer.OrdinalIgnoreCase);
-        private readonly object _prefetchLock = new ();
+        private readonly object prefetchLock = new ();
 
         /// <summary>Tracks wall-clock watch time for the currently visible reel.</summary>
-        private readonly Stopwatch _watchStopwatch = new ();
-        private ReelModel? _previousReel;
+        private readonly Stopwatch watchStopwatch = new ();
+        private ReelModel? previousReel;
 
         [ObservableProperty]
-        private string _pageTitle = AppMessages.ReelsFeedPageTitle;
+        private string pageTitle = AppMessages.ReelsFeedPageTitle;
 
         [ObservableProperty]
-        private string _statusMessage = AppMessages.ReelsFeedInitialStatus;
+        private string statusMessage = AppMessages.ReelsFeedInitialStatus;
 
         [ObservableProperty]
-        private bool _isLoading;
+        private bool isLoading;
 
         [ObservableProperty]
-        private string? _errorMessage;
+        private string? errorMessage;
 
         /// <summary>Gets a value indicating whether <see cref="ErrorMessage"/> has a value.</summary>
         public bool HasError => !string.IsNullOrEmpty(this.ErrorMessage);
 
         /// <summary>Visibility helper: true when feed loaded successfully but returned zero clips.</summary>
         [ObservableProperty]
-        private bool _isEmpty;
+        private bool isEmpty;
 
         [ObservableProperty]
-        private ReelModel? _currentReel;
+        private ReelModel? currentReel;
 
         partial void OnErrorMessageChanged(string? value) => this.OnPropertyChanged(nameof(HasError));
 
@@ -77,9 +77,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
             IClipPlaybackService clipPlaybackService,
             IReelInteractionService reelInteractionService)
         {
-            this._recommendationService = recommendationService;
-            this._clipPlaybackService = clipPlaybackService;
-            this._reelInteractionService = reelInteractionService;
+            this.recommendationService = recommendationService;
+            this.clipPlaybackService = clipPlaybackService;
+            this.reelInteractionService = reelInteractionService;
         }
 
         /// <summary>
@@ -93,14 +93,14 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
             this.ErrorMessage = null;
             this.IsEmpty = false;
             this.ReelQueue.Clear();
-            lock (this._prefetchLock)
+            lock (this.prefetchLock)
             {
-                this._prefetchedPlaybackItems.Clear();
+                this.prefetchedPlaybackItems.Clear();
             }
 
             try
             {
-                var recommendedReels = await this._recommendationService.GetRecommendedReelsAsync(MockUserId, RecommendedReelCount);
+                var recommendedReels = await this.recommendationService.GetRecommendedReelsAsync(MockUserId, RecommendedReelCount);
                 foreach (var recommendedReel in recommendedReels)
                 {
                     this.ReelQueue.Add(recommendedReel);
@@ -112,8 +112,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
                 if (this.ReelQueue.Count > 0)
                 {
                     this.CurrentReel = this.ReelQueue.First();
-                    this._previousReel = this.CurrentReel;
-                    this._watchStopwatch.Restart();
+                    this.previousReel = this.CurrentReel;
+                    this.watchStopwatch.Restart();
                     this.StatusMessage = string.Empty;
                     this.PrefetchNearby(InitialQueueIndex);
                 }
@@ -167,27 +167,27 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
                 return;
             }
 
-            lock (this._prefetchLock)
+            lock (this.prefetchLock)
             {
-                if (this._prefetchedPlaybackItems.ContainsKey(videoUrl))
+                if (this.prefetchedPlaybackItems.ContainsKey(videoUrl))
                 {
                     return;
                 }
             }
 
-            await this._clipPlaybackService.PrefetchClipAsync(videoUrl);
+            await this.clipPlaybackService.PrefetchClipAsync(videoUrl);
 
             try
             {
-                var transmission = this._clipPlaybackService.GetClipTransmission(videoUrl);
+                var transmission = this.clipPlaybackService.GetClipTransmission(videoUrl);
                 var mediaSource = MediaSource.CreateFromUri(new Uri(transmission.VideoUrl));
                 var playbackItem = new MediaPlaybackItem(mediaSource);
 
-                lock (this._prefetchLock)
+                lock (this.prefetchLock)
                 {
-                    if (!this._prefetchedPlaybackItems.ContainsKey(videoUrl))
+                    if (!this.prefetchedPlaybackItems.ContainsKey(videoUrl))
                     {
-                        this._prefetchedPlaybackItems[videoUrl] = playbackItem;
+                        this.prefetchedPlaybackItems[videoUrl] = playbackItem;
                     }
                 }
             }
@@ -205,8 +205,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
         {
             this.FlushWatchData();
             this.CurrentReel = newCurrent;
-            this._previousReel = newCurrent;
-            this._watchStopwatch.Restart();
+            this.previousReel = newCurrent;
+            this.watchStopwatch.Restart();
 
             var queueIndex = this.ReelQueue.IndexOf(newCurrent);
             if (queueIndex >= 0)
@@ -224,8 +224,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
         {
             this.FlushWatchData();
             this.CurrentReel = newCurrent;
-            this._previousReel = newCurrent;
-            this._watchStopwatch.Restart();
+            this.previousReel = newCurrent;
+            this.watchStopwatch.Restart();
 
             var queueIndex = this.ReelQueue.IndexOf(newCurrent);
             if (queueIndex >= 0)
@@ -240,14 +240,14 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
         /// </summary>
         private void FlushWatchData()
         {
-            this._watchStopwatch.Stop();
-            var previouslyVisibleReel = this._previousReel;
+            this.watchStopwatch.Stop();
+            var previouslyVisibleReel = this.previousReel;
             if (previouslyVisibleReel == null)
             {
                 return;
             }
 
-            double watchedSeconds = this._watchStopwatch.Elapsed.TotalSeconds;
+            double watchedSeconds = this.watchStopwatch.Elapsed.TotalSeconds;
             if (watchedSeconds < MinTrackedWatchSeconds)
             {
                 return; // ignore trivial flicks
@@ -266,7 +266,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
         {
             try
             {
-                await this._reelInteractionService.RecordViewAsync(MockUserId, reelId, watchedSeconds, watchPercentage);
+                await this.reelInteractionService.RecordViewAsync(MockUserId, reelId, watchedSeconds, watchPercentage);
             }
             catch
             {
@@ -307,9 +307,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
             {
                 try
                 {
-                    var userInteraction = await this._reelInteractionService.GetInteractionAsync(MockUserId, reelItem.ReelId);
+                    var userInteraction = await this.reelInteractionService.GetInteractionAsync(MockUserId, reelItem.ReelId);
                     reelItem.IsLiked = userInteraction?.IsLiked ?? false;
-                    reelItem.LikeCount = await this._reelInteractionService.GetLikeCountAsync(reelItem.ReelId);
+                    reelItem.LikeCount = await this.reelInteractionService.GetLikeCountAsync(reelItem.ReelId);
                 }
                 catch
                 {
@@ -332,9 +332,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
                 return null;
             }
 
-            lock (this._prefetchLock)
+            lock (this.prefetchLock)
             {
-                if (this._prefetchedPlaybackItems.Remove(videoUrl, out var prefetchedPlaybackItem))
+                if (this.prefetchedPlaybackItems.Remove(videoUrl, out var prefetchedPlaybackItem))
                 {
                     return prefetchedPlaybackItem;
                 }
@@ -342,7 +342,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
 
             try
             {
-                var transmission = this._clipPlaybackService.GetClipTransmission(videoUrl);
+                var transmission = this.clipPlaybackService.GetClipTransmission(videoUrl);
                 var mediaSource = MediaSource.CreateFromUri(new Uri(transmission.VideoUrl));
                 return new MediaPlaybackItem(mediaSource);
             }

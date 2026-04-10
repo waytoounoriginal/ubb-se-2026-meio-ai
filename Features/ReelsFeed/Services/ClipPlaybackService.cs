@@ -7,14 +7,14 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
     /// </summary>
     public class ClipPlaybackService : IClipPlaybackService
     {
-        private readonly HashSet<string> _prefetchedClipUrls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> prefetchedClipUrls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         /// <inheritdoc />
         public Task PrefetchClipAsync(string videoUrl)
         {
             if (!string.IsNullOrWhiteSpace(videoUrl))
             {
-                this._prefetchedClipUrls.Add(videoUrl);
+                this.prefetchedClipUrls.Add(videoUrl);
             }
 
             return Task.CompletedTask;
@@ -28,7 +28,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
         /// <returns>A DTO containing playback transmission metadata.</returns>
         public ClipMediaSourceTransmission GetClipTransmission(string videoUrl)
         {
-            bool wasPrefetched = this._prefetchedClipUrls.Remove(videoUrl);
+            bool wasPrefetched = this.prefetchedClipUrls.Remove(videoUrl);
             return new ClipMediaSourceTransmission
             {
                 VideoUrl = videoUrl,

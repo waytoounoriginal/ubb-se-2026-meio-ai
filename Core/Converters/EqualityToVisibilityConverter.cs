@@ -8,10 +8,12 @@ namespace ubb_se_2026_meio_ai.Core.Converters
         public object Convert(object value, Type targetType, object parameter, string language)
         {
             if (value == null || parameter == null)
+            {
                 return Visibility.Collapsed;
+            }
 
-            return value.ToString() == parameter.ToString() 
-                ? Visibility.Visible 
+            return value.ToString() == parameter.ToString()
+                ? Visibility.Visible
                 : Visibility.Collapsed;
         }
 

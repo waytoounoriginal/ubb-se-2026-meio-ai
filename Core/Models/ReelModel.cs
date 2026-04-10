@@ -4,7 +4,6 @@ namespace ubb_se_2026_meio_ai.Core.Models
 {
     public partial class ReelModel : ObservableObject
     {
-        
         public int ReelId { get; set; }
         public int MovieId { get; set; }
         public int CreatorUserId { get; set; }
@@ -21,11 +20,10 @@ namespace ubb_se_2026_meio_ai.Core.Models
         public DateTime? LastEditedAt { get; set; }
 
         // ── Client-side state (changes at runtime, needs UI notification) ──
+        [ObservableProperty]
+        private bool isLiked;
 
         [ObservableProperty]
-        private bool _isLiked;
-
-        [ObservableProperty]
-        private int _likeCount;
+        private int likeCount;
     }
 }

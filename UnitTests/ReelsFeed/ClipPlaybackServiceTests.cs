@@ -77,6 +77,5 @@ namespace UnitTests.ReelsFeed
             Assert.That(transmission.VideoUrl, Is.EqualTo(INVALID_URL));
             Assert.That(transmission.WasPrefetched, Is.False);
         }
-
     }
 }

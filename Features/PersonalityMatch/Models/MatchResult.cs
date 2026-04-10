@@ -1,7 +1,7 @@
 namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Models
 {
     /// <summary>
-    /// Represents the result of a personality match between the current user and 
+    /// Represents the result of a personality match between the current user and
     /// another user, including the match score and relevant profile information.
     /// </summary>
     public class MatchResult
