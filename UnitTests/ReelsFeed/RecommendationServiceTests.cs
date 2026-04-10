@@ -42,15 +42,15 @@ namespace UnitTests.ReelsFeed
             var mockedRecommendationRepository = new Mock<IRecommendationRepository>();
 
             mockedRecommendationRepository
-                .Setup(x => x.UserHasPreferencesAsync(USER_ID))
+                .Setup(repository => repository.UserHasPreferencesAsync(USER_ID))
                 .ReturnsAsync(true);
 
             mockedRecommendationRepository
-                .Setup(x => x.GetAllReelsAsync())
+                .Setup(repository => repository.GetAllReelsAsync())
                 .ReturnsAsync(allReels);
 
             mockedRecommendationRepository
-                .Setup(x => x.GetUserPreferenceScoresAsync(USER_ID))
+                .Setup(repository => repository.GetUserPreferenceScoresAsync(USER_ID))
                 .ReturnsAsync(preferenceScoresByMovieId);
 
             var service = new RecommendationService(mockedRecommendationRepository.Object);
@@ -107,15 +107,15 @@ namespace UnitTests.ReelsFeed
             var mockedRecommendationRepository = new Mock<IRecommendationRepository>();
 
             mockedRecommendationRepository
-                .Setup(x => x.UserHasPreferencesAsync(USER_ID))
+                .Setup(repository => repository.UserHasPreferencesAsync(USER_ID))
                 .ReturnsAsync(false);
 
             mockedRecommendationRepository
-                .Setup(x => x.GetAllReelsAsync())
+                .Setup(repository => repository.GetAllReelsAsync())
                 .ReturnsAsync(allReels);
 
             mockedRecommendationRepository
-                .Setup(x => x.GetLikesWithinDaysAsync(It.IsAny<int>()))
+                .Setup(repository => repository.GetLikesWithinDaysAsync(It.IsAny<int>()))
                 .ReturnsAsync(recentInteractions);
 
             var service = new RecommendationService(mockedRecommendationRepository.Object);
@@ -154,15 +154,15 @@ namespace UnitTests.ReelsFeed
             var mockedRecommendationRepository = new Mock<IRecommendationRepository>();
 
             mockedRecommendationRepository
-                .Setup(x => x.UserHasPreferencesAsync(USER_ID))
+                .Setup(repository => repository.UserHasPreferencesAsync(USER_ID))
                 .ReturnsAsync(true);
 
             mockedRecommendationRepository
-                .Setup(x => x.GetAllReelsAsync())
+                .Setup(repository => repository.GetAllReelsAsync())
                 .ReturnsAsync(allReels);
 
             mockedRecommendationRepository
-                .Setup(x => x.GetUserPreferenceScoresAsync(USER_ID))
+                .Setup(repository => repository.GetUserPreferenceScoresAsync(USER_ID))
                 .ReturnsAsync(preferenceScoresByMovieId);
 
             var service = new RecommendationService(mockedRecommendationRepository.Object);
@@ -181,11 +181,11 @@ namespace UnitTests.ReelsFeed
             var mockedRecommendationRepository = new Mock<IRecommendationRepository>();
 
             mockedRecommendationRepository
-                .Setup(x => x.UserHasPreferencesAsync(USER_ID))
+                .Setup(repository => repository.UserHasPreferencesAsync(USER_ID))
                 .ReturnsAsync(true);
 
             mockedRecommendationRepository
-                .Setup(x => x.GetAllReelsAsync())
+                .Setup(repository => repository.GetAllReelsAsync())
                 .ReturnsAsync(new List<ReelModel>()
                 {
                     new () { MovieId = 0 },
@@ -194,17 +194,17 @@ namespace UnitTests.ReelsFeed
                 );
 
             mockedRecommendationRepository
-                .Setup(x => x.GetUserPreferenceScoresAsync(USER_ID))
+                .Setup(repository => repository.GetUserPreferenceScoresAsync(USER_ID))
                 .ReturnsAsync(new Dictionary<int, double>());
 
             var service = new RecommendationService(mockedRecommendationRepository.Object);
 
             await service.GetRecommendedReelsAsync(USER_ID, 5);
 
-            mockedRecommendationRepository.Verify(x => x.UserHasPreferencesAsync(USER_ID), Times.Once);
-            mockedRecommendationRepository.Verify(x => x.GetAllReelsAsync(), Times.Once);
-            mockedRecommendationRepository.Verify(x => x.GetUserPreferenceScoresAsync(USER_ID), Times.Once);
-            mockedRecommendationRepository.Verify(x => x.GetLikesWithinDaysAsync(It.IsAny<int>()), Times.Never);
+            mockedRecommendationRepository.Verify(repository => repository.UserHasPreferencesAsync(USER_ID), Times.Once);
+            mockedRecommendationRepository.Verify(repository => repository.GetAllReelsAsync(), Times.Once);
+            mockedRecommendationRepository.Verify(repository => repository.GetUserPreferenceScoresAsync(USER_ID), Times.Once);
+            mockedRecommendationRepository.Verify(repository => repository.GetLikesWithinDaysAsync(It.IsAny<int>()), Times.Never);
         }
 
         [Test]
@@ -215,11 +215,11 @@ namespace UnitTests.ReelsFeed
             var mockedRecommendationRepository = new Mock<IRecommendationRepository>();
 
             mockedRecommendationRepository
-                .Setup(x => x.UserHasPreferencesAsync(USER_ID))
+                .Setup(repository => repository.UserHasPreferencesAsync(USER_ID))
                 .ReturnsAsync(false);
 
             mockedRecommendationRepository
-                .Setup(x => x.GetAllReelsAsync())
+                .Setup(repository => repository.GetAllReelsAsync())
                 .ReturnsAsync(new List<ReelModel>() 
                 {
                     new () { MovieId = 0 },
@@ -228,17 +228,17 @@ namespace UnitTests.ReelsFeed
                 );
 
             mockedRecommendationRepository
-                .Setup(x => x.GetLikesWithinDaysAsync(It.IsAny<int>()))
+                .Setup(repository => repository.GetLikesWithinDaysAsync(It.IsAny<int>()))
                 .ReturnsAsync(new List<UserReelInteractionModel>());
 
             var service = new RecommendationService(mockedRecommendationRepository.Object);
 
             await service.GetRecommendedReelsAsync(USER_ID, 5);
 
-            mockedRecommendationRepository.Verify(x => x.UserHasPreferencesAsync(USER_ID), Times.Once);
-            mockedRecommendationRepository.Verify(x => x.GetAllReelsAsync(), Times.Once);
-            mockedRecommendationRepository.Verify(x => x.GetLikesWithinDaysAsync(It.IsAny<int>()), Times.Once);
-            mockedRecommendationRepository.Verify(x => x.GetUserPreferenceScoresAsync(It.IsAny<int>()), Times.Never);
+            mockedRecommendationRepository.Verify(repository => repository.UserHasPreferencesAsync(USER_ID), Times.Once);
+            mockedRecommendationRepository.Verify(repository => repository.GetAllReelsAsync(), Times.Once);
+            mockedRecommendationRepository.Verify(repository => repository.GetLikesWithinDaysAsync(It.IsAny<int>()), Times.Once);
+            mockedRecommendationRepository.Verify(repository => repository.GetUserPreferenceScoresAsync(It.IsAny<int>()), Times.Never);
         }
     }
 }

@@ -18,7 +18,7 @@ namespace UnitTests.MovieTournament
             this.mockedTournamentLogicService = new Mock<ITournamentLogicService>();
 
             this.mockedTournamentLogicService
-                .Setup(x => x.IsTournamentComplete())
+                .Setup(tournamentLogicService => tournamentLogicService.IsTournamentComplete())
                 .Returns(false);
         }
 
@@ -37,7 +37,7 @@ namespace UnitTests.MovieTournament
         public void Constructor_tournamentNotComplete_winnerMovieIsNull()
         {
             this.mockedTournamentLogicService
-                .Setup(x => x.IsTournamentComplete())
+                .Setup(tournamentLogicService => tournamentLogicService.IsTournamentComplete())
                 .Returns(false);
 
             var viewModel = this.CreateViewModel();
@@ -49,13 +49,13 @@ namespace UnitTests.MovieTournament
         public void Constructor_tournamentNotComplete_doesNotCallGetFinalWinner()
         {
             this.mockedTournamentLogicService
-                .Setup(x => x.IsTournamentComplete())
+                .Setup(tournamentLogicService => tournamentLogicService.IsTournamentComplete())
                 .Returns(false);
 
             this.CreateViewModel();
 
             this.mockedTournamentLogicService.Verify(
-                x => x.GetFinalWinner(),
+                tournamentLogicService => tournamentLogicService.GetFinalWinner(),
                 Times.Never);
         }
 
@@ -65,11 +65,11 @@ namespace UnitTests.MovieTournament
             var winner = new MovieCardModel { MovieId = 1, Title = "The Winner" };
 
             this.mockedTournamentLogicService
-                .Setup(x => x.IsTournamentComplete())
+                .Setup(tournamentLogicService => tournamentLogicService.IsTournamentComplete())
                 .Returns(true);
 
             this.mockedTournamentLogicService
-                .Setup(x => x.GetFinalWinner())
+                .Setup(tournamentLogicService => tournamentLogicService.GetFinalWinner())
                 .Returns(winner);
 
             var viewModel = this.CreateViewModel();
@@ -83,17 +83,17 @@ namespace UnitTests.MovieTournament
             var winner = new MovieCardModel { MovieId = 1, Title = "The Winner" };
 
             this.mockedTournamentLogicService
-                .Setup(x => x.IsTournamentComplete())
+                .Setup(tournamentLogicService => tournamentLogicService.IsTournamentComplete())
                 .Returns(true);
 
             this.mockedTournamentLogicService
-                .Setup(x => x.GetFinalWinner())
+                .Setup(tournamentLogicService => tournamentLogicService.GetFinalWinner())
                 .Returns(winner);
 
             this.CreateViewModel();
 
             this.mockedTournamentLogicService.Verify(
-                x => x.GetFinalWinner(),
+                tournamentLogicService => tournamentLogicService.GetFinalWinner(),
                 Times.Once);
         }
 
@@ -104,7 +104,7 @@ namespace UnitTests.MovieTournament
 
             viewModel.StartAnotherTournament();
 
-            this.mockedTournamentLogicService.Verify(x => x.ResetTournament(), Times.Once);
+            this.mockedTournamentLogicService.Verify(tournamentLogicService => tournamentLogicService.ResetTournament(), Times.Once);
         }
 
         [Test]
@@ -143,7 +143,7 @@ namespace UnitTests.MovieTournament
             {
                 try
                 {
-                    this.mockedTournamentLogicService.Verify(x => x.ResetTournament(), Times.Once);
+                    this.mockedTournamentLogicService.Verify(tournamentLogicService => tournamentLogicService.ResetTournament(), Times.Once);
                     resetCalledBeforeEvent = true;
                 }
                 catch

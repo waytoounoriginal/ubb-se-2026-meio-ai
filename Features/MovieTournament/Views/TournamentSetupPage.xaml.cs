@@ -29,7 +29,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Views
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            await this.ViewModel.InitializeAsync();
+            // await this.ViewModel.InitializeAsync();
         }
 
         /// <summary>

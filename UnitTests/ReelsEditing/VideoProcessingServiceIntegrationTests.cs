@@ -470,7 +470,7 @@ namespace UnitTests.ReelsEditing
                 File.WriteAllText(invalidMediaPath, "invalid probe content");
 
                 MethodInfo method = GetPrivateStaticMethod("TryGetMediaDurationSecondsAsync");
-                var task = (Task<double?>)method.Invoke(null, new object[] { invalidMediaPath, Path.GetTempPath() })!;
+                var task = (Task<double?>)method.Invoke(null, new object[] { invalidMediaPath, Path.GetTempPath() }) !;
                 double? duration = await task;
 
                 Assert.That(duration, Is.Null);
@@ -487,12 +487,12 @@ namespace UnitTests.ReelsEditing
             EnsureBinaryAvailableOrIgnore("ffprobe");
 
             string fixtureVideoPath = GetFixtureVideoPath();
-            string workingDirectory = Path.GetDirectoryName(fixtureVideoPath)!;
+            string workingDirectory = Path.GetDirectoryName(fixtureVideoPath) !;
 
             SetPrivateStaticField("FfmpegTimeout", TimeSpan.FromMilliseconds(1));
 
             MethodInfo method = GetPrivateStaticMethod("TryGetMediaDurationSecondsAsync");
-            var task = (Task<double?>)method.Invoke(null, new object[] { fixtureVideoPath, workingDirectory })!;
+            var task = (Task<double?>)method.Invoke(null, new object[] { fixtureVideoPath, workingDirectory }) !;
             double? duration = await task;
 
             Assert.That(duration, Is.Null);
@@ -514,7 +514,7 @@ namespace UnitTests.ReelsEditing
             SetPrivateStaticField("FfmpegTimeout", TimeSpan.FromMilliseconds(1));
 
             MethodInfo method = GetPrivateStaticMethod("RunFfmpegAsync");
-            var task = (Task)method.Invoke(null, new object[] { "/c ping 127.0.0.1 -n 6 > nul", Path.GetTempPath() })!;
+            var task = (Task)method.Invoke(null, new object[] { "/c ping 127.0.0.1 -n 6 > nul", Path.GetTempPath() }) !;
 
             var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await task);
 
@@ -529,7 +529,7 @@ namespace UnitTests.ReelsEditing
             File.WriteAllText(localFfmpegPath, "stub");
 
             MethodInfo method = GetPrivateStaticMethod("ResolveFfmpegPath");
-            string resolved = (string)method.Invoke(null, null)!;
+            string resolved = (string)method.Invoke(null, null) !;
 
             Assert.That(resolved, Is.EqualTo(localFfmpegPath));
         }
@@ -541,7 +541,7 @@ namespace UnitTests.ReelsEditing
             File.WriteAllText(localFfprobePath, "stub");
 
             MethodInfo method = GetPrivateStaticMethod("ResolveFfprobePath");
-            string resolved = (string)method.Invoke(null, null)!;
+            string resolved = (string)method.Invoke(null, null) !;
 
             Assert.That(resolved, Is.EqualTo(localFfprobePath));
         }
@@ -553,7 +553,7 @@ namespace UnitTests.ReelsEditing
             string localPath = Path.Combine(Path.GetTempPath(), "sample.mp4");
             string fileUri = new Uri(localPath).AbsoluteUri;
 
-            string resolved = (string)method.Invoke(null, new object[] { fileUri })!;
+            string resolved = (string)method.Invoke(null, new object[] { fileUri }) !;
 
             Assert.That(resolved, Is.EqualTo(localPath));
         }
@@ -564,7 +564,7 @@ namespace UnitTests.ReelsEditing
             MethodInfo method = GetPrivateStaticMethod("ResolveMediaInput");
             string value = "relative/path/video.mp4";
 
-            string resolved = (string)method.Invoke(null, new object[] { value })!;
+            string resolved = (string)method.Invoke(null, new object[] { value }) !;
 
             Assert.That(resolved, Is.EqualTo(value));
         }
@@ -574,9 +574,9 @@ namespace UnitTests.ReelsEditing
         {
             MethodInfo method = GetPrivateStaticMethod("IsHttpUrl");
 
-            bool http = (bool)method.Invoke(null, new object[] { "http://example.com" })!;
-            bool https = (bool)method.Invoke(null, new object[] { "https://example.com" })!;
-            bool invalid = (bool)method.Invoke(null, new object[] { "not_a_uri" })!;
+            bool http = (bool)method.Invoke(null, new object[] { "http://example.com" }) !;
+            bool https = (bool)method.Invoke(null, new object[] { "https://example.com" }) !;
+            bool invalid = (bool)method.Invoke(null, new object[] { "not_a_uri" }) !;
 
             Assert.That(http, Is.True);
             Assert.That(https, Is.True);
@@ -589,7 +589,7 @@ namespace UnitTests.ReelsEditing
             MethodInfo method = GetPrivateStaticMethod("ReadCropData");
             string cropJson = "{\"x\":\"1919\",\"y\":\"1079\",\"width\":\"100\",\"height\":\"100\"}";
 
-            var result = ((int CropX, int CropY, int CropWidth, int CropHeight))method.Invoke(null, new object[] { cropJson })!;
+            var result = ((int CropX, int CropY, int CropWidth, int CropHeight))method.Invoke(null, new object[] { cropJson }) !;
 
             Assert.That(result.CropX, Is.EqualTo(1919));
             Assert.That(result.CropY, Is.EqualTo(1079));
@@ -603,7 +603,7 @@ namespace UnitTests.ReelsEditing
             MethodInfo readIntMethod = GetPrivateStaticMethod("ReadInt");
             using var document = System.Text.Json.JsonDocument.Parse("{\"present\":123}");
 
-            int result = (int)readIntMethod.Invoke(null, new object[] { document.RootElement, "missing", 777 })!;
+            int result = (int)readIntMethod.Invoke(null, new object[] { document.RootElement, "missing", 777 }) !;
 
             Assert.That(result, Is.EqualTo(777));
         }
@@ -614,7 +614,7 @@ namespace UnitTests.ReelsEditing
             MethodInfo readIntMethod = GetPrivateStaticMethod("ReadInt");
             using var document = System.Text.Json.JsonDocument.Parse("{\"value\":\"abc\"}");
 
-            int result = (int)readIntMethod.Invoke(null, new object[] { document.RootElement, "value", 555 })!;
+            int result = (int)readIntMethod.Invoke(null, new object[] { document.RootElement, "value", 555 }) !;
 
             Assert.That(result, Is.EqualTo(555));
         }
@@ -635,7 +635,7 @@ namespace UnitTests.ReelsEditing
             try
             {
                 using var lockStream = new FileStream(sourcePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
-                string finalPath = (string)method.Invoke(null, new object[] { sourcePath, tempPath, "_fallback_" })!;
+                string finalPath = (string)method.Invoke(null, new object[] { sourcePath, tempPath, "_fallback_" }) !;
 
                 Assert.That(finalPath, Is.Not.EqualTo(sourcePath));
                 Assert.That(finalPath, Does.Contain("_fallback_"));
@@ -788,7 +788,7 @@ namespace UnitTests.ReelsEditing
                 durationSeconds,
                 destinationPath);
 
-            await RunProcessAndRequireSuccessAsync("ffmpeg", arguments, Path.GetDirectoryName(destinationPath)!);
+            await RunProcessAndRequireSuccessAsync("ffmpeg", arguments, Path.GetDirectoryName(destinationPath) !);
 
             Assert.That(File.Exists(destinationPath), Is.True, "Expected generated audio fixture file to exist.");
         }
@@ -809,7 +809,7 @@ namespace UnitTests.ReelsEditing
                 RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                WorkingDirectory = Path.GetDirectoryName(outputPath)!,
+                WorkingDirectory = Path.GetDirectoryName(outputPath) !,
             };
 
             using var process = Process.Start(processStartInfo)
@@ -833,7 +833,7 @@ namespace UnitTests.ReelsEditing
                 "-v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 \"{0}\"",
                 videoPath);
 
-            string output = await RunProcessAndCaptureOutputAsync("ffprobe", arguments, Path.GetDirectoryName(videoPath)!);
+            string output = await RunProcessAndCaptureOutputAsync("ffprobe", arguments, Path.GetDirectoryName(videoPath) !);
             string trimmed = output.Trim();
 
             string[] parts = trimmed.Split('x', StringSplitOptions.RemoveEmptyEntries);
@@ -854,7 +854,7 @@ namespace UnitTests.ReelsEditing
                 "-v error -select_streams a:0 -show_entries stream=codec_type -of default=noprint_wrappers=1:nokey=1 \"{0}\"",
                 videoPath);
 
-            string output = await RunProcessAndCaptureOutputAsync("ffprobe", arguments, Path.GetDirectoryName(videoPath)!);
+            string output = await RunProcessAndCaptureOutputAsync("ffprobe", arguments, Path.GetDirectoryName(videoPath) !);
             return output.Contains("audio", StringComparison.OrdinalIgnoreCase);
         }
 
@@ -865,7 +865,7 @@ namespace UnitTests.ReelsEditing
                 "-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"{0}\"",
                 mediaPath);
 
-            string output = await RunProcessAndCaptureOutputAsync("ffprobe", arguments, Path.GetDirectoryName(mediaPath)!);
+            string output = await RunProcessAndCaptureOutputAsync("ffprobe", arguments, Path.GetDirectoryName(mediaPath) !);
             if (double.TryParse(output.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var duration))
             {
                 return duration;

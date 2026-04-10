@@ -21,7 +21,7 @@ namespace UnitTests.ReelsFeed
             var mockedProfileRepository = new Mock<IProfileRepository>();
 
             mockedProfileRepository
-                .Setup(x => x.GetProfileAsync(It.IsAny<int>()))
+                .Setup(repository => repository.GetProfileAsync(It.IsAny<int>()))
                 .ReturnsAsync(EXPECTED_MODEL);
 
             var result = await new EngagementProfileService(mockedProfileRepository.Object).GetProfileAsync(USER_ID);
@@ -38,7 +38,7 @@ namespace UnitTests.ReelsFeed
             var mockedProfileRepository = new Mock<IProfileRepository>();
 
             mockedProfileRepository
-                .Setup(x => x.GetProfileAsync(It.IsAny<int>()))
+                .Setup(repository => repository.GetProfileAsync(It.IsAny<int>()))
                 .ReturnsAsync((UserProfileModel?)null);
 
             var result = await new EngagementProfileService(mockedProfileRepository.Object).GetProfileAsync(USER_ID);
@@ -54,12 +54,12 @@ namespace UnitTests.ReelsFeed
             var mockedProfileRepository = new Mock<IProfileRepository>();
 
             mockedProfileRepository
-                .Setup(x => x.GetProfileAsync(It.IsAny<int>()))
+                .Setup(repository => repository.GetProfileAsync(It.IsAny<int>()))
                 .ReturnsAsync((UserProfileModel?)null);
 
             await new EngagementProfileService(mockedProfileRepository.Object).GetProfileAsync(USER_ID);
 
-            mockedProfileRepository.Verify(x => x.GetProfileAsync(USER_ID), Times.Once);
+            mockedProfileRepository.Verify(repository => repository.GetProfileAsync(USER_ID), Times.Once);
         }
 
         [Test]
@@ -71,13 +71,13 @@ namespace UnitTests.ReelsFeed
             var mockedProfileRepository = new Mock<IProfileRepository>();
 
             mockedProfileRepository
-                .Setup(x => x.BuildProfileFromInteractionsAsync(USER_ID))
+                .Setup(repository => repository.BuildProfileFromInteractionsAsync(USER_ID))
                 .ReturnsAsync(aggregatedProfile);
 
             await new EngagementProfileService(mockedProfileRepository.Object).RefreshProfileAsync(USER_ID);
 
-            mockedProfileRepository.Verify(x => x.BuildProfileFromInteractionsAsync(USER_ID), Times.Once);
-            mockedProfileRepository.Verify(x => x.UpsertProfileAsync(aggregatedProfile), Times.Once);
+            mockedProfileRepository.Verify(repository => repository.BuildProfileFromInteractionsAsync(USER_ID), Times.Once);
+            mockedProfileRepository.Verify(repository => repository.UpsertProfileAsync(aggregatedProfile), Times.Once);
         }
 
     }

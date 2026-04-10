@@ -38,8 +38,8 @@ namespace UnitTests.PersonalityMatch
                 }
             };
 
-            this.mockedRepository.Setup(x => x.GetCurrentUserPreferencesAsync(CurrentUserId)).ReturnsAsync(currentPrefs);
-            this.mockedRepository.Setup(x => x.GetAllPreferencesExceptUserAsync(CurrentUserId)).ReturnsAsync(othersPrefs);
+            this.mockedRepository.Setup(repository => repository.GetCurrentUserPreferencesAsync(CurrentUserId)).ReturnsAsync(currentPrefs);
+            this.mockedRepository.Setup(repository => repository.GetAllPreferencesExceptUserAsync(CurrentUserId)).ReturnsAsync(othersPrefs);
 
             var results = await this.service.GetTopMatchesAsync(CurrentUserId, 1);
 
@@ -57,8 +57,8 @@ namespace UnitTests.PersonalityMatch
                 [OtherUserId] = new List<UserMoviePreferenceModel> { new UserMoviePreferenceModel { MovieId = 2, Score = 1.0 } }
             };
 
-            this.mockedRepository.Setup(x => x.GetCurrentUserPreferencesAsync(CurrentUserId)).ReturnsAsync(currentPrefs);
-            this.mockedRepository.Setup(x => x.GetAllPreferencesExceptUserAsync(CurrentUserId)).ReturnsAsync(othersPrefs);
+            this.mockedRepository.Setup(repository => repository.GetCurrentUserPreferencesAsync(CurrentUserId)).ReturnsAsync(currentPrefs);
+            this.mockedRepository.Setup(repository => repository.GetAllPreferencesExceptUserAsync(CurrentUserId)).ReturnsAsync(othersPrefs);
 
             var results = await this.service.GetTopMatchesAsync(CurrentUserId, 1);
 
@@ -69,7 +69,7 @@ namespace UnitTests.PersonalityMatch
         public async Task GetTopMatchesAsync_EmptyPrefs_ReturnsEmptyList()
         {
             // Branch coverage: if (currentUserPreferences.Count == 0)
-            this.mockedRepository.Setup(x => x.GetCurrentUserPreferencesAsync(CurrentUserId))
+            this.mockedRepository.Setup(repository => repository.GetCurrentUserPreferencesAsync(CurrentUserId))
                 .ReturnsAsync(new List<UserMoviePreferenceModel>());
 
             var results = await this.service.GetTopMatchesAsync(CurrentUserId, 5);
@@ -82,12 +82,12 @@ namespace UnitTests.PersonalityMatch
         {
             // Logic: Random matches should have a hardcoded score of 0
             var randomIds = new List<int> { 10, 20 };
-            this.mockedRepository.Setup(x => x.GetRandomUserIdsAsync(CurrentUserId, 2)).ReturnsAsync(randomIds);
+            this.mockedRepository.Setup(repository => repository.GetRandomUserIdsAsync(CurrentUserId, 2)).ReturnsAsync(randomIds);
 
             var results = await this.service.GetRandomMatchesAsync(CurrentUserId, 2);
 
             Assert.That(results.Count, Is.EqualTo(2));
-            Assert.That(results.All(r => r.MatchScore == 0), Is.True);
+            Assert.That(results.All(match => match.MatchScore == 0), Is.True);
             Assert.That(results[0].MatchedUserId, Is.EqualTo(10));
         }
 
@@ -96,13 +96,13 @@ namespace UnitTests.PersonalityMatch
         {
             // Covers the private GetHardcodedUsername and GetHardcodedFacebookAccount methods
             var profile = new UserProfileModel { UserId = 1 };
-            this.mockedRepository.Setup(x => x.GetUserProfileAsync(1)).ReturnsAsync(profile);
+            this.mockedRepository.Setup(repository => repository.GetUserProfileAsync(1)).ReturnsAsync(profile);
 
             var result = await this.service.GetUserProfileAsync(1);
 
             Assert.That(result, Is.Not.Null);
             // "Alex Carter" is hardcoded for ID 1 in PersonalityMatchingService.cs
-            this.mockedRepository.Verify(x => x.GetUsernameAsync(1), Times.Never);
+            this.mockedRepository.Verify(repository => repository.GetUsernameAsync(1), Times.Never);
         }
 
         [Test]
@@ -114,7 +114,7 @@ namespace UnitTests.PersonalityMatch
                 new MoviePreferenceDisplayModel { MovieId = 1, Score = 10 },
                 new MoviePreferenceDisplayModel { MovieId = 2, Score = 5 }
             };
-            this.mockedRepository.Setup(x => x.GetTopPreferencesWithTitlesAsync(OtherUserId, 2)).ReturnsAsync(prefs);
+            this.mockedRepository.Setup(repository => repository.GetTopPreferencesWithTitlesAsync(OtherUserId, 2)).ReturnsAsync(prefs);
 
             var results = await this.service.GetTopMoviePreferencesAsync(OtherUserId, 2);
 

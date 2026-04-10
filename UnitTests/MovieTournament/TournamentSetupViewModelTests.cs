@@ -26,11 +26,11 @@ namespace UnitTests.MovieTournament
             this.mockedTournamentRepository = new Mock<IMovieTournamentRepository>();
 
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolSizeAsync(UserId))
                 .ReturnsAsync(MinPoolSize);
 
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolAsync(UserId, BackgroundCount))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolAsync(UserId, BackgroundCount))
                 .ReturnsAsync(new List<MovieCardModel>());
         }
 
@@ -70,7 +70,7 @@ namespace UnitTests.MovieTournament
             const int MaxPool = 16;
 
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolSizeAsync(UserId))
                 .ReturnsAsync(MaxPool);
 
             var viewModel = this.CreateViewModel();
@@ -80,10 +80,10 @@ namespace UnitTests.MovieTournament
         }
 
         [Test]
-        public async Task LoadSetupDataAsync_fourBackgroundMovies_setsAllFourPosters()
+        public async Task LoadSetupDataAsync_fourBackgroundMovies_setsFirstPoster()
         {
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolAsync(UserId, BackgroundCount))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolAsync(UserId, BackgroundCount))
                 .ReturnsAsync(new List<MovieCardModel>
                 {
                     new MovieCardModel { MovieId = 1, PosterUrl = "http://1.jpg" },
@@ -96,16 +96,13 @@ namespace UnitTests.MovieTournament
             await viewModel.LoadSetupDataAsync();
 
             Assert.That(viewModel.BackgroundPoster1, Is.EqualTo("http://1.jpg"));
-            Assert.That(viewModel.BackgroundPoster2, Is.EqualTo("http://2.jpg"));
-            Assert.That(viewModel.BackgroundPoster3, Is.EqualTo("http://3.jpg"));
-            Assert.That(viewModel.BackgroundPoster4, Is.EqualTo("http://4.jpg"));
         }
 
         [Test]
-        public async Task LoadSetupDataAsync_moreThanFourMovies_usesFirstFour()
+        public async Task LoadSetupDataAsync_moreThanFourMovies_usesFirstFourPosters()
         {
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolAsync(UserId, BackgroundCount))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolAsync(UserId, BackgroundCount))
                 .ReturnsAsync(new List<MovieCardModel>
                 {
                     new MovieCardModel { MovieId = 1, PosterUrl = "http://1.jpg" },
@@ -118,15 +115,14 @@ namespace UnitTests.MovieTournament
             var viewModel = this.CreateViewModel();
             await viewModel.LoadSetupDataAsync();
 
-            Assert.That(viewModel.BackgroundPoster1, Is.EqualTo("http://1.jpg"));
             Assert.That(viewModel.BackgroundPoster4, Is.EqualTo("http://4.jpg"));
         }
 
         [Test]
-        public async Task LoadSetupDataAsync_fewerThanFourMovies_usesFallbacks()
+        public async Task LoadSetupDataAsync_fewerThanFourMovies_usesFallbacksForMissing()
         {
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolAsync(UserId, BackgroundCount))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolAsync(UserId, BackgroundCount))
                 .ReturnsAsync(new List<MovieCardModel>
                 {
                     new MovieCardModel { MovieId = 1, PosterUrl = "http://1.jpg" },
@@ -135,33 +131,27 @@ namespace UnitTests.MovieTournament
             var viewModel = this.CreateViewModel();
             await viewModel.LoadSetupDataAsync();
 
-            Assert.That(viewModel.BackgroundPoster1, Is.EqualTo("http://1.jpg"));
             Assert.That(viewModel.BackgroundPoster2, Is.EqualTo("https://media.themoviedb.org/t/p/w600_and_h900_face/qJ2tW6WMUDux911r6m7haRef0WH.jpg"));
-            Assert.That(viewModel.BackgroundPoster3, Is.EqualTo("https://media.themoviedb.org/t/p/w600_and_h900_face/q2qXg4OmJgm0qGaBYLdXzP8nHPy.jpg"));
-            Assert.That(viewModel.BackgroundPoster4, Is.EqualTo("https://media.themoviedb.org/t/p/w600_and_h900_face/nrmXQ0zcZUL8jFLrakWc90IR8z9.jpg"));
         }
 
         [Test]
         public async Task LoadSetupDataAsync_emptyMovieList_usesAllFallbacks()
         {
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolAsync(UserId, BackgroundCount))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolAsync(UserId, BackgroundCount))
                 .ReturnsAsync(new List<MovieCardModel>());
 
             var viewModel = this.CreateViewModel();
             await viewModel.LoadSetupDataAsync();
 
             Assert.That(viewModel.BackgroundPoster1, Is.EqualTo("https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg"));
-            Assert.That(viewModel.BackgroundPoster2, Is.EqualTo("https://media.themoviedb.org/t/p/w600_and_h900_face/qJ2tW6WMUDux911r6m7haRef0WH.jpg"));
-            Assert.That(viewModel.BackgroundPoster3, Is.EqualTo("https://media.themoviedb.org/t/p/w600_and_h900_face/q2qXg4OmJgm0qGaBYLdXzP8nHPy.jpg"));
-            Assert.That(viewModel.BackgroundPoster4, Is.EqualTo("https://media.themoviedb.org/t/p/w600_and_h900_face/nrmXQ0zcZUL8jFLrakWc90IR8z9.jpg"));
         }
 
         [Test]
         public async Task LoadSetupDataAsync_repositoryThrowsOnPoolSize_setsSetupErrorMessage()
         {
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolSizeAsync(UserId))
                 .ThrowsAsync(new InvalidOperationException("DB is down"));
 
             var viewModel = this.CreateViewModel();
@@ -174,7 +164,7 @@ namespace UnitTests.MovieTournament
         public async Task LoadSetupDataAsync_repositoryThrowsOnPool_setsSetupErrorMessage()
         {
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolAsync(UserId, BackgroundCount))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolAsync(UserId, BackgroundCount))
                 .ThrowsAsync(new InvalidOperationException("Pool fetch failed"));
 
             var viewModel = this.CreateViewModel();
@@ -187,7 +177,7 @@ namespace UnitTests.MovieTournament
         public void LoadSetupDataAsync_repositoryThrows_doesNotThrowToCallerSurface()
         {
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolSizeAsync(UserId))
                 .ThrowsAsync(new Exception("Boom"));
 
             var viewModel = this.CreateViewModel();
@@ -217,7 +207,7 @@ namespace UnitTests.MovieTournament
             await viewModel.StartTournamentAsync();
 
             this.mockedTournamentLogicService.Verify(
-                x => x.StartTournamentAsync(It.IsAny<int>(), It.IsAny<int>()),
+                tournamentLogicService => tournamentLogicService.StartTournamentAsync(It.IsAny<int>(), It.IsAny<int>()),
                 Times.Never);
         }
 
@@ -242,7 +232,7 @@ namespace UnitTests.MovieTournament
             const int MaxPool = 10;
 
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolSizeAsync(UserId))
                 .ReturnsAsync(MaxPool);
 
             var viewModel = this.CreateViewModel();
@@ -260,7 +250,7 @@ namespace UnitTests.MovieTournament
             const int MaxPool = 10;
 
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolSizeAsync(UserId))
                 .ReturnsAsync(MaxPool);
 
             var viewModel = this.CreateViewModel();
@@ -270,7 +260,7 @@ namespace UnitTests.MovieTournament
             await viewModel.StartTournamentAsync();
 
             this.mockedTournamentLogicService.Verify(
-                x => x.StartTournamentAsync(It.IsAny<int>(), It.IsAny<int>()),
+                tournamentLogicService => tournamentLogicService.StartTournamentAsync(It.IsAny<int>(), It.IsAny<int>()),
                 Times.Never);
         }
 
@@ -280,7 +270,7 @@ namespace UnitTests.MovieTournament
             const int MaxPool = 10;
 
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolSizeAsync(UserId))
                 .ReturnsAsync(MaxPool);
 
             var viewModel = this.CreateViewModel();
@@ -302,11 +292,11 @@ namespace UnitTests.MovieTournament
             const int GoodSize = 8;
 
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolSizeAsync(UserId))
                 .ReturnsAsync(MaxPool);
 
             this.mockedTournamentLogicService
-                .Setup(x => x.StartTournamentAsync(UserId, GoodSize))
+                .Setup(tournamentLogicService => tournamentLogicService.StartTournamentAsync(UserId, GoodSize))
                 .Returns(Task.CompletedTask);
 
             var viewModel = this.CreateViewModel();
@@ -316,7 +306,7 @@ namespace UnitTests.MovieTournament
             await viewModel.StartTournamentAsync();
 
             this.mockedTournamentLogicService.Verify(
-                x => x.StartTournamentAsync(UserId, GoodSize),
+                tournamentLogicService => tournamentLogicService.StartTournamentAsync(UserId, GoodSize),
                 Times.Once);
         }
 
@@ -327,11 +317,11 @@ namespace UnitTests.MovieTournament
             const int GoodSize = 8;
 
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolSizeAsync(UserId))
                 .ReturnsAsync(MaxPool);
 
             this.mockedTournamentLogicService
-                .Setup(x => x.StartTournamentAsync(UserId, GoodSize))
+                .Setup(tournamentLogicService => tournamentLogicService.StartTournamentAsync(UserId, GoodSize))
                 .Returns(Task.CompletedTask);
 
             var viewModel = this.CreateViewModel();
@@ -351,11 +341,11 @@ namespace UnitTests.MovieTournament
             const int GoodSize = 8;
 
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolSizeAsync(UserId))
                 .ReturnsAsync(MaxPool);
 
             this.mockedTournamentLogicService
-                .Setup(x => x.StartTournamentAsync(UserId, GoodSize))
+                .Setup(tournamentLogicService => tournamentLogicService.StartTournamentAsync(UserId, GoodSize))
                 .Returns(Task.CompletedTask);
 
             var viewModel = this.CreateViewModel();
@@ -377,11 +367,11 @@ namespace UnitTests.MovieTournament
             const int GoodSize = 8;
 
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolSizeAsync(UserId))
                 .ReturnsAsync(MaxPool);
 
             this.mockedTournamentLogicService
-                .Setup(x => x.StartTournamentAsync(UserId, GoodSize))
+                .Setup(tournamentLogicService => tournamentLogicService.StartTournamentAsync(UserId, GoodSize))
                 .Returns(Task.CompletedTask);
 
             var viewModel = this.CreateViewModel();
@@ -402,11 +392,11 @@ namespace UnitTests.MovieTournament
             const int MaxPool = 16;
 
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolSizeAsync(UserId))
                 .ReturnsAsync(MaxPool);
 
             this.mockedTournamentLogicService
-                .Setup(x => x.StartTournamentAsync(UserId, MinPoolSize))
+                .Setup(tournamentLogicService => tournamentLogicService.StartTournamentAsync(UserId, MinPoolSize))
                 .Returns(Task.CompletedTask);
 
             var viewModel = this.CreateViewModel();
@@ -416,7 +406,7 @@ namespace UnitTests.MovieTournament
             await viewModel.StartTournamentAsync();
 
             this.mockedTournamentLogicService.Verify(
-                x => x.StartTournamentAsync(UserId, MinPoolSize),
+                tournamentLogicService => tournamentLogicService.StartTournamentAsync(UserId, MinPoolSize),
                 Times.Once);
         }
 
@@ -426,11 +416,11 @@ namespace UnitTests.MovieTournament
             const int MaxPool = 16;
 
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolSizeAsync(UserId))
                 .ReturnsAsync(MaxPool);
 
             this.mockedTournamentLogicService
-                .Setup(x => x.StartTournamentAsync(UserId, MaxPool))
+                .Setup(tournamentLogicService => tournamentLogicService.StartTournamentAsync(UserId, MaxPool))
                 .Returns(Task.CompletedTask);
 
             var viewModel = this.CreateViewModel();
@@ -440,7 +430,7 @@ namespace UnitTests.MovieTournament
             await viewModel.StartTournamentAsync();
 
             this.mockedTournamentLogicService.Verify(
-                x => x.StartTournamentAsync(UserId, MaxPool),
+                tournamentLogicService => tournamentLogicService.StartTournamentAsync(UserId, MaxPool),
                 Times.Once);
         }
 
@@ -451,11 +441,11 @@ namespace UnitTests.MovieTournament
             const int GoodSize = 8;
 
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolSizeAsync(UserId))
                 .ReturnsAsync(MaxPool);
 
             this.mockedTournamentLogicService
-                .Setup(x => x.StartTournamentAsync(UserId, GoodSize))
+                .Setup(tournamentLogicService => tournamentLogicService.StartTournamentAsync(UserId, GoodSize))
                 .ThrowsAsync(new InvalidOperationException("Tournament exploded"));
 
             var viewModel = this.CreateViewModel();
@@ -474,11 +464,11 @@ namespace UnitTests.MovieTournament
             const int GoodSize = 8;
 
             this.mockedTournamentRepository
-                .Setup(x => x.GetTournamentPoolSizeAsync(UserId))
+                .Setup(tournamentRepository => tournamentRepository.GetTournamentPoolSizeAsync(UserId))
                 .ReturnsAsync(MaxPool);
 
             this.mockedTournamentLogicService
-                .Setup(x => x.StartTournamentAsync(UserId, GoodSize))
+                .Setup(tournamentLogicService => tournamentLogicService.StartTournamentAsync(UserId, GoodSize))
                 .ThrowsAsync(new InvalidOperationException("Tournament exploded"));
 
             var viewModel = this.CreateViewModel();

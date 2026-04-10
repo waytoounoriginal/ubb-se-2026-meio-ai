@@ -33,8 +33,8 @@ namespace UnitTests.PersonalityMatch
             string username = "TestUser";
             var profile = new UserProfileModel { UserId = userId, TotalLikes = 10 };
 
-            _mockService.Setup(s => s.GetUserProfileAsync(userId)).ReturnsAsync(profile);
-            _mockService.Setup(s => s.GetTopMoviePreferencesAsync(userId, It.IsAny<int>()))
+            _mockService.Setup(item => item.GetUserProfileAsync(userId)).ReturnsAsync(profile);
+            _mockService.Setup(item => item.GetTopMoviePreferencesAsync(userId, It.IsAny<int>()))
                         .ReturnsAsync(new List<MoviePreferenceDisplayModel>());
 
             // Act
@@ -56,7 +56,7 @@ namespace UnitTests.PersonalityMatch
         public async Task LoadUserDetailAsync_ServiceError_SetsErrorMessage()
         {
             // Arrange
-            _mockService.Setup(s => s.GetUserProfileAsync(It.IsAny<int>()))
+            _mockService.Setup(item => item.GetUserProfileAsync(It.IsAny<int>()))
                         .ThrowsAsync(new Exception("Connection Failed"));
 
             // Act

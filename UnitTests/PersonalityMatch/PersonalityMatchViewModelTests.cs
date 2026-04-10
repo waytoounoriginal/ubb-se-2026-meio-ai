@@ -29,7 +29,7 @@ namespace UnitTests.PersonalityMatch
             {
                 new MatchResult { MatchedUserId = 2, MatchedUsername = "Alice" }
             };
-            _mockService.Setup(s => s.GetTopMatchesAsync(It.IsAny<int>(), It.IsAny<int>()))
+            _mockService.Setup(service => service.GetTopMatchesAsync(It.IsAny<int>(), It.IsAny<int>()))
                         .ReturnsAsync(results);
 
             // Act
@@ -49,11 +49,11 @@ namespace UnitTests.PersonalityMatch
         public async Task LoadMatchesAsync_NoMatches_PopulatesFallback()
         {
             // Arrange
-            _mockService.Setup(s => s.GetTopMatchesAsync(It.IsAny<int>(), It.IsAny<int>()))
+            _mockService.Setup(service => service.GetTopMatchesAsync(It.IsAny<int>(), It.IsAny<int>()))
                         .ReturnsAsync(new List<MatchResult>());
 
             var fallback = new List<MatchResult> { new MatchResult { MatchedUserId = 99 } };
-            _mockService.Setup(s => s.GetRandomUsersAsync(It.IsAny<int>(), It.IsAny<int>()))
+            _mockService.Setup(service => service.GetRandomUsersAsync(It.IsAny<int>(), It.IsAny<int>()))
                         .ReturnsAsync(fallback);
 
             // Act
