@@ -775,7 +775,8 @@ namespace UnitTests.ReelsEditing
 
         private static void SetPrivateStaticField(string fieldName, object? value)
         {
-            FieldInfo field = typeof(VideoProcessingService).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Static)
+            FieldInfo? field = typeof(VideoProcessingService).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Static)
+                ?? typeof(VideoProcessingService).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.IgnoreCase)
                 ?? throw new MissingFieldException($"Could not find private static field '{fieldName}'.");
             field.SetValue(null, value);
         }
