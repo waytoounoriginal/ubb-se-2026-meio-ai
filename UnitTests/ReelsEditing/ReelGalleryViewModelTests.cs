@@ -41,7 +41,7 @@
                 new ReelModel { ReelId = 102, Title = "Coding Session" },
             };
 
-            this.mockRepo.Setup(r => r.GetUserReelsAsync(1)).ReturnsAsync(expectedReels);
+            this.mockRepo.Setup(repository => repository.GetUserReelsAsync(1)).ReturnsAsync(expectedReels);
 
             await this.viewModel.LoadReelsCommand.ExecuteAsync(null);
 
@@ -58,7 +58,7 @@
         [Test]
         public async Task LoadReelsCommand_NoReelsFound_SetsNoReelsMessage()
         {
-            this.mockRepo.Setup(r => r.GetUserReelsAsync(1)).ReturnsAsync(new List<ReelModel>());
+            this.mockRepo.Setup(repository => repository.GetUserReelsAsync(1)).ReturnsAsync(new List<ReelModel>());
 
             await this.viewModel.LoadReelsCommand.ExecuteAsync(null);
 
@@ -74,7 +74,7 @@
         [Test]
         public async Task LoadReelsCommand_RepositoryThrowsException_SetsErrorMessage()
         {
-            this.mockRepo.Setup(r => r.GetUserReelsAsync(It.IsAny<int>()))
+            this.mockRepo.Setup(repository => repository.GetUserReelsAsync(It.IsAny<int>()))
                       .ThrowsAsync(new Exception("Database connection failed"));
 
             await this.viewModel.LoadReelsCommand.ExecuteAsync(null);
@@ -92,11 +92,11 @@
         public async Task EnsureLoadedAsync_NotLoaded_CallsRepository()
         {
             this.viewModel.IsLoaded = false;
-            this.mockRepo.Setup(r => r.GetUserReelsAsync(It.IsAny<int>())).ReturnsAsync(new List<ReelModel>());
+            this.mockRepo.Setup(repository => repository.GetUserReelsAsync(It.IsAny<int>())).ReturnsAsync(new List<ReelModel>());
 
             await this.viewModel.EnsureLoadedAsync();
 
-            this.mockRepo.Verify(r => r.GetUserReelsAsync(1), Times.Once);
+            this.mockRepo.Verify(repository => repository.GetUserReelsAsync(1), Times.Once);
         }
 
         /// <summary>
@@ -110,7 +110,7 @@
 
             await this.viewModel.EnsureLoadedAsync();
 
-            this.mockRepo.Verify(r => r.GetUserReelsAsync(It.IsAny<int>()), Times.Never);
+            this.mockRepo.Verify(repository => repository.GetUserReelsAsync(It.IsAny<int>()), Times.Never);
         }
     }
 }

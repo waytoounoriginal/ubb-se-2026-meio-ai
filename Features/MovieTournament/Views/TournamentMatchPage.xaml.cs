@@ -45,7 +45,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Views
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            this.ViewModel.Initialize();
+            // this.ViewModel.Initialize();
         }
 
         private void OnMoviePointerEntered(object sender, PointerRoutedEventArgs e)

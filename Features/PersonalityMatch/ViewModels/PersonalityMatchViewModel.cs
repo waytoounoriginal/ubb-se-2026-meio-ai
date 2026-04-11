@@ -30,7 +30,7 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
         /// A static dictionary of demo accounts used for development and testing,
         /// mapping each user identifier to a username and Facebook account pair.
         /// </summary>
-        private static readonly Dictionary<int, (string Username, string FacebookAccount)> _demoAccounts = new()
+        private static readonly Dictionary<int, (string Username, string FacebookAccount)> DemoAccounts = new ()
         {
             [1] = ("Alex Carter", "fb_alex_carter"),
             [2] = ("Alice Rivers", "fb_alice_rivers"),
@@ -47,7 +47,7 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
         /// <summary>
         /// The list of user identifiers currently logged into the account switcher.
         /// </summary>
-        private readonly List<int> loggedAccountIds = new() { 1, 2, 9 };
+        private readonly List<int> loggedAccountIds = new () { 1, 2, 9 };
 
         /// <summary>
         /// Gets or sets the title displayed at the top of the personality match page.
@@ -102,17 +102,17 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
         /// <summary>
         /// Gets the collection of personality match results for the current user. Populated when at least one match is found.
         /// </summary>
-        public ObservableCollection<MatchResult> MatchResults { get; } = new();
+        public ObservableCollection<MatchResult> MatchResults { get; } = new ();
 
         /// <summary>
         /// Gets the collection of randomly selected users shown as a fallback when no personality matches are found.
         /// </summary>
-        public ObservableCollection<MatchResult> FallbackUsers { get; } = new();
+        public ObservableCollection<MatchResult> FallbackUsers { get; } = new ();
 
         /// <summary>
         /// Gets the collection of other logged-in accounts available in the account switcher, excluding the currently active user.
         /// </summary>
-        public ObservableCollection<UserAccountModel> OtherAccounts { get; } = new();
+        public ObservableCollection<UserAccountModel> OtherAccounts { get; } = new ();
 
         /// <summary>
         /// Raised when the user selects a match result and navigation to the detail view is requested.
@@ -253,7 +253,7 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
         public IReadOnlyList<UserAccountModel> GetAvailableAccountsToAdd()
         {
             List<UserAccountModel> availableAccounts = new List<UserAccountModel>();
-            foreach (KeyValuePair<int, (string Username, string FacebookAccount)> demoAccountEntry in _demoAccounts)
+            foreach (KeyValuePair<int, (string Username, string FacebookAccount)> demoAccountEntry in DemoAccounts)
             {
                 bool accountIsNotLogged = !loggedAccountIds.Contains(demoAccountEntry.Key);
                 if (accountIsNotLogged)
@@ -341,7 +341,7 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
             foreach (int loggedUserId in loggedAccountIds)
             {
                 bool isActiveUser = loggedUserId == activeUserId;
-                bool isNotInDemoAccounts = !_demoAccounts.TryGetValue(loggedUserId, out (string Username, string FacebookAccount) accountInfo);
+                bool isNotInDemoAccounts = !DemoAccounts.TryGetValue(loggedUserId, out (string Username, string FacebookAccount) accountInfo);
                 if (isActiveUser || isNotInDemoAccounts)
                 {
                     continue;

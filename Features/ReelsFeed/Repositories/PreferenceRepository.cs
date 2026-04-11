@@ -8,7 +8,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
     /// </summary>
     public class PreferenceRepository : IPreferenceRepository
     {
-        private readonly ISqlConnectionFactory _connectionFactory;
+        private readonly ISqlConnectionFactory connectionFactory;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PreferenceRepository"/> class.
@@ -16,7 +16,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
         /// <param name="connectionFactory">Factory used to create SQL connections.</param>
         public PreferenceRepository(ISqlConnectionFactory connectionFactory)
         {
-            this._connectionFactory = connectionFactory;
+            this.connectionFactory = connectionFactory;
         }
 
         /// <inheritdoc />
@@ -24,7 +24,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
         {
             const string checkPreferenceExistsSql = "SELECT 1 FROM UserMoviePreference WHERE UserId = @UserId AND MovieId = @MovieId";
 
-            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var connection = await this.connectionFactory.CreateConnectionAsync();
             await using var checkPreferenceExistsCommand = new SqlCommand(checkPreferenceExistsSql, connection);
             checkPreferenceExistsCommand.Parameters.AddWithValue("@UserId", userId);
             checkPreferenceExistsCommand.Parameters.AddWithValue("@MovieId", movieId);
@@ -40,7 +40,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                 VALUES (@UserId, @MovieId, @Score, SYSUTCDATETIME(), 0)
             ";
 
-            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var connection = await this.connectionFactory.CreateConnectionAsync();
             await using var insertPreferenceCommand = new SqlCommand(insertPreferenceSql, connection);
             insertPreferenceCommand.Parameters.AddWithValue("@UserId", userId);
             insertPreferenceCommand.Parameters.AddWithValue("@MovieId", movieId);
@@ -59,7 +59,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                 WHERE UserId = @UserId AND MovieId = @MovieId
             ";
 
-            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var connection = await this.connectionFactory.CreateConnectionAsync();
             await using var updatePreferenceCommand = new SqlCommand(updatePreferenceSql, connection);
             updatePreferenceCommand.Parameters.AddWithValue("@UserId", userId);
             updatePreferenceCommand.Parameters.AddWithValue("@MovieId", movieId);

@@ -1,7 +1,7 @@
 namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Models
 {
     /// <summary>
-    /// Represents a lightweight view of a user account, containing only the essential identity and 
+    /// Represents a lightweight view of a user account, containing only the essential identity and
     /// social media information needed for personality match operations.
     /// </summary>
     public class UserAccountModel

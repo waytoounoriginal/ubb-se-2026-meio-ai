@@ -1,7 +1,7 @@
-﻿using Moq;
-using NUnit.Framework;
-using System.IO;
+﻿using System.IO;
 using System.Threading.Tasks;
+using Moq;
+using NUnit.Framework;
 using ubb_se_2026_meio_ai.Core.Models;
 using ubb_se_2026_meio_ai.Features.ReelsUpload.Models;
 using ubb_se_2026_meio_ai.Features.ReelsUpload.Repository;
@@ -34,7 +34,7 @@ namespace UnitTests.ReelsUpload
             Assert.That(exception.Message, Does.Contain("could not be found"));
 
             // Verify the database is completely protected from invalid files
-            mockedRepository.Verify(x => x.InsertReelAsync(It.IsAny<ReelModel>()), Times.Never);
+            mockedRepository.Verify(videoRepository => videoRepository.InsertReelAsync(It.IsAny<ReelModel>()), Times.Never);
         }
 
         [Test]
@@ -91,7 +91,10 @@ namespace UnitTests.ReelsUpload
             }
             finally
             {
-                if (File.Exists(tempFile)) File.Delete(tempFile);
+                if (File.Exists(tempFile))
+                {
+                    File.Delete(tempFile);
+                }
             }
         }
 
@@ -115,7 +118,7 @@ namespace UnitTests.ReelsUpload
                 var mockedRepository = new Mock<IVideoStorageRepository>();
 
                 mockedRepository
-                    .Setup(x => x.InsertReelAsync(It.IsAny<ReelModel>()))
+                    .Setup(videoRepository => videoRepository.InsertReelAsync(It.IsAny<ReelModel>()))
                     .ReturnsAsync(new ReelModel { ReelId = 100 });
 
                 var service = new VideoStorageService(mockedRepository.Object);
@@ -126,16 +129,18 @@ namespace UnitTests.ReelsUpload
                 Assert.That(result.ReelId, Is.EqualTo(100));
 
                 // UPDATE THE 15.0 TO 0 HERE:
-                mockedRepository.Verify(x => x.InsertReelAsync(It.Is<ReelModel>(r =>
-                    r.Title == "My Uploaded Reel" &&
-                    r.FeatureDurationSeconds == 0 && // <--- Changed from 15.0 to 0
-                    r.MovieId == 10 &&
-                    r.VideoUrl.Contains("Videos")
-                )), Times.Once);
+                mockedRepository.Verify(videoRepository => videoRepository.InsertReelAsync(It.Is<ReelModel>(reel =>
+                    reel.Title == "My Uploaded Reel" &&
+                    reel.FeatureDurationSeconds == 0 && // <--- Changed from 15.0 to 0
+                    reel.MovieId == 10 &&
+                    reel.VideoUrl.Contains("Videos"))), Times.Once);
             }
             finally
             {
-                if (File.Exists(tempFile)) File.Delete(tempFile);
+                if (File.Exists(tempFile))
+                {
+                    File.Delete(tempFile);
+                }
             }
         }
 
@@ -184,7 +189,10 @@ namespace UnitTests.ReelsUpload
             }
             finally
             {
-                if (File.Exists(tempFile)) File.Delete(tempFile);
+                if (File.Exists(tempFile))
+                {
+                    File.Delete(tempFile);
+                }
             }
         }
 
@@ -206,20 +214,22 @@ namespace UnitTests.ReelsUpload
 
                 var mockedRepository = new Mock<IVideoStorageRepository>();
                 mockedRepository
-                    .Setup(x => x.InsertReelAsync(It.IsAny<ReelModel>()))
+                    .Setup(videoRepository => videoRepository.InsertReelAsync(It.IsAny<ReelModel>()))
                     .ReturnsAsync(new ReelModel { ReelId = 55 });
 
                 var service = new VideoStorageService(mockedRepository.Object);
 
                 await service.UploadVideoAsync(request);
 
-                mockedRepository.Verify(x => x.InsertReelAsync(It.Is<ReelModel>(r =>
-                    r.FeatureDurationSeconds == 0
-                )), Times.Once);
+                mockedRepository.Verify(videoRepository => videoRepository.InsertReelAsync(It.Is<ReelModel>(reel =>
+                    reel.FeatureDurationSeconds == 0)), Times.Once);
             }
             finally
             {
-                if (File.Exists(tempFile)) File.Delete(tempFile);
+                if (File.Exists(tempFile))
+                {
+                    File.Delete(tempFile);
+                }
             }
         }
     }

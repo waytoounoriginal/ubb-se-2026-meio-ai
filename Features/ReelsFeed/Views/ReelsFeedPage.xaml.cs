@@ -134,7 +134,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         /// <typeparam name="T">The visual child type to locate.</typeparam>
         /// <param name="parent">The parent element to search beneath.</param>
         /// <returns>The first matching child, or null when none is found.</returns>
-        private T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        private T? FindVisualChild<T>(DependencyObject parent)
+            where T : DependencyObject
         {
             for (int childIndex = 0; childIndex < VisualTreeHelper.GetChildrenCount(parent); childIndex++)
             {

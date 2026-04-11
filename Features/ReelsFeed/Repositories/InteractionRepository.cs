@@ -12,7 +12,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
     /// </summary>
     public class InteractionRepository : IInteractionRepository
     {
-        private readonly ISqlConnectionFactory _connectionFactory;
+        private readonly ISqlConnectionFactory connectionFactory;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InteractionRepository"/> class.
@@ -20,7 +20,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
         /// <param name="connectionFactory">Factory used to create SQL connections.</param>
         public InteractionRepository(ISqlConnectionFactory connectionFactory)
         {
-            this._connectionFactory = connectionFactory;
+            this.connectionFactory = connectionFactory;
         }
 
         /// <inheritdoc />
@@ -33,7 +33,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                     (@UserId, @ReelId, @IsLiked, @WatchDurationSec, @WatchPercentage, SYSUTCDATETIME())
             ";
 
-            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var connection = await this.connectionFactory.CreateConnectionAsync();
             await using var insertCommand = new SqlCommand(insertInteractionSql, connection);
             insertCommand.Parameters.AddWithValue("@UserId", interaction.UserId);
             insertCommand.Parameters.AddWithValue("@ReelId", interaction.ReelId);
@@ -54,7 +54,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                 END
             ";
 
-            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var connection = await this.connectionFactory.CreateConnectionAsync();
             await using var upsertCommand = new SqlCommand(upsertInteractionSql, connection);
             upsertCommand.Parameters.AddWithValue("@UserId", userId);
             upsertCommand.Parameters.AddWithValue("@ReelId", reelId);
@@ -65,7 +65,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
         public async Task ToggleLikeAsync(int userId, int reelId)
         {
             var existingInteraction = await this.GetInteractionAsync(userId, reelId);
-            
+
             if (existingInteraction == null)
             {
                 var interactionToInsert = new UserReelInteractionModel
@@ -87,7 +87,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                 WHERE UserId = @UserId AND ReelId = @ReelId
             ";
 
-            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var connection = await this.connectionFactory.CreateConnectionAsync();
             await using var toggleLikeCommand = new SqlCommand(toggleLikeSql, connection);
             toggleLikeCommand.Parameters.AddWithValue("@UserId", userId);
             toggleLikeCommand.Parameters.AddWithValue("@ReelId", reelId);
@@ -98,7 +98,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
         public async Task UpdateViewDataAsync(int userId, int reelId, double watchDurationSec, double watchPercentage)
         {
             var existingInteraction = await this.GetInteractionAsync(userId, reelId);
-            
+
             if (existingInteraction == null)
             {
                 var interactionToInsert = new UserReelInteractionModel
@@ -122,7 +122,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                 WHERE UserId = @UserId AND ReelId = @ReelId
             ";
 
-            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var connection = await this.connectionFactory.CreateConnectionAsync();
             await using var updateViewDataCommand = new SqlCommand(updateViewDataSql, connection);
             updateViewDataCommand.Parameters.AddWithValue("@UserId", userId);
             updateViewDataCommand.Parameters.AddWithValue("@ReelId", reelId);
@@ -140,7 +140,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                 WHERE UserId = @UserId AND ReelId = @ReelId
             ";
 
-            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var connection = await this.connectionFactory.CreateConnectionAsync();
             await using var getInteractionCommand = new SqlCommand(getInteractionSql, connection);
             getInteractionCommand.Parameters.AddWithValue("@UserId", userId);
             getInteractionCommand.Parameters.AddWithValue("@ReelId", reelId);
@@ -163,7 +163,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                 WHERE ReelId = @ReelId AND IsLiked = 1
             ";
 
-            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var connection = await this.connectionFactory.CreateConnectionAsync();
             await using var getLikeCountCommand = new SqlCommand(getLikeCountSql, connection);
             getLikeCountCommand.Parameters.AddWithValue("@ReelId", reelId);
             var likeCountResult = await getLikeCountCommand.ExecuteScalarAsync();
@@ -175,7 +175,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
         {
             const string getReelMovieIdSql = "SELECT MovieId FROM Reel WHERE ReelId = @ReelId";
 
-            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var connection = await this.connectionFactory.CreateConnectionAsync();
             await using var getReelMovieIdCommand = new SqlCommand(getReelMovieIdSql, connection);
             getReelMovieIdCommand.Parameters.AddWithValue("@ReelId", reelId);
             var movieIdResult = await getReelMovieIdCommand.ExecuteScalarAsync();

@@ -14,11 +14,11 @@ namespace ubb_se_2026_meio_ai.Core.Services
     /// </summary>
     public class MovieService : IMovieService
     {
-        private readonly IMovieRepository _movieRepository;
+        private readonly IMovieRepository movieRepository;
 
         public MovieService(IMovieRepository movieRepository)
         {
-            _movieRepository = movieRepository;
+            this.movieRepository = movieRepository;
         }
 
         public async Task<List<MovieCardModel>> SearchTop10MoviesAsync(string partialMovieName)
@@ -29,7 +29,7 @@ namespace ubb_se_2026_meio_ai.Core.Services
                 return new List<MovieCardModel>();
             }
 
-            return await _movieRepository.SearchTop10MoviesAsync(partialMovieName);
+            return await movieRepository.SearchTop10MoviesAsync(partialMovieName);
         }
     }
 }

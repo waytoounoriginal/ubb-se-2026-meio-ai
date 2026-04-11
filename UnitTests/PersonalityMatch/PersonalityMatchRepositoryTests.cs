@@ -22,9 +22,8 @@ namespace UnitTests.PersonalityMatch
         public async Task GetUsernameAsync_HandlesEmptyResults()
         {
             // This verifies the fallback logic in the repository when no DB records are found.
-            // Even if we cannot easily mock the SqlDataReader in a unit test, 
+            // Even if we cannot easily mock the SqlDataReader in a unit test,
             // the logic for generating "User {id}" is a critical branch.
-
             var username = await this.repository.GetUsernameAsync(999);
             Assert.That(username, Is.EqualTo("User 999"));
         }

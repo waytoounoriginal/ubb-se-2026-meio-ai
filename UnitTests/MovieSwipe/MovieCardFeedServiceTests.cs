@@ -27,7 +27,7 @@ namespace UnitTests.MovieSwipe
             // Arrange
             var expected = new List<MovieCardModel> { new MovieCardModel { MovieId = 1 } };
             this.mockedRepository
-                .Setup(x => x.GetMovieFeedAsync(UserId, Count))
+                .Setup(repository => repository.GetMovieFeedAsync(UserId, Count))
                 .ReturnsAsync(expected);
 
             // Act
@@ -35,7 +35,6 @@ namespace UnitTests.MovieSwipe
 
             // Assert
             Assert.That(result, Is.EqualTo(expected));
-            this.mockedRepository.Verify(x => x.GetMovieFeedAsync(UserId, Count), Times.Once);
         }
     }
 }

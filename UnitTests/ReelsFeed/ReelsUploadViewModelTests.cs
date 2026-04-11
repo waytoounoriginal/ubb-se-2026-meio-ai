@@ -1,9 +1,9 @@
-﻿using Moq;
-using NUnit.Framework;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Moq;
+using NUnit.Framework;
 using ubb_se_2026_meio_ai.Core.Models;
 using ubb_se_2026_meio_ai.Core.Platform;
 using ubb_se_2026_meio_ai.Core.Services; // Based on your IMovieService using statement
@@ -16,15 +16,15 @@ namespace UnitTests.ReelsUpload
     [TestFixture]
     public class ReelsUploadViewModelTests
     {
-        private Mock<IAppWindowContext> _mockAppWindowContext;
+        private Mock<IAppWindowContext> mockAppWindowContext;
 
         [SetUp]
         public void Setup()
         {
-            _mockAppWindowContext = new Mock<IAppWindowContext>();
+            mockAppWindowContext = new Mock<IAppWindowContext>();
 
             // This forces the background thread UI updates to run immediately in our tests
-            _mockAppWindowContext
+            mockAppWindowContext
                 .Setup(x => x.TryEnqueueOnUiThread(It.IsAny<Action>()))
                 .Callback<Action>(action => action());
         }
@@ -36,7 +36,7 @@ namespace UnitTests.ReelsUpload
             var mockedMovieService = new Mock<IMovieService>();
 
             var viewModel = new ReelsUploadViewModel(
-                _mockAppWindowContext.Object,
+                mockAppWindowContext.Object,
                 mockedStorageService.Object,
                 mockedMovieService.Object);
 
@@ -55,7 +55,7 @@ namespace UnitTests.ReelsUpload
             var mockedMovieService = new Mock<IMovieService>();
 
             var viewModel = new ReelsUploadViewModel(
-                _mockAppWindowContext.Object,
+                mockAppWindowContext.Object,
                 mockedStorageService.Object,
                 mockedMovieService.Object);
 
@@ -75,7 +75,7 @@ namespace UnitTests.ReelsUpload
             var mockedMovieService = new Mock<IMovieService>();
 
             var viewModel = new ReelsUploadViewModel(
-                _mockAppWindowContext.Object,
+                mockAppWindowContext.Object,
                 mockedStorageService.Object,
                 mockedMovieService.Object);
 
@@ -102,7 +102,7 @@ namespace UnitTests.ReelsUpload
                 .ReturnsAsync(false); // Simulate file is too large or corrupted
 
             var viewModel = new ReelsUploadViewModel(
-                _mockAppWindowContext.Object,
+                mockAppWindowContext.Object,
                 mockedStorageService.Object,
                 mockedMovieService.Object);
 
@@ -134,7 +134,7 @@ namespace UnitTests.ReelsUpload
                 .ThrowsAsync(new Exception(ERROR_MESSAGE));
 
             var viewModel = new ReelsUploadViewModel(
-                _mockAppWindowContext.Object,
+                mockAppWindowContext.Object,
                 mockedStorageService.Object,
                 mockedMovieService.Object);
 
@@ -166,7 +166,7 @@ namespace UnitTests.ReelsUpload
                 .ReturnsAsync(new ReelModel { ReelId = GENERATED_REEL_ID });
 
             var viewModel = new ReelsUploadViewModel(
-                _mockAppWindowContext.Object,
+                mockAppWindowContext.Object,
                 mockedStorageService.Object,
                 mockedMovieService.Object);
 
@@ -192,7 +192,7 @@ namespace UnitTests.ReelsUpload
             var movie = new MovieCardModel { MovieId = 5, Title = "Spiderman" };
 
             var viewModel = new ReelsUploadViewModel(
-                _mockAppWindowContext.Object,
+                mockAppWindowContext.Object,
                 new Mock<IVideoStorageService>().Object,
                 new Mock<IMovieService>().Object);
 
@@ -207,7 +207,7 @@ namespace UnitTests.ReelsUpload
         {
             var mockedMovieService = new Mock<IMovieService>();
             var viewModel = new ReelsUploadViewModel(
-                _mockAppWindowContext.Object,
+                mockAppWindowContext.Object,
                 new Mock<IVideoStorageService>().Object,
                 mockedMovieService.Object);
 
@@ -236,7 +236,7 @@ namespace UnitTests.ReelsUpload
                 .ReturnsAsync(expectedResults);
 
             var viewModel = new ReelsUploadViewModel(
-                _mockAppWindowContext.Object,
+                mockAppWindowContext.Object,
                 new Mock<IVideoStorageService>().Object,
                 mockedMovieService.Object);
 
@@ -258,7 +258,7 @@ namespace UnitTests.ReelsUpload
                 .ThrowsAsync(new Exception(DB_ERROR));
 
             var viewModel = new ReelsUploadViewModel(
-                _mockAppWindowContext.Object,
+                mockAppWindowContext.Object,
                 new Mock<IVideoStorageService>().Object,
                 mockedMovieService.Object);
 
@@ -286,7 +286,7 @@ namespace UnitTests.ReelsUpload
                 .ReturnsAsync(new ReelModel { ReelId = 1 });
 
             var viewModel = new ReelsUploadViewModel(
-                _mockAppWindowContext.Object,
+                mockAppWindowContext.Object,
                 mockedStorageService.Object,
                 mockedMovieService.Object);
 
@@ -301,8 +301,7 @@ namespace UnitTests.ReelsUpload
 
             // Verify the request passed to the service successfully converted the null to an empty string
             mockedStorageService.Verify(x => x.UploadVideoAsync(It.Is<ReelUploadRequest>(req =>
-                req.Caption == string.Empty
-            )), Times.Once);
+                req.Caption == string.Empty)), Times.Once);
         }
 
         [Test]
@@ -340,12 +339,14 @@ namespace UnitTests.ReelsUpload
                     r.Title == "My Uploaded Reel" &&
                     r.FeatureDurationSeconds == 0 &&
                     r.MovieId == 10 &&
-                    r.VideoUrl.Contains("Videos")
-                )), Times.Once);
+                    r.VideoUrl.Contains("Videos"))), Times.Once);
             }
             finally
             {
-                if (File.Exists(tempFile)) File.Delete(tempFile);
+                if (File.Exists(tempFile))
+                {
+                    File.Delete(tempFile);
+                }
             }
         }
     }

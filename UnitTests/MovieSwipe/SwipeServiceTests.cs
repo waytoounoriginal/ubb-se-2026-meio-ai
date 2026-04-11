@@ -26,8 +26,8 @@ namespace UnitTests.MovieSwipe
         {
             await this.service.UpdatePreferenceScoreAsync(UserId, MovieId, true);
 
-            this.mockedRepository.Verify(x => x.UpsertPreferenceAsync(It.Is<UserMoviePreferenceModel>(p =>
-                p.UserId == UserId && p.Score == SwipeService.LikeDelta && p.ChangeFromPreviousValue == 1)), Times.Once);
+            this.mockedRepository.Verify(repository => repository.UpsertPreferenceAsync(It.Is<UserMoviePreferenceModel>(preference =>
+                preference.UserId == UserId && preference.Score == SwipeService.LikeDelta && preference.ChangeFromPreviousValue == 1)), Times.Once);
         }
 
         [Test]
@@ -35,19 +35,19 @@ namespace UnitTests.MovieSwipe
         {
             await this.service.UpdatePreferenceScoreAsync(UserId, MovieId, false);
 
-            this.mockedRepository.Verify(x => x.UpsertPreferenceAsync(It.Is<UserMoviePreferenceModel>(p =>
-                p.UserId == UserId && p.Score == SwipeService.SkipDelta && p.ChangeFromPreviousValue == -1)), Times.Once);
+            this.mockedRepository.Verify(repository => repository.UpsertPreferenceAsync(It.Is<UserMoviePreferenceModel>(preference =>
+                preference.UserId == UserId && preference.Score == SwipeService.SkipDelta && preference.ChangeFromPreviousValue == -1)), Times.Once);
         }
 
         [Test]
         public async Task GetMovieFeedAsync_DelegatesToRepository()
         {
-            var list = new List<MovieCardModel>();
-            this.mockedRepository.Setup(x => x.GetMovieFeedAsync(UserId, 5)).ReturnsAsync(list);
+            var movieFeed = new List<MovieCardModel>();
+            this.mockedRepository.Setup(repository => repository.GetMovieFeedAsync(UserId, 5)).ReturnsAsync(movieFeed);
 
             var result = await this.service.GetMovieFeedAsync(UserId, 5);
 
-            Assert.That(result, Is.EqualTo(list));
+            Assert.That(result, Is.EqualTo(movieFeed));
         }
     }
 }

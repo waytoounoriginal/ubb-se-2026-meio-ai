@@ -22,19 +22,19 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
     public class MovieCardFeedService : IMovieCardFeedService
     {
         /// <summary> The repository used for data access. </summary>
-        private readonly IPreferenceRepository _repository;
+        private readonly IPreferenceRepository repository;
 
         /// <summary> Initializes a new instance of the <see cref="MovieCardFeedService"/> class. </summary>
         /// <param name="repository">The preference repository.</param>
         public MovieCardFeedService(IPreferenceRepository repository)
         {
-            _repository = repository;
+            this.repository = repository;
         }
 
         /// <inheritdoc />
         public Task<List<MovieCardModel>> FetchMovieFeedAsync(int userId, int count)
         {
-            return _repository.GetMovieFeedAsync(userId, count);
+            return repository.GetMovieFeedAsync(userId, count);
         }
     }
 }

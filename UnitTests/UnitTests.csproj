@@ -35,7 +35,27 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Content Include="..\tools\ffmpeg\ffmpeg.exe" Condition="Exists('..\tools\ffmpeg\ffmpeg.exe')">
+			<TargetPath>ffmpeg.exe</TargetPath>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Include="..\tools\ffmpeg\ffprobe.exe" Condition="Exists('..\tools\ffmpeg\ffprobe.exe')">
+			<TargetPath>ffprobe.exe</TargetPath>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+
+	<ItemGroup>
 		<Using Include="NUnit.Framework" />
 	</ItemGroup>
+
+	<Target Name="CopyFfmpegToolsToTestOutput" AfterTargets="Build">
+		<Copy SourceFiles="..\tools\ffmpeg\ffmpeg.exe"
+			  DestinationFolder="$(OutDir)"
+			  Condition="Exists('..\tools\ffmpeg\ffmpeg.exe')" />
+		<Copy SourceFiles="..\tools\ffmpeg\ffprobe.exe"
+			  DestinationFolder="$(OutDir)"
+			  Condition="Exists('..\tools\ffmpeg\ffprobe.exe')" />
+	</Target>
 
 </Project>

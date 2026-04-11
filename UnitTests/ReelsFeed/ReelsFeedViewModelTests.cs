@@ -1,7 +1,7 @@
-using Moq;
-using NUnit.Framework;
 using System.Linq;
 using System.Threading;
+using Moq;
+using NUnit.Framework;
 using ubb_se_2026_meio_ai.Core.Models;
 using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
 using ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels;

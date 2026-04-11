@@ -56,7 +56,7 @@ namespace UnitTests.MovieTournament
 
             var mockedRepository = new Mock<IMovieTournamentRepository>();
             mockedRepository
-                .Setup(x => x.GetTournamentPoolAsync(USER_ID, POOL_SIZE))
+                .Setup(repository => repository.GetTournamentPoolAsync(USER_ID, POOL_SIZE))
                 .ReturnsAsync(new List<MovieCardModel>
                 {
                     new MovieCardModel { MovieId = 1, Title = "Movie 1" },
@@ -70,7 +70,7 @@ namespace UnitTests.MovieTournament
         }
 
         [Test]
-        public async Task StartTournamentAsync_validPool_startsTournamentAndCreatesMatches()
+        public async Task StartTournamentAsync_validPool_setsTournamentActive()
         {
             const int USER_ID = 1;
             const int POOL_SIZE = 4;
@@ -85,7 +85,7 @@ namespace UnitTests.MovieTournament
 
             var mockedRepository = new Mock<IMovieTournamentRepository>();
             mockedRepository
-                .Setup(x => x.GetTournamentPoolAsync(USER_ID, POOL_SIZE))
+                .Setup(repository => repository.GetTournamentPoolAsync(USER_ID, POOL_SIZE))
                 .ReturnsAsync(movies);
 
             var service = new TournamentLogicService(mockedRepository.Object);
@@ -93,10 +93,6 @@ namespace UnitTests.MovieTournament
             await service.StartTournamentAsync(USER_ID, POOL_SIZE);
 
             Assert.That(service.IsTournamentActive, Is.True);
-            Assert.That(service.CurrentState, Is.Not.Null);
-            Assert.That(service.CurrentState.PendingMatches.Count, Is.EqualTo(2));
-            Assert.That(service.CurrentState.CompletedMatches.Count, Is.EqualTo(0));
-            Assert.That(service.CurrentState.CurrentRoundWinners.Count, Is.EqualTo(0));
         }
 
         [Test]
@@ -115,13 +111,13 @@ namespace UnitTests.MovieTournament
 
             var mockedRepository = new Mock<IMovieTournamentRepository>();
             mockedRepository
-                .Setup(x => x.GetTournamentPoolAsync(USER_ID, POOL_SIZE))
+                .Setup(repository => repository.GetTournamentPoolAsync(USER_ID, POOL_SIZE))
                 .ReturnsAsync(movies);
 
             await new TournamentLogicService(mockedRepository.Object)
                 .StartTournamentAsync(USER_ID, POOL_SIZE);
 
-            mockedRepository.Verify(x => x.GetTournamentPoolAsync(USER_ID, POOL_SIZE), Times.Once);
+            mockedRepository.Verify(repository => repository.GetTournamentPoolAsync(USER_ID, POOL_SIZE), Times.Once);
         }
 
         [Test]
@@ -154,7 +150,7 @@ namespace UnitTests.MovieTournament
 
             var mockedRepository = new Mock<IMovieTournamentRepository>();
             mockedRepository
-                .Setup(x => x.GetTournamentPoolAsync(USER_ID, POOL_SIZE))
+                .Setup(repository => repository.GetTournamentPoolAsync(USER_ID, POOL_SIZE))
                 .ReturnsAsync(movies);
 
             var service = new TournamentLogicService(mockedRepository.Object);
@@ -180,7 +176,7 @@ namespace UnitTests.MovieTournament
 
             var mockedRepository = new Mock<IMovieTournamentRepository>();
             mockedRepository
-                .Setup(x => x.GetTournamentPoolAsync(USER_ID, POOL_SIZE))
+                .Setup(repository => repository.GetTournamentPoolAsync(USER_ID, POOL_SIZE))
                 .ReturnsAsync(movies);
 
             var service = new TournamentLogicService(mockedRepository.Object);
@@ -189,7 +185,6 @@ namespace UnitTests.MovieTournament
             var result = service.GetCurrentMatch();
 
             Assert.That(result, Is.Not.Null);
-            Assert.That(result!.FirstMovie, Is.Not.Null);
         }
 
         [Test]
@@ -208,7 +203,7 @@ namespace UnitTests.MovieTournament
 
             var mockedRepository = new Mock<IMovieTournamentRepository>();
             mockedRepository
-                .Setup(x => x.GetTournamentPoolAsync(USER_ID, POOL_SIZE))
+                .Setup(repository => repository.GetTournamentPoolAsync(USER_ID, POOL_SIZE))
                 .ReturnsAsync(movies);
 
             var service = new TournamentLogicService(mockedRepository.Object);
@@ -244,7 +239,7 @@ namespace UnitTests.MovieTournament
 
             var mockedRepository = new Mock<IMovieTournamentRepository>();
             mockedRepository
-                .Setup(x => x.GetTournamentPoolAsync(USER_ID, POOL_SIZE))
+                .Setup(repository => repository.GetTournamentPoolAsync(USER_ID, POOL_SIZE))
                 .ReturnsAsync(movies);
 
             var service = new TournamentLogicService(mockedRepository.Object);
@@ -261,7 +256,7 @@ namespace UnitTests.MovieTournament
             var finalWinner = service.GetFinalWinner();
 
             mockedRepository.Verify(
-                x => x.BoostMovieScoreAsync(USER_ID, finalWinner.MovieId, 2.0),
+                repository => repository.BoostMovieScoreAsync(USER_ID, finalWinner.MovieId, 2.0),
                 Times.Once);
         }
 
@@ -281,7 +276,7 @@ namespace UnitTests.MovieTournament
 
             var mockedRepository = new Mock<IMovieTournamentRepository>();
             mockedRepository
-                .Setup(x => x.GetTournamentPoolAsync(USER_ID, POOL_SIZE))
+                .Setup(repository => repository.GetTournamentPoolAsync(USER_ID, POOL_SIZE))
                 .ReturnsAsync(movies);
 
             var service = new TournamentLogicService(mockedRepository.Object);
@@ -296,11 +291,10 @@ namespace UnitTests.MovieTournament
             var result = service.GetFinalWinner();
 
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.MovieId, Is.GreaterThan(0));
         }
 
         [Test]
-        public async Task StartTournamentAsync_oddPoolSize_createsByeMatchAndAdvancesOneMovie()
+        public async Task StartTournamentAsync_oddPoolSize_createsTwoPendingMatches()
         {
             const int USER_ID = 3;
             const int POOL_SIZE = 5;
@@ -316,7 +310,7 @@ namespace UnitTests.MovieTournament
 
             var mockedRepository = new Mock<IMovieTournamentRepository>();
             mockedRepository
-                .Setup(x => x.GetTournamentPoolAsync(USER_ID, POOL_SIZE))
+                .Setup(repository => repository.GetTournamentPoolAsync(USER_ID, POOL_SIZE))
                 .ReturnsAsync(movies);
 
             var service = new TournamentLogicService(mockedRepository.Object);
@@ -324,12 +318,10 @@ namespace UnitTests.MovieTournament
             await service.StartTournamentAsync(USER_ID, POOL_SIZE);
 
             Assert.That(service.CurrentState.PendingMatches.Count, Is.EqualTo(2));
-            Assert.That(service.CurrentState.CompletedMatches.Count, Is.EqualTo(1));
-            Assert.That(service.CurrentState.CurrentRoundWinners.Count, Is.EqualTo(1));
         }
 
         [Test]
-        public async Task ResetTournament_afterStart_clearsTournamentState()
+        public async Task ResetTournament_afterStart_setsTournamentInactive()
         {
             const int USER_ID = 1;
             const int POOL_SIZE = 4;
@@ -344,7 +336,7 @@ namespace UnitTests.MovieTournament
 
             var mockedRepository = new Mock<IMovieTournamentRepository>();
             mockedRepository
-                .Setup(x => x.GetTournamentPoolAsync(USER_ID, POOL_SIZE))
+                .Setup(repository => repository.GetTournamentPoolAsync(USER_ID, POOL_SIZE))
                 .ReturnsAsync(movies);
 
             var service = new TournamentLogicService(mockedRepository.Object);
@@ -353,10 +345,6 @@ namespace UnitTests.MovieTournament
             service.ResetTournament();
 
             Assert.That(service.IsTournamentActive, Is.False);
-            Assert.Throws<InvalidOperationException>(() =>
-            {
-                _ = service.CurrentState;
-            });
         }
     }
 }

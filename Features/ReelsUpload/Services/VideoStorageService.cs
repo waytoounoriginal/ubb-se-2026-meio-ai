@@ -15,39 +15,43 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
     /// </summary>
     public class VideoStorageService : IVideoStorageService
     {
-        private readonly IVideoStorageRepository _memoryRepository;
+        private readonly IVideoStorageRepository memoryRepository;
 
         // Simulating a blob storage directory inside the AppData folder for local development
-        private readonly string _blobStorageDirectory;
+        private readonly string blobStorageDirectory;
 
-        const string videoFileExtension = ".mp4", emptyURL = "", uploadSource = "upload";
+        private const string VideoFileExtension = ".mp4";
+        private const string EmptyURL = "";
+        private const string UploadSource = "upload";
 
-        const int nullId = 0;
+        private const int NullId = 0;
 
-        const double maximumReelDurationSeconds = 60.0;
+        private const double MaximumReelDurationSeconds = 60.0;
 
         public VideoStorageService(IVideoStorageRepository memoryRepository)
         {
-            _memoryRepository = memoryRepository;
+            this.memoryRepository = memoryRepository;
 
-            _blobStorageDirectory = Path.Combine(
+            blobStorageDirectory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "MeioAI",
                 "Videos");
 
-            if (!Directory.Exists(_blobStorageDirectory))
+            if (!Directory.Exists(blobStorageDirectory))
             {
-                Directory.CreateDirectory(_blobStorageDirectory);
+                Directory.CreateDirectory(blobStorageDirectory);
             }
         }
 
         public async Task<bool> ValidateVideoAsync(string localFilePath)
         {
             if (string.IsNullOrWhiteSpace(localFilePath) || !File.Exists(localFilePath))
+            {
                 return false;
+            }
 
             var fileExtension = Path.GetExtension(localFilePath).ToLowerInvariant();
-            if (fileExtension != videoFileExtension)
+            if (fileExtension != VideoFileExtension)
             {
                 return false;
             }
@@ -57,7 +61,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
                 var storageFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(localFilePath);
                 var videoProperties = await storageFile.Properties.GetVideoPropertiesAsync();
 
-                if (videoProperties.Duration.TotalSeconds > maximumReelDurationSeconds)
+                if (videoProperties.Duration.TotalSeconds > MaximumReelDurationSeconds)
                 {
                     return false; // Video is too long
                 }
@@ -73,11 +77,13 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
         public async Task<ReelModel> UploadVideoAsync(ReelUploadRequest request)
         {
             if (!File.Exists(request.LocalFilePath))
+            {
                 throw new FileNotFoundException("The selected video file could not be found.", request.LocalFilePath);
+            }
 
             // "Upload" to Blob Storage
             string fileName = Guid.NewGuid().ToString() + Path.GetExtension(request.LocalFilePath);
-            string destinationBlobPath = Path.Combine(_blobStorageDirectory, fileName);
+            string destinationBlobPath = Path.Combine(blobStorageDirectory, fileName);
             await Task.Run(() => File.Copy(request.LocalFilePath, destinationBlobPath, overwrite: true));
 
             // Compute TRUE duration natively
@@ -96,19 +102,19 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
             // Prepare the model with the data we know
             var newReel = new ReelModel
             {
-                MovieId = request.MovieId ?? nullId,
+                MovieId = request.MovieId ?? NullId,
                 CreatorUserId = request.UploaderUserId,
                 VideoUrl = destinationBlobPath,
-                ThumbnailUrl = emptyURL,
+                ThumbnailUrl = EmptyURL,
 
                 Title = request.Title,
                 Caption = request.Caption,
 
                 FeatureDurationSeconds = computedDurationSeconds,
-                Source = uploadSource
+                Source = UploadSource
             };
 
-            return await _memoryRepository.InsertReelAsync(newReel);
+            return await memoryRepository.InsertReelAsync(newReel);
         }
     }
 }

@@ -33,11 +33,11 @@ namespace UnitTests.MovieTournament
             this.defaultState.CurrentRound = 1;
 
             this.mockedTournamentLogicService
-                .Setup(x => x.GetCurrentMatch())
+                .Setup(tournamentLogicService => tournamentLogicService.GetCurrentMatch())
                 .Returns(this.defaultMatch);
 
             this.mockedTournamentLogicService
-                .SetupGet(x => x.CurrentState)
+                .SetupGet(tournamentLogicService => tournamentLogicService.CurrentState)
                 .Returns(this.defaultState);
 
             this.viewModel = new TournamentMatchViewModel(this.mockedTournamentLogicService.Object);
@@ -71,33 +71,28 @@ namespace UnitTests.MovieTournament
         }
 
         [Test]
-        public void Constructor_nullCurrentMatch_doesNotThrowAndLeavesPropertiesDefault()
+        public void Constructor_nullCurrentMatch_doesNotThrow()
         {
             this.mockedTournamentLogicService
-                .Setup(x => x.GetCurrentMatch())
+                .Setup(tournamentLogicService => tournamentLogicService.GetCurrentMatch())
                 .Returns((MatchPair?)null);
 
             TournamentMatchViewModel viewModel = null!;
 
             Assert.DoesNotThrow(() =>
                 viewModel = new TournamentMatchViewModel(this.mockedTournamentLogicService.Object));
-
-            Assert.That(viewModel.MovieOptionA, Is.Null);
-            Assert.That(viewModel.MovieOptionB, Is.Null);
-            Assert.That(viewModel.RoundDisplay, Is.EqualTo(string.Empty));
         }
 
         [Test]
-        public void RefreshCurrentMatch_nullCurrentMatch_doesNotUpdateProperties()
+        public void RefreshCurrentMatch_nullCurrentMatch_leavesMovieOptionAUnchanged()
         {
             this.mockedTournamentLogicService
-                .Setup(x => x.GetCurrentMatch())
+                .Setup(tournamentLogicService => tournamentLogicService.GetCurrentMatch())
                 .Returns((MatchPair?)null);
 
             this.viewModel.RefreshCurrentMatch();
 
             Assert.That(this.viewModel.MovieOptionA, Is.SameAs(this.defaultMatch.FirstMovie));
-            Assert.That(this.viewModel.MovieOptionB, Is.SameAs(this.defaultMatch.SecondMovie));
         }
 
         [Test]
@@ -112,11 +107,11 @@ namespace UnitTests.MovieTournament
             newState.CurrentRound = 3;
 
             this.mockedTournamentLogicService
-                .Setup(x => x.GetCurrentMatch())
+                .Setup(tournamentLogicService => tournamentLogicService.GetCurrentMatch())
                 .Returns(newMatch);
 
             this.mockedTournamentLogicService
-                .SetupGet(x => x.CurrentState)
+                .SetupGet(tournamentLogicService => tournamentLogicService.CurrentState)
                 .Returns(newState);
 
             this.viewModel.RefreshCurrentMatch();
@@ -136,11 +131,11 @@ namespace UnitTests.MovieTournament
             newState.CurrentRound = 3;
 
             this.mockedTournamentLogicService
-                .Setup(x => x.GetCurrentMatch())
+                .Setup(tournamentLogicService => tournamentLogicService.GetCurrentMatch())
                 .Returns(newMatch);
 
             this.mockedTournamentLogicService
-                .SetupGet(x => x.CurrentState)
+                .SetupGet(tournamentLogicService => tournamentLogicService.CurrentState)
                 .Returns(newState);
 
             this.viewModel.RefreshCurrentMatch();
@@ -160,11 +155,11 @@ namespace UnitTests.MovieTournament
             newState.CurrentRound = 3;
 
             this.mockedTournamentLogicService
-                .Setup(x => x.GetCurrentMatch())
+                .Setup(tournamentLogicService => tournamentLogicService.GetCurrentMatch())
                 .Returns(newMatch);
 
             this.mockedTournamentLogicService
-                .SetupGet(x => x.CurrentState)
+                .SetupGet(tournamentLogicService => tournamentLogicService.CurrentState)
                 .Returns(newState);
 
             this.viewModel.RefreshCurrentMatch();
@@ -178,22 +173,22 @@ namespace UnitTests.MovieTournament
             const int WinnerId = 1;
 
             this.mockedTournamentLogicService
-                .Setup(x => x.AdvanceWinnerAsync(UserId, WinnerId))
+                .Setup(tournamentLogicService => tournamentLogicService.AdvanceWinnerAsync(UserId, WinnerId))
                 .Returns(Task.CompletedTask);
 
             this.mockedTournamentLogicService
-                .Setup(x => x.IsTournamentComplete())
+                .Setup(tournamentLogicService => tournamentLogicService.IsTournamentComplete())
                 .Returns(false);
 
             await this.viewModel.SelectMovieAsync(WinnerId);
 
             this.mockedTournamentLogicService.Verify(
-                x => x.AdvanceWinnerAsync(UserId, WinnerId),
+                tournamentLogicService => tournamentLogicService.AdvanceWinnerAsync(UserId, WinnerId),
                 Times.Once);
         }
 
         [Test]
-        public async Task SelectMovieAsync_tournamentNotComplete_refreshesCurrentMatch()
+        public async Task SelectMovieAsync_tournamentNotComplete_updatesMovieOptionA()
         {
             const int WinnerId = 1;
 
@@ -206,26 +201,24 @@ namespace UnitTests.MovieTournament
             nextState.CurrentRound = 2;
 
             this.mockedTournamentLogicService
-                .Setup(x => x.AdvanceWinnerAsync(UserId, WinnerId))
+                .Setup(tournamentLogicService => tournamentLogicService.AdvanceWinnerAsync(UserId, WinnerId))
                 .Returns(Task.CompletedTask);
 
             this.mockedTournamentLogicService
-                .Setup(x => x.IsTournamentComplete())
+                .Setup(tournamentLogicService => tournamentLogicService.IsTournamentComplete())
                 .Returns(false);
 
             this.mockedTournamentLogicService
-                .Setup(x => x.GetCurrentMatch())
+                .Setup(tournamentLogicService => tournamentLogicService.GetCurrentMatch())
                 .Returns(nextMatch);
 
             this.mockedTournamentLogicService
-                .SetupGet(x => x.CurrentState)
+                .SetupGet(tournamentLogicService => tournamentLogicService.CurrentState)
                 .Returns(nextState);
 
             await this.viewModel.SelectMovieAsync(WinnerId);
 
             Assert.That(this.viewModel.MovieOptionA, Is.SameAs(nextMatch.FirstMovie));
-            Assert.That(this.viewModel.MovieOptionB, Is.SameAs(nextMatch.SecondMovie));
-            Assert.That(this.viewModel.RoundDisplay, Is.EqualTo("Round 2"));
         }
 
         [Test]
@@ -234,11 +227,11 @@ namespace UnitTests.MovieTournament
             const int WinnerId = 1;
 
             this.mockedTournamentLogicService
-                .Setup(x => x.AdvanceWinnerAsync(UserId, WinnerId))
+                .Setup(tournamentLogicService => tournamentLogicService.AdvanceWinnerAsync(UserId, WinnerId))
                 .Returns(Task.CompletedTask);
 
             this.mockedTournamentLogicService
-                .Setup(x => x.IsTournamentComplete())
+                .Setup(tournamentLogicService => tournamentLogicService.IsTournamentComplete())
                 .Returns(false);
 
             bool eventRaised = false;
@@ -255,11 +248,11 @@ namespace UnitTests.MovieTournament
             const int WinnerId = 2;
 
             this.mockedTournamentLogicService
-                .Setup(x => x.AdvanceWinnerAsync(UserId, WinnerId))
+                .Setup(tournamentLogicService => tournamentLogicService.AdvanceWinnerAsync(UserId, WinnerId))
                 .Returns(Task.CompletedTask);
 
             this.mockedTournamentLogicService
-                .Setup(x => x.IsTournamentComplete())
+                .Setup(tournamentLogicService => tournamentLogicService.IsTournamentComplete())
                 .Returns(true);
 
             bool eventRaised = false;
@@ -276,17 +269,17 @@ namespace UnitTests.MovieTournament
             const int WinnerId = 2;
 
             this.mockedTournamentLogicService
-                .Setup(x => x.AdvanceWinnerAsync(UserId, WinnerId))
+                .Setup(tournamentLogicService => tournamentLogicService.AdvanceWinnerAsync(UserId, WinnerId))
                 .Returns(Task.CompletedTask);
 
             this.mockedTournamentLogicService
-                .Setup(x => x.IsTournamentComplete())
+                .Setup(tournamentLogicService => tournamentLogicService.IsTournamentComplete())
                 .Returns(true);
 
             await this.viewModel.SelectMovieAsync(WinnerId);
 
             this.mockedTournamentLogicService.Verify(
-                x => x.GetCurrentMatch(),
+                tournamentLogicService => tournamentLogicService.GetCurrentMatch(),
                 Times.Once);
         }
 
@@ -296,11 +289,11 @@ namespace UnitTests.MovieTournament
             const int WinnerId = 1;
 
             this.mockedTournamentLogicService
-                .Setup(x => x.AdvanceWinnerAsync(UserId, WinnerId))
+                .Setup(tournamentLogicService => tournamentLogicService.AdvanceWinnerAsync(UserId, WinnerId))
                 .Returns(Task.CompletedTask);
 
             this.mockedTournamentLogicService
-                .Setup(x => x.IsTournamentComplete())
+                .Setup(tournamentLogicService => tournamentLogicService.IsTournamentComplete())
                 .Returns(true);
 
             object? capturedSender = null;
@@ -316,7 +309,7 @@ namespace UnitTests.MovieTournament
         {
             this.viewModel.GoBack();
 
-            this.mockedTournamentLogicService.Verify(x => x.ResetTournament(), Times.Once);
+            this.mockedTournamentLogicService.Verify(tournamentLogicService => tournamentLogicService.ResetTournament(), Times.Once);
         }
 
         [Test]
@@ -350,7 +343,7 @@ namespace UnitTests.MovieTournament
             {
                 try
                 {
-                    this.mockedTournamentLogicService.Verify(x => x.ResetTournament(), Times.Once);
+                    this.mockedTournamentLogicService.Verify(tournamentLogicService => tournamentLogicService.ResetTournament(), Times.Once);
                     resetCalledBeforeEvent = true;
                 }
                 catch

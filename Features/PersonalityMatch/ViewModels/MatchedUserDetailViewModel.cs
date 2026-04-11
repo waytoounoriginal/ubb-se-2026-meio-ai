@@ -7,7 +7,7 @@ using ubb_se_2026_meio_ai.Features.PersonalityMatch.Services;
 namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
 {
     /// <summary>
-    /// ViewModel for the matched user detail view, responsible for loading and exposing profile information, 
+    /// ViewModel for the matched user detail view, responsible for loading and exposing profile information,
     /// compatibility score, Facebook account, and top movie preferences for a specific matched user.
     /// </summary>
     public partial class MatchedUserDetailViewModel : ObservableObject
@@ -72,7 +72,7 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
         /// Gets the collection of top-rated movie preferences for the matched user,
         /// enriched with movie titles and best movie flags.
         /// </summary>
-        public ObservableCollection<MoviePreferenceDisplayModel> TopPreferences { get; } = new();
+        public ObservableCollection<MoviePreferenceDisplayModel> TopPreferences { get; } = new ();
 
         /// <summary>
         /// Initializes a new instance of <see cref="MatchedUserDetailViewModel"/> with the specified matching service.
@@ -136,7 +136,7 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
         }
 
         /// <summary>
-        /// Resolves the display username for the specified user. Returns the provided username directly 
+        /// Resolves the display username for the specified user. Returns the provided username directly
         /// if it is non-empty; otherwise fetches it from the service.
         /// </summary>
         /// <param name="userId">The identifier of the user whose username is to be resolved.</param>

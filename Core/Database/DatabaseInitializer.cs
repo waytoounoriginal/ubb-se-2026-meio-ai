@@ -2,22 +2,19 @@ using Microsoft.Data.SqlClient;
 
 namespace ubb_se_2026_meio_ai.Core.Database
 {
-
     public class DatabaseInitializer
     {
-        private readonly ISqlConnectionFactory _connectionFactory;
+        private readonly ISqlConnectionFactory connectionFactory;
 
         private const string DatabaseName = "MeioAiDb";
 
-
         public DatabaseInitializer(ISqlConnectionFactory connectionFactory)
         {
-            _connectionFactory = connectionFactory;
+            this.connectionFactory = connectionFactory;
         }
 
         public async Task CreateTablesIfNotExistAsync()
         {
-
             await EnsureDatabaseExistsAsync();
 
             const string sql = @"
@@ -416,7 +413,7 @@ END
                     VALUES (6, 25, 12000, 110.0, 109, 0.23);
             ";
 
-            await using SqlConnection connection = await _connectionFactory.CreateConnectionAsync();
+            await using SqlConnection connection = await connectionFactory.CreateConnectionAsync();
             await using SqlCommand command = new SqlCommand(sql, connection);
             await command.ExecuteNonQueryAsync();
         }
@@ -430,8 +427,7 @@ END
                 END
             ";
 
-
-            await using SqlConnection masterConnection = await _connectionFactory.CreateMasterConnectionAsync();
+            await using SqlConnection masterConnection = await connectionFactory.CreateMasterConnectionAsync();
             await using SqlCommand command = new SqlCommand(sql, masterConnection);
             await command.ExecuteNonQueryAsync();
         }

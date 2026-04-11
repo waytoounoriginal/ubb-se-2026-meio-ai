@@ -12,16 +12,16 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
     /// </summary>
     public partial class UserProfileViewModel : ObservableObject
     {
-        private readonly IEngagementProfileService _profileService;
+        private readonly IEngagementProfileService profileService;
 
         [ObservableProperty]
-        private UserProfileModel? _profile;
+        private UserProfileModel? profile;
 
         [ObservableProperty]
-        private bool _isLoading;
+        private bool isLoading;
 
         [ObservableProperty]
-        private string? _errorMessage;
+        private string? errorMessage;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UserProfileViewModel"/> class.
@@ -29,7 +29,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
         /// <param name="profileService">Service used to load and refresh user engagement profiles.</param>
         public UserProfileViewModel(IEngagementProfileService profileService)
         {
-            this._profileService = profileService;
+            this.profileService = profileService;
         }
 
         /// <summary>
@@ -45,8 +45,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
 
             try
             {
-                await this._profileService.RefreshProfileAsync(userId);
-                this.Profile = await this._profileService.GetProfileAsync(userId);
+                await this.profileService.RefreshProfileAsync(userId);
+                this.Profile = await this.profileService.GetProfileAsync(userId);
             }
             catch (System.Exception ex)
             {

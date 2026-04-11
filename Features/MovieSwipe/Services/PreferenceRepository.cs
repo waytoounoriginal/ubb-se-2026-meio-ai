@@ -12,13 +12,13 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
     public class PreferenceRepository : IPreferenceRepository
     {
         /// <summary> The connection factory for creating SQL connections. </summary>
-        private readonly ISqlConnectionFactory _connectionFactory;
+        private readonly ISqlConnectionFactory connectionFactory;
 
         /// <summary> Initializes a new instance of the <see cref="PreferenceRepository"/> class. </summary>
         /// <param name="connectionFactory">The SQL connection factory.</param>
         public PreferenceRepository(ISqlConnectionFactory connectionFactory)
         {
-            _connectionFactory = connectionFactory;
+            this.connectionFactory = connectionFactory;
         }
 
         /// <inheritdoc />
@@ -29,7 +29,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
                 FROM   UserMoviePreference
                 WHERE  UserId = @UserId AND MovieId = @MovieId;";
 
-            await using SqlConnection connection = await _connectionFactory.CreateConnectionAsync();
+            await using SqlConnection connection = await connectionFactory.CreateConnectionAsync();
             await using SqlCommand command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@UserId", userId);
             command.Parameters.AddWithValue("@MovieId", movieId);
@@ -71,7 +71,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
                     INSERT (UserId, MovieId, Score, LastModified, ChangeFromPreviousValue)
                     VALUES (@UserId, @MovieId, @ScoreDelta, SYSUTCDATETIME(), @ChangeFromPreviousValue);";
 
-            await using SqlConnection connection = await _connectionFactory.CreateConnectionAsync();
+            await using SqlConnection connection = await connectionFactory.CreateConnectionAsync();
             await using SqlCommand command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@UserId", preference.UserId);
             command.Parameters.AddWithValue("@MovieId", preference.MovieId);
@@ -96,7 +96,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
 
             var results = new List<MovieCardModel>();
 
-            await using SqlConnection connection = await _connectionFactory.CreateConnectionAsync();
+            await using SqlConnection connection = await connectionFactory.CreateConnectionAsync();
             await using SqlCommand command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@UserId", userId);
             command.Parameters.AddWithValue("@Count", count);
@@ -131,7 +131,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
 
             var result = new Dictionary<int, List<UserMoviePreferenceModel>>();
 
-            await using SqlConnection connection = await _connectionFactory.CreateConnectionAsync();
+            await using SqlConnection connection = await connectionFactory.CreateConnectionAsync();
             await using SqlCommand command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@ExcludeUserId", excludeUserId);
 
@@ -176,7 +176,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
 
             var movieIds = new List<int>();
 
-            await using SqlConnection connection = await _connectionFactory.CreateConnectionAsync();
+            await using SqlConnection connection = await connectionFactory.CreateConnectionAsync();
             await using SqlCommand command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@UserId", userId);
 

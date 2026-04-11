@@ -10,12 +10,11 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
     /// </summary>
     public class RecommendationRepository : IRecommendationRepository
     {
-
-        private readonly ISqlConnectionFactory _connectionFactory;
+        private readonly ISqlConnectionFactory connectionFactory;
 
         public RecommendationRepository(ISqlConnectionFactory connectionFactory)
         {
-            this._connectionFactory = connectionFactory;
+            this.connectionFactory = connectionFactory;
         }
 
         /// <inheritdoc />
@@ -27,7 +26,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
                 WHERE UserId = @UserId
             ";
 
-            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var connection = await this.connectionFactory.CreateConnectionAsync();
             await using var checkUserHasPreferencesCommand = new SqlCommand(checkUserHasPreferencesSql, connection);
             checkUserHasPreferencesCommand.Parameters.AddWithValue("@UserId", userId);
             var hasPreferencesResult = await checkUserHasPreferencesCommand.ExecuteScalarAsync();
@@ -49,7 +48,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
 
             var allReels = new List<ReelModel>();
 
-            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var connection = await this.connectionFactory.CreateConnectionAsync();
             await using var getAllReelsCommand = new SqlCommand(getAllReelsSql, connection);
 
             await using var reelReader = await getAllReelsCommand.ExecuteReaderAsync();
@@ -72,7 +71,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
 
             var preferenceScoresByMovieId = new Dictionary<int, double>();
 
-            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var connection = await this.connectionFactory.CreateConnectionAsync();
             await using var getUserPreferenceScoresCommand = new SqlCommand(getUserPreferenceScoresSql, connection);
             getUserPreferenceScoresCommand.Parameters.AddWithValue("@UserId", userId);
 
@@ -98,7 +97,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
 
             var likeCountsByReelId = new Dictionary<int, int>();
 
-            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var connection = await this.connectionFactory.CreateConnectionAsync();
             await using var getAllLikeCountsCommand = new SqlCommand(getAllLikeCountsSql, connection);
 
             await using var likeCountReader = await getAllLikeCountsCommand.ExecuteReaderAsync();
@@ -122,7 +121,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
 
             var interactions = new List<UserReelInteractionModel>();
 
-            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var connection = await this.connectionFactory.CreateConnectionAsync();
             await using var command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@Days", -days);
 

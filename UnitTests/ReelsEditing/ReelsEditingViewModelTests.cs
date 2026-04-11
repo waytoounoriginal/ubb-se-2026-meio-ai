@@ -133,7 +133,7 @@
         public async Task LoadReelAsync_MalformedCropJson_KeepsDefaultMargins()
         {
             var reelToLoad = new ReelModel { ReelId = 1, CropDataJson = "{ invalid_json: 1 " };
-            this.mockRepo.Setup(r => r.GetReelByIdAsync(1)).ReturnsAsync(reelToLoad);
+            this.mockRepo.Setup(repository => repository.GetReelByIdAsync(1)).ReturnsAsync(reelToLoad);
 
             await this.viewModel.LoadReelAsync(reelToLoad);
 
@@ -151,7 +151,7 @@
             // Note: We use "45" instead of "45.5" to avoid cross-culture decimal separator issues.
             string complexJson = "{\"x\": \"10\", \"y\": \"bad_int\", \"musicDuration\": \"45\", \"musicVolume\": \"bad_double\"}";
             var reelToLoad = new ReelModel { ReelId = 1, CropDataJson = complexJson };
-            this.mockRepo.Setup(r => r.GetReelByIdAsync(1)).ReturnsAsync(reelToLoad);
+            this.mockRepo.Setup(repository => repository.GetReelByIdAsync(1)).ReturnsAsync(reelToLoad);
 
             await this.viewModel.LoadReelAsync(reelToLoad);
 
@@ -214,7 +214,7 @@
             this.viewModel.SelectedEditOption = "Crop";
 
             var tracks = new List<MusicTrackModel> { new MusicTrackModel() };
-            this.mockAudioService.Setup(a => a.GetAllTracksAsync()).ReturnsAsync(tracks);
+            this.mockAudioService.Setup(audioService => audioService.GetAllTracksAsync()).ReturnsAsync(tracks);
 
             this.viewModel.SelectEditOptionCommand.Execute("Music");
 
@@ -228,7 +228,7 @@
         [Test]
         public void SelectEditOptionCommand_LoadMusicThrows_SetsErrorStatus()
         {
-            this.mockAudioService.Setup(a => a.GetAllTracksAsync()).ThrowsAsync(new Exception("Network Down"));
+            this.mockAudioService.Setup(audioService => audioService.GetAllTracksAsync()).ThrowsAsync(new Exception("Network Down"));
 
             this.viewModel.SelectEditOptionCommand.Execute("Music");
 
@@ -340,14 +340,14 @@
             this.viewModel.CropMarginBottom = 10;
 
             this.mockVideoService
-                .Setup(v => v.ApplyCropAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(videoService => videoService.ApplyCropAsync(It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync("cropped.mp4");
 
             this.mockRepo
-                .Setup(r => r.UpdateReelEditsAsync(1, It.IsAny<string>(), It.IsAny<int?>(), "cropped.mp4"))
+                .Setup(repository => repository.UpdateReelEditsAsync(1, It.IsAny<string>(), It.IsAny<int?>(), "cropped.mp4"))
                 .ReturnsAsync(1); // Simulate 1 row affected
 
-            this.mockRepo.Setup(r => r.GetReelByIdAsync(1))
+            this.mockRepo.Setup(repository => repository.GetReelByIdAsync(1))
                         .ReturnsAsync(() => new ReelModel { ReelId = 1, CropDataJson = this.viewModel.CurrentEdits.ToCropDataJson() });
 
             await this.viewModel.SaveCropCommand.ExecuteAsync(null);
@@ -368,12 +368,12 @@
         {
             this.viewModel.SelectedReel = new ReelModel { ReelId = 1, VideoUrl = "original.mp4" };
             this.mockVideoService
-                .Setup(v => v.ApplyCropAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(videoService => videoService.ApplyCropAsync(It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync("cropped.mp4");
 
             // Simulating a scenario where the database fails to find the reel to update (returns 0 rows affected)
             this.mockRepo
-                .Setup(r => r.UpdateReelEditsAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<string>()))
+                .Setup(repository => repository.UpdateReelEditsAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<string>()))
                 .ReturnsAsync(0);
 
             bool eventFired = false;
@@ -415,7 +415,7 @@
             this.viewModel.CurrentEdits = new VideoEditMetadata();
 
             this.mockVideoService
-                .Setup(video => video.MergeAudioAsync("cropped.mp4", 3, It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
+                .Setup(videoService => videoService.MergeAudioAsync("cropped.mp4", 3, It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
                 .ReturnsAsync("final.mp4");
 
             this.mockRepo
@@ -440,14 +440,14 @@
             this.viewModel.SelectedReel = new ReelModel { ReelId = 1, VideoUrl = "original.mp4" };
             this.viewModel.SelectedMusicTrack = new MusicTrackModel { MusicTrackId = 5 };
 
-            this.mockVideoService.Setup(v => v.MergeAudioAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
+            this.mockVideoService.Setup(videoService => videoService.MergeAudioAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
                 .ReturnsAsync("merged.mp4");
 
-            this.mockRepo.Setup(r => r.UpdateReelEditsAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<string>()))
+            this.mockRepo.Setup(repository => repository.UpdateReelEditsAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<string>()))
                 .ReturnsAsync(1);
 
             // Return a reel with a DIFFERENT music ID to trigger the mismatch exception
-            this.mockRepo.Setup(r => r.GetReelByIdAsync(1))
+            this.mockRepo.Setup(repository => repository.GetReelByIdAsync(1))
                 .ReturnsAsync(new ReelModel { BackgroundMusicId = 99 });
 
             await this.viewModel.SaveMusicCommand.ExecuteAsync(null);
@@ -469,7 +469,7 @@
             this.viewModel.SelectedReel = null;
             await this.viewModel.DeleteReelCommand.ExecuteAsync(null);
 
-            this.mockRepo.Verify(r => r.DeleteReelAsync(It.IsAny<int>()), Times.Never);
+            this.mockRepo.Verify(repository => repository.DeleteReelAsync(It.IsAny<int>()), Times.Never);
         }
 
         /// <summary>
@@ -483,7 +483,7 @@
 
             await this.viewModel.DeleteReelCommand.ExecuteAsync(null);
 
-            this.mockRepo.Verify(r => r.DeleteReelAsync(99), Times.Once);
+            this.mockRepo.Verify(repository => repository.DeleteReelAsync(99), Times.Once);
             Assert.That(this.viewModel.SelectedReel, Is.Null);
             Assert.That(this.viewModel.IsEditing, Is.False);
         }
@@ -495,7 +495,7 @@
         public async Task DeleteReelCommand_RepositoryThrowsException_SetsErrorStatus()
         {
             this.viewModel.SelectedReel = new ReelModel { ReelId = 1 };
-            this.mockRepo.Setup(r => r.DeleteReelAsync(1)).ThrowsAsync(new InvalidOperationException("DB Lock"));
+            this.mockRepo.Setup(repository => repository.DeleteReelAsync(1)).ThrowsAsync(new InvalidOperationException("DB Lock"));
 
             await this.viewModel.DeleteReelCommand.ExecuteAsync(null);
 
@@ -513,7 +513,7 @@
             // Providing actual JSON numbers instead of strings (no quotes around 42.5 or 75.0)
             string json = "{\"musicDuration\": 42.5, \"musicVolume\": 75.0}";
             var reelToLoad = new ReelModel { ReelId = 1, CropDataJson = json };
-            this.mockRepo.Setup(r => r.GetReelByIdAsync(1)).ReturnsAsync(reelToLoad);
+            this.mockRepo.Setup(repository => repository.GetReelByIdAsync(1)).ReturnsAsync(reelToLoad);
 
             await this.viewModel.LoadReelAsync(reelToLoad);
 
@@ -531,17 +531,17 @@
             this.viewModel.CurrentEdits = new VideoEditMetadata();
 
             this.mockVideoService
-                .Setup(v => v.ApplyCropAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(videoService => videoService.ApplyCropAsync(It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync("cropped.mp4");
 
             // Mock update to succeed
             this.mockRepo
-                .Setup(r => r.UpdateReelEditsAsync(1, It.IsAny<string>(), It.IsAny<int?>(), "cropped.mp4"))
+                .Setup(repository => repository.UpdateReelEditsAsync(1, It.IsAny<string>(), It.IsAny<int?>(), "cropped.mp4"))
                 .ReturnsAsync(1);
 
             // Mock get to return a mismatched JSON payload
             this.mockRepo
-                .Setup(r => r.GetReelByIdAsync(1))
+                .Setup(repository => repository.GetReelByIdAsync(1))
                 .ReturnsAsync(new ReelModel { ReelId = 1, CropDataJson = "{\"x\": 999}" });
 
             await this.viewModel.SaveCropCommand.ExecuteAsync(null);
@@ -561,12 +561,12 @@
             this.viewModel.SelectedMusicTrack = new MusicTrackModel { MusicTrackId = 3 };
 
             this.mockVideoService
-                .Setup(v => v.MergeAudioAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
+                .Setup(videoService => videoService.MergeAudioAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
                 .ReturnsAsync("merged.mp4");
 
             // Simulate the DB failing to find the record
             this.mockRepo
-                .Setup(r => r.UpdateReelEditsAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<string>()))
+                .Setup(repository => repository.UpdateReelEditsAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<string>()))
                 .ReturnsAsync(0);
 
             await this.viewModel.SaveMusicCommand.ExecuteAsync(null);

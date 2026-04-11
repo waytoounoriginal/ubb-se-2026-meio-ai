@@ -1,11 +1,11 @@
+using System;
+using System.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
-using System;
-using System.ComponentModel;
 using ubb_se_2026_meio_ai.Core.Models;
 using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
 using Windows.Media.Playback;
@@ -73,21 +73,21 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
             }
         }
 
-        private readonly IReelInteractionService _interactionService;
-        private DispatcherTimer? _progressTimer;
-        private string? _loadedVideoUrl;
+        private readonly IReelInteractionService interactionService;
+        private DispatcherTimer? progressTimer;
+        private string? loadedVideoUrl;
 
         /// <summary>
         /// Per-instance flag to prevent double-disposal and post-dispose access.
         /// Reset when the container is recycled via OnReelChanged.
         /// </summary>
-        private volatile bool _disposed;
+        private volatile bool disposed;
 
         /// <summary>
         /// Stored reference so we can unhook PropertyChanged when the Reel changes
         /// or the control is recycled by the VirtualizingStackPanel.
         /// </summary>
-        private ReelModel? _subscribedReel;
+        private ReelModel? subscribedReel;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ReelItemView"/> class.
@@ -95,7 +95,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         public ReelItemView()
         {
             this.InitializeComponent();
-            this._interactionService = App.Services.GetRequiredService<IReelInteractionService>();
+            this.interactionService = App.Services.GetRequiredService<IReelInteractionService>();
 
             // Do NOT hook MediaEnded here — it's done in OnReelChanged after setting Source,
             // so we always hook the correct auto-created MediaPlayer instance.
@@ -133,11 +133,11 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
                 view.DisposeCurrentPlayer();
 
                 // Container is being reused — clear the disposed flag
-                view._disposed = false;
+                view.disposed = false;
 
                 // Set the new source — MediaPlayerElement will auto-create a new MediaPlayer
                 view.ReelPlayer.Source = null;
-                view._loadedVideoUrl = null;
+                view.loadedVideoUrl = null;
 
                 // Hook MediaEnded on the newly created MediaPlayer
                 if (view.ReelPlayer.MediaPlayer != null)
@@ -153,7 +153,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
                 view.UpdateGenreBadge(reel.Genre);
 
                 // Listen for model property changes (e.g. if liked state loaded async after binding)
-                view._subscribedReel = reel;
+                view.subscribedReel = reel;
                 reel.PropertyChanged += view.OnReelPropertyChanged;
             }
         }
@@ -165,7 +165,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         /// <param name="args">The property change arguments.</param>
         private void OnReelPropertyChanged(object? sender, PropertyChangedEventArgs args)
         {
-            if (ReelItemView.IsAppClosing || this._disposed)
+            if (ReelItemView.IsAppClosing || this.disposed)
             {
                 return;
             }
@@ -184,7 +184,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
 
                         void UpdateLikeVisualsOnDispatcher()
                         {
-                            if (ReelItemView.IsAppClosing || this._disposed)
+                            if (ReelItemView.IsAppClosing || this.disposed)
                             {
                                 return;
                             }
@@ -214,10 +214,10 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         /// </summary>
         private void UnsubscribeFromReel()
         {
-            if (this._subscribedReel != null)
+            if (this.subscribedReel != null)
             {
-                this._subscribedReel.PropertyChanged -= this.OnReelPropertyChanged;
-                this._subscribedReel = null;
+                this.subscribedReel.PropertyChanged -= this.OnReelPropertyChanged;
+                this.subscribedReel = null;
             }
         }
 
@@ -301,7 +301,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
 
             try
             {
-                await this._interactionService.ToggleLikeAsync(MockUserId, this.Reel.ReelId);
+                await this.interactionService.ToggleLikeAsync(MockUserId, this.Reel.ReelId);
             }
             catch
             {
@@ -392,7 +392,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         /// </summary>
         public void PlayVideo()
         {
-            if (this._disposed || ReelItemView.IsAppClosing)
+            if (this.disposed || ReelItemView.IsAppClosing)
             {
                 return;
             }
@@ -416,7 +416,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         /// </summary>
         public void PauseVideo()
         {
-            if (this._disposed)
+            if (this.disposed)
             {
                 return;
             }
@@ -441,13 +441,13 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         /// </summary>
         private void StartProgressTimer()
         {
-            if (this._progressTimer == null)
+            if (this.progressTimer == null)
             {
-                this._progressTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(ProgressTimerIntervalMilliseconds) };
-                this._progressTimer.Tick += this.ProgressTimer_Tick;
+                this.progressTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(ProgressTimerIntervalMilliseconds) };
+                this.progressTimer.Tick += this.ProgressTimer_Tick;
             }
 
-            this._progressTimer.Start();
+            this.progressTimer.Start();
         }
 
         /// <summary>
@@ -455,11 +455,11 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         /// </summary>
         private void StopProgressTimer()
         {
-            if (this._progressTimer != null)
+            if (this.progressTimer != null)
             {
-                this._progressTimer.Stop();
-                this._progressTimer.Tick -= this.ProgressTimer_Tick;
-                this._progressTimer = null;
+                this.progressTimer.Stop();
+                this.progressTimer.Tick -= this.ProgressTimer_Tick;
+                this.progressTimer = null;
             }
         }
 
@@ -470,7 +470,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         /// <param name="e">The event data.</param>
         private void ProgressTimer_Tick(object? sender, object e)
         {
-            if (ReelItemView.IsAppClosing || this._disposed)
+            if (ReelItemView.IsAppClosing || this.disposed)
             {
                 this.StopProgressTimer();
                 return;
@@ -530,7 +530,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
                 player.Source = null;
                 previousSource?.Dispose();
                 player.Dispose();
-                this._loadedVideoUrl = null;
+                this.loadedVideoUrl = null;
             }
             catch
             {
@@ -544,12 +544,12 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         /// </summary>
         public void DisposeMediaPlayer()
         {
-            if (this._disposed)
+            if (this.disposed)
             {
                 return;
             }
 
-            this._disposed = true;
+            this.disposed = true;
 
             this.StopProgressTimer();
             this.DisposeCurrentPlayer();
@@ -580,7 +580,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         {
             // This callback fires on a Media Foundation background thread.
             // Do NOT access any DependencyProperty here.
-            if (ReelItemView.IsAppClosing || this._disposed)
+            if (ReelItemView.IsAppClosing || this.disposed)
             {
                 return;
             }
@@ -597,7 +597,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
 
                 void AdvanceToNextReelOnDispatcher()
                 {
-                    if (ReelItemView.IsAppClosing || this._disposed)
+                    if (ReelItemView.IsAppClosing || this.disposed)
                     {
                         return;
                     }
@@ -637,13 +637,13 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
         /// <param name="playbackItem">Playback item built by the ViewModel.</param>
         public void SetPlaybackItem(string? videoUrl, MediaPlaybackItem? playbackItem)
         {
-            if (this._disposed || ReelItemView.IsAppClosing)
+            if (this.disposed || ReelItemView.IsAppClosing)
             {
                 return;
             }
 
             if (!string.IsNullOrWhiteSpace(videoUrl) &&
-                string.Equals(this._loadedVideoUrl, videoUrl, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(this.loadedVideoUrl, videoUrl, StringComparison.OrdinalIgnoreCase) &&
                 this.ReelPlayer.Source != null)
             {
                 return;
@@ -652,9 +652,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
             try
             {
                 this.DisposeCurrentPlayer();
-                this._disposed = false;
+                this.disposed = false;
                 this.ReelPlayer.Source = playbackItem;
-                this._loadedVideoUrl = videoUrl;
+                this.loadedVideoUrl = videoUrl;
 
                 if (this.ReelPlayer.MediaPlayer != null)
                 {

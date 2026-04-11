@@ -230,7 +230,6 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
             return $"{FallbackUsernamePrefix} {userId}";
         }
 
-
         /// <summary>
         /// Reads a single row from the provided <see cref="SqlDataReader"/> and maps it to a <see cref="UserMoviePreferenceModel"/>.
         /// </summary>
@@ -249,7 +248,6 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
                 LastModified = dataReader.GetDateTime(ColumnIndexLastModified),
             };
         }
-
 
         /// <summary>
         /// Reads a single row from the provided <see cref="SqlDataReader"/> and maps it to a <see cref="UserProfileModel"/>.

@@ -1,13 +1,13 @@
+using System;
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Data.SqlClient;
-using System;
-using System.Collections.ObjectModel;
 using ubb_se_2026_meio_ai.Core.Database;
 using ubb_se_2026_meio_ai.Core.Models;
 using ubb_se_2026_meio_ai.Core.Platform;
-using ubb_se_2026_meio_ai.Features.ReelsUpload.Services;
 using ubb_se_2026_meio_ai.Core.Services;
+using ubb_se_2026_meio_ai.Features.ReelsUpload.Services;
 
 namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
 {
@@ -17,55 +17,55 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
     /// </summary>
     public partial class ReelsUploadViewModel : ObservableObject
     {
-        private readonly IAppWindowContext _appWindowContext;
-        private readonly IVideoStorageService _videoStorageService;
-        private readonly IMovieService _movieService;
+        private readonly IAppWindowContext appWindowContext;
+        private readonly IVideoStorageService videoStorageService;
+        private readonly IMovieService movieService;
 
-        const string untitledName = "Untitled Reel";
+        private const string UntitledName = "Untitled Reel";
 
         public ReelsUploadViewModel(
             IAppWindowContext appWindowContext,
             IVideoStorageService videoStorageService,
             IMovieService movieService)
         {
-            _appWindowContext = appWindowContext;
-            _videoStorageService = videoStorageService;
-            _movieService = movieService;
+            this.appWindowContext = appWindowContext;
+            this.videoStorageService = videoStorageService;
+            this.movieService = movieService;
             SuggestedMovies = new ObservableCollection<MovieCardModel>();
         }
 
         public ObservableCollection<MovieCardModel> SuggestedMovies { get; }
 
         [ObservableProperty]
-        private string _pageTitle = "Reels Upload";
+        private string pageTitle = "Reels Upload";
 
         [ObservableProperty]
-        private string _statusMessage = "Ready to upload.";
+        private string statusMessage = "Ready to upload.";
 
         // TODO: Replace with actual authenticated user ID later
-        private const int _currentUserID = 1;
+        private const int CurrentUserID = 1;
 
         [ObservableProperty]
-        private string _reelTitle = string.Empty;
+        private string reelTitle = string.Empty;
 
         [ObservableProperty]
-        private string _reelCaption = string.Empty;
+        private string reelCaption = string.Empty;
 
         [ObservableProperty]
-        private MovieCardModel? _linkedMovie;
+        private MovieCardModel? linkedMovie;
 
         [ObservableProperty]
-        private string _localVideoFilePath = string.Empty;
+        private string localVideoFilePath = string.Empty;
 
-        const string videoFileExtension = ".mp4";
+        private const string VideoFileExtension = ".mp4";
 
         [RelayCommand]
         private async Task SelectVideoFileAsync()
         {
             var filePicker = new Windows.Storage.Pickers.FileOpenPicker();
-            filePicker.FileTypeFilter.Add(videoFileExtension);
+            filePicker.FileTypeFilter.Add(VideoFileExtension);
 
-            var windowHandle = _appWindowContext.GetMainWindowHandle();
+            var windowHandle = appWindowContext.GetMainWindowHandle();
             WinRT.Interop.InitializeWithWindow.Initialize(filePicker, windowHandle);
 
             var selectedMovieFile = await filePicker.PickSingleFileAsync();
@@ -96,31 +96,31 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
                 return;
             }
 
-            _appWindowContext.TryEnqueueOnUiThread(() => StatusMessage = "Validating video format...");
+            appWindowContext.TryEnqueueOnUiThread(() => StatusMessage = "Validating video format...");
 
             try
             {
-                bool isValid = await _videoStorageService.ValidateVideoAsync(LocalVideoFilePath);
+                bool isValid = await videoStorageService.ValidateVideoAsync(LocalVideoFilePath);
                 if (!isValid)
                 {
-                    _appWindowContext.TryEnqueueOnUiThread(() => StatusMessage = "Invalid file! Must be a non-empty MP4 file\nno longer than 60 seconds.");
+                    appWindowContext.TryEnqueueOnUiThread(() => StatusMessage = "Invalid file! Must be a non-empty MP4 file\nno longer than 60 seconds.");
                     return;
                 }
 
-                _appWindowContext.TryEnqueueOnUiThread(() => StatusMessage = "Uploading to Blob Storage & saving metadata...");
+                appWindowContext.TryEnqueueOnUiThread(() => StatusMessage = "Uploading to Blob Storage & saving metadata...");
 
                 var request = new Models.ReelUploadRequest
                 {
                     LocalFilePath = LocalVideoFilePath,
                     Title = ReelTitle,
                     Caption = ReelCaption ?? string.Empty,
-                    UploaderUserId = _currentUserID,
+                    UploaderUserId = CurrentUserID,
                     MovieId = LinkedMovie.MovieId
                 };
 
-                var savedReel = await _videoStorageService.UploadVideoAsync(request);
+                var savedReel = await videoStorageService.UploadVideoAsync(request);
 
-                _appWindowContext.TryEnqueueOnUiThread(() =>
+                appWindowContext.TryEnqueueOnUiThread(() =>
                 {
                     StatusMessage = $"Success! Reel uploaded with ID {savedReel.ReelId}.";
                     LocalVideoFilePath = string.Empty;
@@ -132,7 +132,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
             catch (Exception ex)
             {
                 string errorMessage = $"Upload Failed: {ex.Message}";
-                _appWindowContext.TryEnqueueOnUiThread(() => StatusMessage = errorMessage);
+                appWindowContext.TryEnqueueOnUiThread(() => StatusMessage = errorMessage);
             }
         }
 
@@ -147,17 +147,17 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
         {
             if (string.IsNullOrWhiteSpace(partialMovieName))
             {
-                _appWindowContext.TryEnqueueOnUiThread(() => SuggestedMovies.Clear());
+                appWindowContext.TryEnqueueOnUiThread(() => SuggestedMovies.Clear());
                 return;
             }
 
             try
             {
                 // Ask the service for the data
-                var searchResults = await _movieService.SearchTop10MoviesAsync(partialMovieName);
+                var searchResults = await movieService.SearchTop10MoviesAsync(partialMovieName);
 
                 // Update UI
-                _appWindowContext.TryEnqueueOnUiThread(() =>
+                appWindowContext.TryEnqueueOnUiThread(() =>
                 {
                     SuggestedMovies.Clear();
                     foreach (var movie in searchResults)
@@ -168,7 +168,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
             }
             catch (Exception ex)
             {
-                _appWindowContext.TryEnqueueOnUiThread(() => StatusMessage = $"Search Error: {ex.Message}");
+                appWindowContext.TryEnqueueOnUiThread(() => StatusMessage = $"Search Error: {ex.Message}");
             }
         }
     }

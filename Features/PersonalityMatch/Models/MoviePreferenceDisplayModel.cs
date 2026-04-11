@@ -1,7 +1,7 @@
 namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Models
 {
     /// <summary>
-    /// Represents a movie preference entry intended for display purposes, combining movie identity information 
+    /// Represents a movie preference entry intended for display purposes, combining movie identity information
     /// with the user's preference score and a flag indicating whether it is the user's top-rated movie.
     /// </summary>
     public class MoviePreferenceDisplayModel

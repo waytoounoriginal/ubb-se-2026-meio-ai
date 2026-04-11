@@ -1,7 +1,7 @@
-﻿using Moq;
-using NUnit.Framework;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Moq;
+using NUnit.Framework;
 using ubb_se_2026_meio_ai.Core.Models;
 using ubb_se_2026_meio_ai.Core.Repositories;
 using ubb_se_2026_meio_ai.Core.Services;
@@ -23,7 +23,7 @@ namespace UnitTests.Core
 
             // Assert
             Assert.That(result, Is.Empty);
-            mockedRepository.Verify(x => x.SearchTop10MoviesAsync(It.IsAny<string>()), Times.Never);
+            mockedRepository.Verify(movieRepository => movieRepository.SearchTop10MoviesAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Test]
@@ -38,7 +38,7 @@ namespace UnitTests.Core
 
             // Assert
             Assert.That(result, Is.Empty);
-            mockedRepository.Verify(x => x.SearchTop10MoviesAsync(It.IsAny<string>()), Times.Never);
+            mockedRepository.Verify(movieRepository => movieRepository.SearchTop10MoviesAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Test]
@@ -53,7 +53,7 @@ namespace UnitTests.Core
 
             // Assert
             Assert.That(result, Is.Empty);
-            mockedRepository.Verify(x => x.SearchTop10MoviesAsync(It.IsAny<string>()), Times.Never);
+            mockedRepository.Verify(movieRepository => movieRepository.SearchTop10MoviesAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Test]
@@ -70,7 +70,7 @@ namespace UnitTests.Core
             var mockedRepository = new Mock<IMovieRepository>();
 
             mockedRepository
-                .Setup(x => x.SearchTop10MoviesAsync(SEARCH_TERM))
+                .Setup(movieRepository => movieRepository.SearchTop10MoviesAsync(SEARCH_TERM))
                 .ReturnsAsync(expectedResults);
 
             var service = new MovieService(mockedRepository.Object);
@@ -84,7 +84,7 @@ namespace UnitTests.Core
             Assert.That(result[0].Title, Is.EqualTo("Batman Begins"));
 
             // Verify the repository was called exactly once with the correct search term
-            mockedRepository.Verify(x => x.SearchTop10MoviesAsync(SEARCH_TERM), Times.Once);
+            mockedRepository.Verify(movieRepository => movieRepository.SearchTop10MoviesAsync(SEARCH_TERM), Times.Once);
         }
     }
 }

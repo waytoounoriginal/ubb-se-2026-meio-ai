@@ -22,7 +22,7 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
         /// A static lookup of hardcoded usernames keyed by user identifier,
         /// used as a fallback until database-backed username retrieval is implemented.
         /// </summary>
-        private static readonly Dictionary<int, string> HardcodedUsernames = new()
+        private static readonly Dictionary<int, string> HardcodedUsernames = new ()
         {
             [1] = "Alex Carter",
             [2] = "Alice Rivers",
@@ -43,7 +43,7 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
         /// A static lookup of hardcoded Facebook account handles keyed by user identifier,
         /// used as a fallback until database-backed social account retrieval is implemented.
         /// </summary>
-        private static readonly Dictionary<int, string> HardcodedFacebookAccounts = new()
+        private static readonly Dictionary<int, string> HardcodedFacebookAccounts = new ()
         {
             [1] = "fb_alex_carter",
             [2] = "fb_alice_rivers",
@@ -84,7 +84,7 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
                     MatchedUsername = GetHardcodedUsername(id),
                     FacebookAccount = GetHardcodedFacebookAccount(id),
                     MatchScore = MatchScoreForRandomUser, // 0
-                    IsSelfView = (id == userId)
+                    IsSelfView = id == userId
                 });
             }
 
@@ -98,7 +98,7 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
             for (int i = 0; i < preferences.Count; i++)
             {
                 // This line satisfies your "FlagsFirstMovieAsBest" test branch
-                preferences[i].IsBestMovie = (i == 0);
+                preferences[i].IsBestMovie = i == 0;
             }
 
             return preferences;
@@ -153,7 +153,6 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
         }
 
         /// <inheritdoc />
-
 
         /// <inheritdoc />
         public async Task<string> GetUsernameAsync(int userId)
@@ -256,13 +255,11 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
                 {
                     dotProduct += firstUserEntry.Value * secondUserScore;
                 }
-                
             }
 
             foreach (KeyValuePair<int, double> secondUserEntry in secondUserVector)
             {
                 secondVectorMagnitudeSquared += secondUserEntry.Value * secondUserEntry.Value;
-            
             }
 
             bool eitherVectorHasZeroMagnitude = firstVectorMagnitudeSquared == 0 || secondVectorMagnitudeSquared == 0;
